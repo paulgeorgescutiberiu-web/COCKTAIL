@@ -301,6 +301,31 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ev-rnote{width:100%;font:inherit;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);resize:vertical}
 .ev-rnote:focus{outline:none;border-color:var(--c)}
 
+.st-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.st-acts{display:flex;gap:8px;flex-wrap:wrap}
+.st-q{width:100%;margin:6px 0 0}
+.st-pend{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.st-row{display:flex;justify-content:space-between;align-items:center;width:100%;gap:12px;padding:12px 16px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer}
+.ev-list>.st-row:first-child{border-top:0}
+.st-n{font-family:"Big Shoulders Display",Impact,sans-serif;font-size:1.6rem;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.st-n.neg{color:var(--danger)}.st-n.zero{color:var(--muted)}
+.st-det{display:flex;flex-wrap:wrap;gap:6px 18px;padding:0 16px 12px;font-size:.9rem;color:var(--muted)}
+.st-det b{color:var(--ink)}
+.st-hist{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
+.ev-list>.st-hist:first-child{border-top:0}
+.st-hist small{color:var(--muted)}
+.st-tag{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:999px;background:var(--sage);color:var(--ink)}
+.st-tag.iesire{background:var(--sun);color:#16241C}.st-tag.corectie{background:var(--line)}
+.st-del{padding:6px 10px;font-size:.85rem}
+.st-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:0 0 6px}
+.st-meta label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted)}
+.st-meta input,.st-meta select{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:1rem;font-weight:500;min-width:0}
+.st-new{align-items:end}
+.st-in{display:grid;grid-template-columns:1fr 96px;gap:12px;align-items:center;padding:8px 16px;border-top:1px solid var(--line)}
+.ev-list>.st-in:first-child{border-top:0}
+.st-in small{display:block;color:var(--muted);font-size:.8rem}
+.st-save{position:sticky;bottom:0;padding:14px 0;background:linear-gradient(transparent,var(--paper) 30%);display:flex;justify-content:flex-end}
+.st-save .btn{padding:13px 22px;font-size:1.05rem}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -340,7 +365,7 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
   <nav class="tabs" role="tablist" aria-label="Secțiuni">
     <button role="tab" aria-selected="true" aria-controls="v-retete" data-view="retete">Rețete</button>
     <button role="tab" aria-selected="false" aria-controls="v-evenimente" data-view="evenimente">Evenimente</button>
-    <button role="tab" aria-selected="false" aria-controls="v-antrenament" data-view="antrenament">Antrenament</button>
+    <button role="tab" aria-selected="false" aria-controls="v-stoc" data-view="stoc">Stoc depozit</button>
   </nav>
 </header>
 <main>
@@ -366,18 +391,7 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
     <div class="ev-tabs" id="evTabs" aria-label="Evenimente"></div>
     <div id="evView"></div>
   </section>
-  <section class="view" id="v-antrenament" role="tabpanel" hidden="">
-    <div class="train">
-      <p class="lead">Pentru barmanii noi: încearcă să spui rețeta din memorie, apoi atinge cardul ca să verifici.</p>
-      <div class="card" id="card" tabindex="0" role="button" aria-label="Arată rețeta"></div>
-      <div class="tnav">
-        <button class="btn" type="button" id="prev">Înapoi</button>
-        <span class="count" id="count"></span>
-        <button class="btn primary" type="button" id="next">Următorul</button>
-      </div>
-      <div class="opts" style="justify-content:center"><button class="btn" type="button" id="shuffle">Amestecă ordinea</button></div>
-    </div>
-  </section>
+  <section class="view" id="v-stoc" role="tabpanel" hidden=""></section>
 </main>
 <footer>Cocktail Philosophy · Str. Tractorului 4, Sibiu · <a href="tel:+40743785655">0743 785 655</a></footer>
 <div class="sheet" id="sheet" hidden=""><div class="panel" role="dialog" aria-modal="true" aria-labelledby="pname" id="panel"></div></div>
@@ -635,30 +649,7 @@ $("#panel").addEventListener("change",e=>{
 $("#sheet").addEventListener("click",e=>{if(e.target.id==="sheet"&&!editing&&!document.querySelector("#panel .editor"))closeSheet()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#sheet").hidden&&!document.querySelector("#panel .editor"))closeSheet()});
 
-/* ---------- Training ---------- */
-let deck=[],pos=0,shown=false;
-function resetDeck(){deck=R.map((_,i)=>i);pos=Math.min(pos,Math.max(0,deck.length-1));shown=false}
-function renderCard(){
-  const c=$("#card");
-  if(!deck.length){c.className="card";c.innerHTML=`<p class="hint">Nu există rețete încă.</p>`;$("#count").textContent="";return}
-  const r=R[deck[pos]];
-  c.className="card"+(shown?" revealed":"")+(r.zero?" zero":"");
-  c.setAttribute("aria-label",shown?"Ascunde rețeta":"Arată rețeta");
-  c.innerHTML=`<svg class="leafdeco" aria-hidden="true"><use href="#monstera"/></svg>
-    <div><p class="cname display">${nameHTML(r)}</p>
-    ${shown?`<div class="reveal">${r.ing.map(i=>`<p><b>${esc(qty(i,1))}</b> ${esc(i.n)}</p>`).join("")}
-      <p style="margin-top:10px"><b>${esc(r.tech)}</b>${r.garnish.length?" · "+r.garnish.map(esc).join(", "):""}</p></div>`:""}</div>
-    <span class="hint">${shown?"Atinge din nou ca să ascunzi":"Ce conține? Atinge ca să verifici"}</span>`;
-  $("#count").textContent=`${pos+1} din ${deck.length}`;
-}
-const flip=()=>{shown=!shown;renderCard()};
-$("#card").addEventListener("click",flip);
-$("#card").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();flip()}});
-$("#next").onclick=()=>{if(!deck.length)return;pos=(pos+1)%deck.length;shown=false;renderCard()};
-$("#prev").onclick=()=>{if(!deck.length)return;pos=(pos-1+deck.length)%deck.length;shown=false;renderCard()};
-$("#shuffle").onclick=()=>{for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}pos=0;shown=false;renderCard()};
-
-function refreshAll(){renderList();resetDeck();renderCard();if(window.__evRefresh)window.__evRefresh()}
+function refreshAll(){renderList();if(window.__evRefresh)window.__evRefresh()}
 refreshAll();
 
 /* ---------- Evenimente (din Excelul centralizator) ---------- */
@@ -732,7 +723,7 @@ function parseAOA(aoa,fileName){
     if(L.startsWith("TRANSPORT")){events.forEach(e=>{if(!blank(row[e.col]))e.transport=capL(row[e.col])});continue}
     if(L.startsWith("MENTIUNI")){inNotes=true;events.forEach(e=>{if(!blank(row[e.col]))e.notesRaw.push(String(row[e.col]).trim())});continue}
     const known=KNOWN[L],key="i"+r+"_"+L.replace(/[^A-Z0-9]/g,"");
-    const it={key,label:known?known[0]:capL(label),cat:known?known[1]:"altele",excelTotal:totalCol>=0?row[totalCol]:null};
+    const it={key,excelLabel:L,label:known?known[0]:capL(label),cat:known?known[1]:"altele",excelTotal:totalCol>=0?row[totalCol]:null};
     items.push(it);
     events.forEach(e=>{
       let v=row[e.col];if(blank(v))return;
@@ -944,7 +935,8 @@ function parseRet(s){s=String(s).trim().replace(",",".");if(s==="")return null;c
 
 function heading(){
   const h=document.querySelector("h1");if(!h)return;
-  h.innerHTML=store.get("tab","retete")==="evenimente"&&D?`Evenimente<span class="yr">${esc(D.title.big)}</span>`:`Rețetar<span class="yr">2026</span>`;
+  const tb=store.get("tab","retete");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}
+  h.innerHTML=tb==="evenimente"&&D?`Evenimente<span class="yr">${esc(D.title.big)}</span>`:`Rețetar<span class="yr">2026</span>`;
 }
 function loadData(){
   try{D=parseAOA(EVD.aoa,EVD.fileName)}catch(e){D=null}
@@ -1092,7 +1084,7 @@ $("#evInput").onchange=async ev=>{
   const t=parseTitle(f.name).big;
   if(!a||readOnly){applyLocal(`Evenimentele pentru ${t} sunt încărcate doar în acest browser.`);btn.disabled=false;btn.textContent=label;return}
   store.set("evroute","ziua");sess.set("open","");sess.set("okmsg",`Evenimentele pentru ${t} sunt încărcate pentru toată echipa.`);
-  try{await a.publish(buildHTML(R,next));EVD=next;route="ziua";loadData();render()}
+  try{await a.publish(buildHTML(R,next));EVD=next;route="ziua";loadData();render();if(window.__stocIesire)window.__stocIesire(next);if(window.__stocRefresh)window.__stocRefresh()}
   catch(e){
     sess.set("open",null);sess.set("okmsg",null);
     const code=e&&e.code;
@@ -1105,6 +1097,7 @@ $("#evInput").onchange=async ev=>{
 
 artReady.then(a=>{if(!a){const l=store.get("events",null);if(l&&l.aoa){EVD=l;loadData();render()}}});
 window.__evRefresh=()=>{if(D)render()};
+window.__cp={norm,KNOWN,CATS,QTY_CATS,parseAOA,evd:()=>EVD};
 (async()=>{
   try{
     if(!window.claude||!window.claude.use)return;
@@ -1117,6 +1110,204 @@ window.__evRefresh=()=>{if(D)render()};
 loadData();render();
 })();
 
+
+/* ---------- Stoc depozit ---------- */
+(function(){
+const CP=window.__cp, F=window.CPFS;
+const V=$("#v-stoc");
+if(!V)return;
+const {norm,KNOWN,CATS,QTY_CATS,parseAOA}=CP;
+const num=n=>{const r=Math.round(n*100)/100;return String(r).replace(".",",")};
+const pnum=s=>{s=String(s??"").trim().replace(",",".");if(s==="")return null;const n=Number(s);return isFinite(n)?n:NaN};
+const K=label=>norm(label).replace(/[.\/\[\]*~`#$]/g," ").replace(/\s+/g," ").trim();
+const today=()=>{const d=new Date(),p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`};
+const fdate=s=>{if(!s)return"";const m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return `${m[3]}.${m[2]}.${m[1]}`;const d=new Date(s);return isNaN(d)?"":`${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`};
+const dsKey=f=>"d-"+String(f).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,150);
+
+let extraCat={}, docs={}, rets={}, retSubs={}, sub=null, mode="list", q="", open=null, confirmDel=null, busy=false, form=null;
+const admin=()=>!!(F&&F.isAdmin);
+
+/* Articolele cunoscute: din lista fixă, din Excelul curent și din mișcările salvate */
+function catalog(){
+  const out={};
+  Object.entries(KNOWN).forEach(([L,[label,cat]])=>{if(QTY_CATS.includes(cat))out[K(L)]={label,cat}});
+  try{const D=parseAOA(CP.evd().aoa,CP.evd().fileName);D.items.forEach(it=>{if(QTY_CATS.includes(it.cat)){const k=K(it.excelLabel);out[k]=out[k]||{label:it.label,cat:it.cat}}})}catch(e){}
+  Object.values(docs).forEach(d=>Object.keys(d.items||{}).forEach(k=>{if(!out[k])out[k]={label:(d.labels||{})[k]||k,cat:(d.cats||{})[k]||"altele"}}));
+  Object.assign(out,extraCat);
+  return out;
+}
+function retFor(d){
+  const r=rets[d.ds]||{},m=d.map||{},out={};
+  Object.values(r).forEach(items=>Object.entries(items||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&typeof v==="number")out[k]=(out[k]||0)+v}));
+  return out;
+}
+function totals(){
+  const t={};const g=k=>t[k]=t[k]||{in:0,out:0,ret:0,adj:0};
+  Object.values(docs).forEach(d=>{
+    const it=d.items||{};
+    if(d.tip==="factura")Object.entries(it).forEach(([k,v])=>g(k).in+=v);
+    else if(d.tip==="corectie")Object.entries(it).forEach(([k,v])=>g(k).adj+=v);
+    else if(d.tip==="iesire"){Object.entries(it).forEach(([k,v])=>g(k).out+=v);Object.entries(retFor(d)).forEach(([k,v])=>g(k).ret+=v)}
+  });
+  Object.values(t).forEach(x=>x.stoc=x.in+x.adj-x.out+x.ret);
+  return t;
+}
+
+/* Ieșirea din stoc pentru un Excel încărcat */
+function iesireFrom(evd){
+  const D=parseAOA(evd.aoa,evd.fileName),items={},map={},labels={},cats={};
+  D.items.forEach(it=>{
+    if(!QTY_CATS.includes(it.cat))return;
+    const s=D.events.reduce((a,e)=>{const x=e.values[it.key];return a+(x&&typeof x.v==="number"&&x.v>0?x.v:0)},0);
+    const k=K(it.excelLabel);map[it.key]=k;
+    if(s>0){items[k]=(items[k]||0)+s;labels[k]=it.label;cats[k]=it.cat}
+  });
+  return {tip:"iesire",file:evd.fileName,title:D.title.big,ds:dsKey(evd.fileName),items,map,labels,cats,by:F.NAME,at:new Date().toISOString()};
+}
+async function writeIesire(evd){
+  if(!admin()||!evd||!evd.aoa)return false;
+  const d=iesireFrom(evd);
+  try{await F.fs.doc(`${F.base}/stoc/ies-${d.ds}`).set(d);return true}
+  catch(e){toast("Nu am putut scădea marfa din stoc. Încearcă din nou din Stoc depozit.");return false}
+}
+window.__stocIesire=async evd=>{if(await writeIesire(evd))toast(`Marfa pentru ${parseAOA(evd.aoa,evd.fileName).title.big} a fost scăzută din stoc.`)};
+
+function subscribe(){
+  if(sub||!F)return;
+  sub=F.fs.collection(`${F.base}/stoc`).onSnapshot(snap=>{
+    const next={};snap.docs.forEach(d=>next[d.id]=d.data());docs=next;
+    Object.values(docs).filter(d=>d.tip==="iesire"&&d.ds&&!retSubs[d.ds]).forEach(d=>{
+      retSubs[d.ds]=F.fs.collection(`${F.base}/retur/${d.ds}/events`).onSnapshot(s=>{
+        const r={};s.docs.forEach(x=>r[x.id]=(x.data()||{}).items||{});rets[d.ds]=r;if(mode==="list")render();
+      },()=>{});
+    });
+    if(mode==="list")render();
+  },()=>{V.innerHTML=`<p class="notice">Stocul nu se poate încărca acum. Verifică internetul și reîncarcă pagina.</p>`});
+}
+
+/* ---------- Afișare ---------- */
+function groups(filterFn){
+  const cat=catalog();
+  return CATS.filter(c=>QTY_CATS.includes(c.id)).map(c=>({c,rows:Object.entries(cat).filter(([k,x])=>x.cat===c.id&&filterFn(k,x)).sort((a,b)=>a[1].label.localeCompare(b[1].label,"ro"))})).filter(g=>g.rows.length);
+}
+function viewList(){
+  const t=totals(),cat=catalog(),qq=norm(q);
+  const list=Object.values(docs).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  const evd=CP.evd(),pend=evd&&evd.aoa&&!docs["ies-"+dsKey(evd.fileName)];
+  const neg=Object.entries(t).filter(([k,x])=>x.stoc<0).length;
+  let h=`<div class="st-top"><div><p class="ev-sub">${list.length?`${Object.keys(t).length} articole urmărite`:"Stocul e gol"}</p>
+    <p class="ev-file">Încărcările se scad la încărcarea Excelului. Returul notat de barmani se adaugă înapoi.</p></div>
+    ${admin()?`<div class="st-acts"><button class="btn primary" data-a="factura">Adaugă factură</button><button class="btn" data-a="inventar">Inventar</button></div>`:""}</div>`;
+  if(!list.length)h+=`<div class="ev-ok">${admin()?"Începe cu <b>Inventar</b>: numără ce ai acum în depozit și scrie cantitățile. Apoi adaugi facturile pe măsură ce vin.":"Paul nu a introdus încă stocul."}</div>`;
+  if(pend&&admin())h+=`<div class="ev-alert st-pend">Excelul curent, <b>${esc(evd.fileName)}</b>, nu e scăzut din stoc. <button class="btn" data-a="scade">Scade acum</button></div>`;
+  if(neg)h+=`<div class="ev-alert">${neg} ${neg===1?"articol are":"articole au"} stoc negativ. Probabil lipsește o factură sau un inventar.</div>`;
+  if(list.length){
+    h+=`<input class="search st-q" type="search" placeholder="Caută articol" value="${esc(q)}" aria-label="Caută articol">`;
+    groups((k,x)=>!qq||norm(x.label).includes(qq)).forEach(g=>{
+      h+=`<h2 class="ev-h2">${esc(g.c.name)}</h2><div class="ev-list">`;
+      g.rows.forEach(([k,x])=>{
+        const s=t[k]||{in:0,out:0,ret:0,adj:0,stoc:0},cls=s.stoc<0?"neg":s.stoc===0?"zero":"";
+        h+=`<button class="st-row" data-k="${esc(k)}" aria-expanded="${open===k}"><span>${esc(x.label)}</span><b class="st-n ${cls}">${num(s.stoc)}</b></button>`;
+        if(open===k){
+          h+=`<div class="st-det"><span>Intrat din facturi <b>${num(s.in)}</b></span><span>Încărcat la evenimente <b>−${num(s.out)}</b></span><span>Retur <b>+${num(s.ret)}</b></span>${s.adj?`<span>Corecții inventar <b>${s.adj>0?"+":""}${num(s.adj)}</b></span>`:""}</div>`;
+        }
+      });
+      h+=`</div>`;
+    });
+    h+=`<h2 class="ev-h2">Istoric<span class="cnt">${list.length}</span></h2><div class="ev-list">`;
+    list.forEach(d=>{
+      const id=Object.keys(docs).find(i=>docs[i]===d),n=Object.keys(d.items||{}).length;
+      const title=d.tip==="factura"?`Factură${d.furnizor?" "+esc(d.furnizor):""}${d.nr?" nr. "+esc(d.nr):""}`:d.tip==="iesire"?`Evenimente ${esc(d.title||d.file)}`:`Inventar${d.note?": "+esc(d.note):""}`;
+      const when=d.tip==="factura"?fdate(d.data):fdate(d.at);
+      const tag=d.tip==="factura"?"Intrare":d.tip==="iesire"?"Ieșire":"Corecție";
+      h+=`<div class="st-hist"><span class="st-tag ${d.tip}">${tag}</span><div><b>${title}</b><br><small>${when} · ${n} ${n===1?"articol":"articole"}${d.by?" · "+esc(d.by):""}</small></div>
+        ${admin()?`<button class="btn st-del" data-del="${esc(id)}">${confirmDel===id?"Sigur? Șterge":"Șterge"}</button>`:""}</div>`;
+    });
+    h+=`</div>`;
+  }
+  return h;
+}
+function viewForm(){
+  const cat=catalog(),t=totals(),inv=mode==="inventar";
+  let h=`<div class="st-top"><div><p class="ev-sub">${inv?"Inventar":"Factură nouă"}</p><p class="ev-file">${inv?"Scrie doar ce ai numărat. Articolele lăsate goale rămân neschimbate.":"Scrie cantitățile în aceleași unități ca în Excel (sticle, baxuri, saci)."}</p></div>
+    <div class="st-acts"><button class="btn" data-a="cancel">Renunță</button></div></div>`;
+  if(!inv)h+=`<div class="st-meta"><label>Furnizor<input id="stF" list="stFL" value="${esc(form.furnizor||"")}" autocomplete="off"></label>
+    <label>Nr. factură<input id="stN" value="${esc(form.nr||"")}"></label><label>Data<input id="stD" type="date" value="${esc(form.data||today())}"></label>
+    <datalist id="stFL">${[...new Set(Object.values(docs).map(d=>d.furnizor).filter(Boolean))].map(f=>`<option value="${esc(f)}">`).join("")}</datalist></div>`;
+  else h+=`<div class="st-meta"><label>Notă (opțional)<input id="stNote" value="${esc(form.note||"")}" placeholder="de ex. Inventar lunar"></label></div>`;
+  groups(()=>true).forEach(g=>{
+    h+=`<h2 class="ev-h2">${esc(g.c.name)}</h2><div class="ev-list">`;
+    g.rows.forEach(([k,x])=>{const s=t[k]?t[k].stoc:0;
+      h+=`<label class="st-in"><span>${esc(x.label)}${inv?`<small>în aplicație: ${num(s)}</small>`:""}</span><input class="ev-rin" inputmode="decimal" data-k="${esc(k)}" value="${esc(form.items[k]??"")}" placeholder="${inv?num(s):"0"}"></label>`});
+    h+=`</div>`;
+  });
+  h+=`<h2 class="ev-h2">Articol nou</h2><div class="st-meta st-new"><label>Nume<input id="stNewN" placeholder="de ex. Tequila 1 L"></label>
+    <label>Categorie<select id="stNewC">${CATS.filter(c=>QTY_CATS.includes(c.id)).map(c=>`<option value="${c.id}"${c.id==="alcool"?" selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
+    <label>Cantitate<input id="stNewQ" inputmode="decimal"></label><button class="btn" data-a="addnew">Adaugă în listă</button></div>
+    <p class="ev-alert" id="stErr" hidden></p>
+    <div class="st-save"><button class="btn primary" data-a="save">${inv?"Salvează inventarul":"Salvează factura"}</button></div>`;
+  return h;
+}
+function render(){
+  const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("st-q");
+  V.innerHTML=mode==="list"?viewList():viewForm();
+  if(fq){const i=V.querySelector(".st-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
+  window.scrollTo(0,y);
+}
+function grab(){
+  if(mode==="list")return;
+  V.querySelectorAll("input[data-k]").forEach(i=>{if(i.value.trim()!=="")form.items[i.dataset.k]=i.value;else delete form.items[i.dataset.k]});
+  const v=id=>{const e=V.querySelector(id);return e?e.value.trim():""};
+  if(mode==="factura"){form.furnizor=v("#stF");form.nr=v("#stN");form.data=v("#stD")}else form.note=v("#stNote");
+}
+const err=m=>{const e=$("#stErr");e.textContent=m;e.hidden=!m;if(m)e.scrollIntoView({block:"center"})};
+
+V.addEventListener("input",e=>{if(e.target.classList.contains("st-q")){q=e.target.value;render()}});
+V.addEventListener("click",async e=>{
+  const row=e.target.closest(".st-row");if(row){open=open===row.dataset.k?null:row.dataset.k;render();return}
+  const del=e.target.closest("[data-del]");
+  if(del){const id=del.dataset.del;if(confirmDel!==id){confirmDel=id;render();setTimeout(()=>{if(confirmDel===id){confirmDel=null;if(mode==="list")render()}},4000);return}
+    confirmDel=null;try{await F.fs.doc(`${F.base}/stoc/${id}`).delete();toast("Mișcarea a fost ștearsă din stoc.")}catch(x){toast("Nu am putut șterge. Încearcă din nou.")}return}
+  const b=e.target.closest("[data-a]");if(!b||busy)return;
+  const act=b.dataset.a;
+  if(act==="factura"||act==="inventar"){mode=act;form={items:{},extra:{}};render();window.scrollTo(0,V.offsetTop-10);return}
+  if(act==="cancel"){mode="list";form=null;extraCat={};render();return}
+  if(act==="scade"){busy=true;b.disabled=true;await window.__stocIesire(CP.evd());busy=false;return}
+  if(act==="addnew"){
+    grab();const n=$("#stNewN").value.trim(),c=$("#stNewC").value,qv=$("#stNewQ").value.trim();
+    if(!n){err("Scrie numele articolului nou.");return}
+    const k=K(n);if(!k){err("Numele nu e valid.");return}
+    form.extra[k]={label:n.charAt(0).toUpperCase()+n.slice(1),cat:c};
+    extraCat[k]=form.extra[k];
+    if(qv)form.items[k]=qv;render();return;
+  }
+  if(act==="save"){
+    grab();const cat=catalog(),t=totals(),items={},labels={},cats={};
+    for(const [k,raw] of Object.entries(form.items)){
+      const v=pnum(raw);if(v===null)continue;
+      if(isNaN(v)||v<0){err(`La ${cat[k]?cat[k].label:k} cantitatea „${raw}” nu e un număr valid.`);return}
+      const val=mode==="inventar"?v-(t[k]?t[k].stoc:0):v;
+      if(mode==="factura"&&val===0)continue;
+      if(mode==="inventar"&&Math.abs(val)<1e-9)continue;
+      items[k]=Math.round(val*1000)/1000;labels[k]=(cat[k]||{}).label||k;cats[k]=(cat[k]||{}).cat||"altele";
+    }
+    if(!Object.keys(items).length){err(mode==="inventar"?"Nu ai schimbat nicio cantitate față de stocul din aplicație.":"Scrie cel puțin o cantitate.");return}
+    const doc=mode==="factura"?{tip:"factura",furnizor:form.furnizor,nr:form.nr,data:form.data||today()}:{tip:"corectie",note:form.note};
+    Object.assign(doc,{items,labels,cats,by:F.NAME,at:new Date().toISOString()});
+    busy=true;b.disabled=true;b.textContent="Se salvează…";
+    try{await F.fs.collection(`${F.base}/stoc`).add(doc);mode="list";form=null;render();
+      toast(doc.tip==="factura"?`Factura a fost adăugată în stoc (${Object.keys(items).length} articole).`:"Inventarul a fost salvat.")}
+    catch(x){err(x&&x.code==="permission-denied"?"Doar administratorul poate modifica stocul. Intră ca administrator, jos în pagină.":"Salvarea nu a reușit. Verifică internetul și încearcă din nou.");b.disabled=false;b.textContent=mode==="inventar"?"Salvează inventarul":"Salvează factura"}
+    busy=false;
+  }
+});
+
+let started=false;
+function start(){if(started)return;started=true;V.innerHTML=`<p class="ev-file">Se încarcă stocul…</p>`;subscribe()}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="stoc")start()}));
+if(store.get("tab","retete")==="stoc")start();
+window.__stocRefresh=()=>{if(started&&mode==="list")render()};
+})();
 
 /* After a save reloads the page, reopen what was being edited */
 {const id=sess.get("open"),msg=sess.get("okmsg");sess.set("open",null);sess.set("okmsg",null);
@@ -1243,6 +1434,7 @@ const db={
 };
 window.claude={use:async n=>n==="artifact"?artifact:n==="user"?user:n==="db"?db:null};
 
+window.CPFS={fs,base,isAdmin,NAME,UID};
 runApp();
 
 /* Rândul de jos: cine ești și intrarea de administrator */
