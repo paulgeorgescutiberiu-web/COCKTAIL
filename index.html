@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cocktail Philosophy · Rețetar și evenimente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<style id="css">
+:root{
+  --leaf:#14432F; --leaf-deep:#0C2C1F; --gold:#C99A2E; --sun:#F4C918;
+  --paper:#EDF0E3; --card:#F8F9F2; --ink:#16241C; --muted:#56655B;
+  --line:#CBD3C0; --sage:#BCD1AB; --lime:#E4EB7A; --on-leaf:#F3F5EC; --danger:#A3321F;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1A14; --card:#15251C; --ink:#E6ECDF; --muted:#9DAC9F;
+    --line:#284134; --leaf:#1B5A3F; --leaf-deep:#123826; --sage:#3E5A43; --lime:#6F7430; --danger:#F08A73;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1A14; --card:#15251C; --ink:#E6ECDF; --muted:#9DAC9F;
+  --line:#284134; --leaf:#1B5A3F; --leaf-deep:#123826; --sage:#3E5A43; --lime:#6F7430; --danger:#F08A73;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);
+  font-family:Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:6px}
+.display{font-family:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;line-height:.9;letter-spacing:.01em}
+body.readonly .edit-only{display:none!important}
+
+header{position:relative;overflow:hidden;background:var(--leaf-deep);color:var(--on-leaf);padding:22px 20px 0}
+header .leafdeco{position:absolute;right:-40px;top:-30px;width:230px;height:250px;opacity:.13;pointer-events:none}
+header .leafdeco.two{right:auto;left:-70px;top:70px;width:170px;height:190px;transform:rotate(160deg);opacity:.08}
+.brandrow{position:relative;display:flex;align-items:baseline;justify-content:space-between;gap:12px;max-width:980px;margin:0 auto}
+.brand{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:700;font-size:1.15rem;letter-spacing:.04em;color:var(--gold)}
+.themebtn{background:none;border:1px solid rgba(243,245,236,.3);border-radius:999px;padding:4px 12px;font-size:.85rem;color:var(--on-leaf);cursor:pointer}
+h1{position:relative;max-width:980px;margin:14px auto 18px;font-size:clamp(3.2rem,13vw,6.4rem);font-weight:900;text-transform:uppercase}
+h1 .yr{display:block;color:var(--sun)}
+nav.tabs{position:relative;display:flex;gap:4px;max-width:980px;margin:0 auto}
+nav.tabs button{flex:1 1 0;background:transparent;border:0;border-radius:12px 12px 0 0;padding:12px 8px;font-weight:600;color:rgba(243,245,236,.75);cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink)}
+
+main{max-width:980px;margin:0 auto;padding:18px 16px 60px}
+.view[hidden]{display:none}
+.notice{background:var(--card);border:1.5px dashed var(--line);border-radius:12px;padding:10px 14px;margin:0 0 14px;color:var(--muted);font-size:.92rem}
+.notice[hidden]{display:none}
+
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.search{flex:1 1 220px;min-width:0;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card)}
+.seg{display:flex;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:3px}
+.seg button{border:0;background:none;padding:8px 12px;border-radius:9px;font-weight:600;font-size:.92rem;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--leaf);color:var(--on-leaf)}
+
+.list{list-style:none;margin:0;padding:0;border-top:1.5px solid var(--ink)}
+.list li{border-bottom:1px solid var(--line)}
+.row{display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:end;width:100%;text-align:left;background:none;border:0;padding:16px 4px 14px;cursor:pointer}
+.row:hover .rname{color:var(--leaf)}
+:root[data-theme="dark"] .row:hover .rname{color:var(--sun)}
+.rname{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:clamp(2.1rem,7vw,3.3rem);line-height:.9;text-transform:uppercase}
+.rname .zero,.pname .zero,.cname .zero,.oname .zero{font-weight:500;color:var(--gold)}
+.rmeta{grid-column:1;color:var(--muted);font-size:.93rem}
+.rtech{grid-row:1 / span 2;grid-column:2;align-self:center;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.78rem;font-weight:700;letter-spacing:.02em}
+.chip.tech{background:var(--leaf);color:var(--on-leaf)}
+.chip.nz{background:var(--lime);color:#2B3310}
+:root[data-theme="dark"] .chip.nz{color:var(--ink)}
+.empty{padding:30px 4px;color:var(--muted)}
+
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,20,14,.55)}
+.sheet[hidden]{display:none}
+.panel{width:100%;max-width:980px;max-height:92%;overflow:auto;background:var(--paper);border-radius:20px 20px 0 0;
+  padding:18px 18px calc(24px + env(safe-area-inset-bottom,0px));animation:rise .28s ease-out}
+@keyframes rise{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.panel{animation:none}}
+.phead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pname{margin:4px 0 6px;font-size:clamp(2.8rem,11vw,5.2rem);font-weight:900;text-transform:uppercase;overflow-wrap:anywhere}
+.pactions{display:flex;gap:8px;flex:none}
+.close{flex:none;width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);font-size:1.3rem;cursor:pointer}
+.glass{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.95rem;margin-bottom:14px}
+.glass svg{width:26px;height:26px}
+.servings{display:flex;align-items:center;gap:10px;margin:4px 0 16px;flex-wrap:wrap}
+.stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;background:var(--card)}
+.stepper button{width:42px;height:40px;border:0;background:none;font-size:1.25rem;cursor:pointer}
+.stepper output{min-width:36px;text-align:center;font-weight:700}
+.cols{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:760px){.cols{grid-template-columns:1fr 1.25fr .9fr}}
+.box{border-radius:14px;overflow:hidden;border:1.5px solid var(--ink)}
+.box h3{margin:0;padding:12px 16px;font-size:.95rem;font-weight:700;border-bottom:1.5px solid var(--ink)}
+.box .in{padding:14px 16px}
+.box.ing{background:var(--leaf);color:var(--on-leaf);border-color:var(--leaf)}
+.box.ing h3{border-color:rgba(243,245,236,.25)}
+.box.met{background:var(--card)}
+.box.gar{background:var(--sun);color:#2A2305;border-color:#C9A40B}
+.box.gar h3{border-color:#C9A40B}
+.panel.nz .box.ing{background:var(--sage);color:var(--ink);border-color:var(--sage)}
+.panel.nz .box.ing h3{border-color:rgba(22,36,28,.2)}
+.panel.nz .box.gar{background:var(--lime);color:#2B3310;border-color:#B9C043}
+:root[data-theme="dark"] .panel.nz .box.gar{color:var(--ink)}
+.ings{list-style:none;margin:0;padding:0}
+.ings li{display:grid;grid-template-columns:5.2rem 1fr;gap:8px;padding:6px 0;border-bottom:1px dashed rgba(243,245,236,.22)}
+.panel.nz .ings li{border-color:rgba(22,36,28,.18)}
+.ings li:last-child{border-bottom:0}
+.q{font-weight:700;font-variant-numeric:tabular-nums}
+.techline{margin:0 0 10px;font-weight:600}
+.techline b{font-family:"Big Shoulders Display",Impact,sans-serif;font-size:1.35rem;font-weight:900;letter-spacing:.02em}
+ol.steps{margin:0;padding-left:1.3rem}
+ol.steps li{margin-bottom:8px}
+ol.steps li strong{color:var(--leaf)}
+:root[data-theme="dark"] ol.steps li strong{color:var(--sun)}
+.gar p{margin:0 0 6px;font-weight:600}
+
+/* Editor */
+.editor h2{margin:4px 0 14px;font-size:clamp(2.2rem,8vw,3.4rem);font-weight:900;text-transform:uppercase}
+.fgrid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:18px}
+@media (min-width:700px){.fgrid{grid-template-columns:2fr 1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.9rem}
+.editor input[type=text],.editor input[type=number],.editor select{width:100%;min-width:0;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);font-weight:500;font-size:1rem}
+.editor input:disabled{opacity:.45}
+.check{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--leaf)}
+.fset{border:1.5px solid var(--ink);border-radius:14px;padding:12px 14px 14px;margin:0 0 14px;background:var(--card)}
+.fset legend{padding:0 6px;font-weight:700}
+.fset .hint{color:var(--muted);font-size:.85rem;margin:0 0 8px}
+.erow{display:grid;gap:6px;margin-bottom:8px;align-items:center}
+.ing-row{grid-template-columns:5rem 7rem 1fr 8rem 40px;grid-template-areas:"q u n k x"}
+.ing-row .f-q{grid-area:q}.ing-row .f-u{grid-area:u}.ing-row .f-n{grid-area:n}.ing-row .f-k{grid-area:k}.ing-row .x{grid-area:x}
+@media (max-width:640px){.ing-row{grid-template-columns:4.5rem 1fr 1fr 40px;grid-template-areas:"q u k x" "n n n n";padding-bottom:8px;border-bottom:1px dashed var(--line)}}
+.txt-row{grid-template-columns:1fr 40px}
+.x{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);cursor:pointer;font-size:1.15rem}
+.add{border:1.5px dashed var(--line);background:none;border-radius:10px;padding:8px 12px;font-weight:600;cursor:pointer;color:var(--muted)}
+.ebar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;
+  background:var(--paper);padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));border-top:1.5px solid var(--line)}
+.ebar .grp{display:flex;gap:10px}
+.err{color:var(--danger);font-weight:600;margin:0 0 12px}
+.err:empty{display:none}
+
+.lead{color:var(--muted);max-width:62ch;margin:0 0 16px}
+.calc{display:grid;grid-template-columns:1fr;gap:18px}
+@media (min-width:820px){.calc{grid-template-columns:1fr 1fr}}
+.orders{list-style:none;margin:0;padding:0;border-top:1.5px solid var(--ink)}
+.orders li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.orders .oname{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:700;font-size:1.5rem;text-transform:uppercase;line-height:1}
+.orders input{width:88px;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.opts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+.toggle{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
+.toggle input{width:20px;height:20px;accent-color:var(--leaf)}
+.btn{border:1.5px solid var(--ink);background:var(--card);border-radius:12px;padding:9px 14px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--leaf);color:var(--on-leaf);border-color:var(--leaf)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.danger.armed{background:var(--danger);color:#fff}
+.btn:disabled{opacity:.55;cursor:progress}
+.result{background:var(--card);border:1.5px solid var(--ink);border-radius:16px;padding:16px;align-self:start}
+.result h2{margin:0 0 4px;font-size:2.2rem;font-weight:900;text-transform:uppercase}
+.total{color:var(--muted);margin:0 0 12px}
+.rgroup{margin-top:14px}
+.rgroup h3{margin:0 0 6px;font-size:.95rem}
+.rtable{width:100%;border-collapse:collapse;font-size:.95rem}
+.rtable td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.rtable td.n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:10px}
+.rtable small{color:var(--muted);font-weight:500}
+
+.train{max-width:560px;margin:0 auto}
+.card{position:relative;min-height:320px;border-radius:20px;border:1.5px solid var(--ink);background:var(--card);padding:22px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;overflow:hidden}
+.card .leafdeco{position:absolute;right:-50px;bottom:-60px;width:220px;height:240px;opacity:.07;pointer-events:none;color:var(--leaf)}
+.card .cname{font-size:clamp(2.8rem,12vw,4.6rem);font-weight:900;text-transform:uppercase;margin:0}
+.card .hint{color:var(--muted)}
+.card.revealed{background:var(--leaf);color:var(--on-leaf);border-color:var(--leaf)}
+.card.revealed .hint{color:rgba(243,245,236,.75)}
+.card.revealed.zero{background:var(--sage);color:var(--ink);border-color:var(--sage)}
+.card.revealed.zero .hint{color:var(--muted)}
+.reveal{margin-top:12px}
+.reveal p{margin:4px 0}
+.tnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+.count{color:var(--muted);font-variant-numeric:tabular-nums}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;max-width:min(92vw,520px);
+  background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:12px;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast[hidden]{display:none}
+
+footer{max-width:980px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:.85rem}
+footer a{color:inherit}
+/* ---------- Evenimente ---------- */
+:root{--soft:#E1E7D5;--warn:#8A5300;--warn-bg:#FBEFCF;--err:#A3321F;--err-bg:#F8E1DA;
+  --c0:#C98A12;--c1:#B2304A;--c2:#2F7253;--c3:#3F4FA3;--c4:#D0602A;--c5:#7B3D82;--c6:#1D7F8C;--c7:#6B7A1E}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--soft:#1D3226;--warn:#F2B650;--warn-bg:#2E2513;--err:#F08A73;--err-bg:#3A1C1E;
+  --c0:#E0A73A;--c1:#E0607A;--c2:#4FA87E;--c3:#7F8EE6;--c4:#F0874F;--c5:#B77CC0;--c6:#45B3C1;--c7:#A8B94A}}
+:root[data-theme="dark"]{--soft:#1D3226;--warn:#F2B650;--warn-bg:#2E2513;--err:#F08A73;--err-bg:#3A1C1E;
+  --c0:#E0A73A;--c1:#E0607A;--c2:#4FA87E;--c3:#7F8EE6;--c4:#F0874F;--c5:#B77CC0;--c6:#45B3C1;--c7:#A8B94A}
+nav.tabs{overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{flex:1 0 auto;padding:12px 12px}
+.ev-top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ev-sub{margin:0;font-weight:700}
+.ev-file{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+.ev-alert{background:var(--err-bg);color:var(--err);border-radius:12px;padding:12px 16px;font-weight:700;margin-bottom:12px}
+.ev-alert[hidden]{display:none}
+.ev-tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);display:flex;gap:8px;overflow-x:auto;padding:10px 0;margin-bottom:8px;border-bottom:1px solid var(--line);scrollbar-width:none}
+.ev-tabs::-webkit-scrollbar{display:none}
+.ev-tab{flex:0 0 auto;border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;font-weight:600;font-size:.95rem}
+.ev-tab .dot{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.ev-tab small{opacity:.7;font-weight:500}
+.ev-tab[aria-current="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.ev-h2{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;text-transform:uppercase;font-size:1.7rem;line-height:1;margin:28px 0 10px}
+.ev-h2 .cnt{font-family:Figtree,system-ui,sans-serif;text-transform:none;font-weight:500;font-size:.85rem;color:var(--muted);margin-left:6px}
+.ev-timeline{display:flex;flex-direction:column;gap:10px}
+.ev-trow{display:grid;grid-template-columns:64px 6px 1fr;gap:14px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;text-align:left;width:100%}
+.ev-trow:hover{border-color:var(--c)}
+.ev-time{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:1.9rem;line-height:1}
+.ev-time.none{font-family:Figtree,system-ui,sans-serif;font-weight:500;font-size:.85rem;color:var(--muted)}
+.ev-bar{border-radius:3px;background:var(--c)}
+.ev-name{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:1.8rem;line-height:.95;text-transform:uppercase}
+.ev-meta{color:var(--muted);font-size:.93rem;margin-top:4px}
+.ev-flag{display:inline-block;background:var(--warn-bg);color:var(--warn);font-size:.8rem;font-weight:600;border-radius:6px;padding:1px 8px;margin-top:6px}
+.ev-checks{background:var(--warn-bg);border-radius:14px;padding:12px 18px}
+.ev-checks ul{margin:0;padding-left:18px}
+.ev-checks li{margin:6px 0}
+.ev-checks b{color:var(--warn)}
+.ev-ok{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 18px;color:var(--muted)}
+.ev-help{color:var(--muted);font-size:.92rem;margin-top:26px;max-width:62ch}
+.ev-hero{position:relative;background:var(--card);border:1.5px solid var(--ink);border-radius:18px;overflow:hidden;padding:18px 18px 18px 30px}
+.ev-hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:12px;background:var(--c)}
+.ev-hero h2{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;text-transform:uppercase;font-size:clamp(2.6rem,10vw,4.4rem);line-height:.9;margin:0 0 16px;overflow-wrap:anywhere}
+.ev-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px}
+@media (min-width:640px){.ev-facts{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.ev-fact .k{color:var(--muted);font-size:.85rem}
+.ev-fact .v{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:700;font-size:1.7rem;line-height:1.05}
+.ev-fact .v.missing{font-family:Figtree,system-ui,sans-serif;color:var(--warn);font-size:1rem;font-weight:700}
+.ev-team{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.ev-chip{background:var(--soft);border-radius:8px;padding:3px 10px;font-weight:700;font-size:.95rem}
+.ev-note{margin-top:14px;border-left:4px solid var(--c);background:var(--soft);padding:10px 14px;border-radius:0 10px 10px 0}
+.ev-note .k{font-size:.85rem;color:var(--muted)}
+.ev-note p{margin:2px 0;font-weight:700}
+.ev-note button{margin-top:6px}
+.ev-progress{display:flex;align-items:center;gap:12px;margin:20px 0 0}
+.ev-pbar{flex:1;height:10px;background:var(--soft);border-radius:99px;overflow:hidden}
+.ev-pbar i{display:block;height:100%;background:var(--c);transition:width .25s}
+.ev-ptext{font-size:.92rem;color:var(--muted);white-space:nowrap}
+.ev-link{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:4px;font-size:.88rem}
+.ev-list{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.ev-item{display:flex;align-items:center;gap:10px;padding:0 16px 0 0;border-top:1px solid var(--line)}
+.ev-item:first-child{border-top:0}
+.ev-item label{flex:1;display:flex;align-items:center;gap:14px;padding:12px 0 12px 16px;cursor:pointer;user-select:none;min-width:0}
+.ev-item input{appearance:none;-webkit-appearance:none;width:26px;height:26px;border:2px solid var(--line);border-radius:7px;flex:0 0 auto;display:grid;place-items:center;cursor:pointer;margin:0;background:var(--paper)}
+.ev-item input:checked{background:var(--c);border-color:var(--c)}
+.ev-item input:checked::after{content:"";width:7px;height:13px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.ev-item .lbl{flex:1;min-width:0}
+.ev-item .lbl small{display:block;color:var(--muted);font-size:.8rem}
+.ev-item .qv{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:1.7rem;min-width:3ch;text-align:right;line-height:1}
+.ev-item .qv.txt{font-family:Figtree,system-ui,sans-serif;font-size:1rem;font-weight:700}
+.ev-item.blank .qv{color:var(--muted);font-weight:500}
+.ev-item.done .lbl,.ev-item.done .qv{opacity:.4;text-decoration:line-through}
+.ev-rec{flex:0 0 auto;border:1.5px solid var(--leaf);color:var(--leaf);background:none;border-radius:999px;padding:3px 10px;font-weight:700;font-size:.8rem;cursor:pointer}
+:root[data-theme="dark"] .ev-rec{border-color:var(--sun);color:var(--sun)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ev-rec{border-color:var(--sun);color:var(--sun)}}
+.ev-pager{display:flex;justify-content:space-between;gap:10px;margin-top:26px}
+.ev-pager button{flex:1;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;text-align:left}
+.ev-pager button:last-child{text-align:right}
+.ev-pager small{display:block;color:var(--muted);font-size:.8rem}
+.ev-pager b{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;text-transform:uppercase;font-size:1.3rem}
+.ev-trow2{display:grid;grid-template-columns:1fr auto;gap:4px 14px;padding:12px 16px;border-top:1px solid var(--line)}
+.ev-trow2:first-child{border-top:0}
+.ev-trow2 .n{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:1.7rem;text-align:right;line-height:1}
+.ev-trow2.blank>div:first-child,.ev-trow2.blank .n{color:var(--muted)}
+.ev-stack{grid-column:1/-1;display:flex;height:9px;border-radius:99px;overflow:hidden;background:var(--soft)}
+.ev-stack span{background:var(--c);border-right:2px solid var(--card)}
+.ev-stack span:last-child{border-right:0}
+.ev-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:4px 0 6px;font-size:.88rem;color:var(--muted)}
+.ev-legend span{display:flex;align-items:center;gap:6px}
+.ev-legend i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.ev-bd{grid-column:1/-1;font-size:.8rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.ev-pbar i{transition:none}}
+
+.ev-item .lbl small.who{color:var(--c);font-weight:600;text-decoration:none}
+.ev-mode{margin:6px 0 0;font-size:.82rem;color:var(--muted)}
+
+.ev-seg{display:flex;gap:4px;background:var(--soft);border-radius:12px;padding:4px;margin:18px 0 0}
+.ev-seg button{flex:1;border:0;background:none;border-radius:9px;padding:10px 8px;font-weight:700;cursor:pointer;color:var(--muted)}
+.ev-seg button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.ev-ret{display:grid;grid-template-columns:1fr 84px 72px;gap:10px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
+.ev-ret:first-child{border-top:0}
+.ev-ret .lbl small{display:block;color:var(--muted);font-size:.8rem}
+.ev-ret .lbl small.warn{color:var(--warn);font-weight:700}
+.ev-rin{width:100%;font:inherit;font-size:1.05rem;font-weight:700;text-align:center;padding:9px 6px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
+.ev-rin:focus{outline:none;border-color:var(--c)}
+.ev-ret.has .ev-rin{border-color:var(--c)}
+.ev-ret.over .ev-rin{border-color:var(--warn)}
+.ev-ret .cons{text-align:right;line-height:1.05}
+.ev-ret .cons small{display:block;color:var(--muted);font-size:.72rem}
+.ev-ret .cons b{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:1.6rem}
+.ev-rnote{width:100%;font:inherit;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);resize:vertical}
+.ev-rnote:focus{outline:none;border-color:var(--c)}
+
+
+#fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
+#fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
+#fbScreen h2{font-family:"Big Shoulders Display",system-ui,sans-serif;font-size:34px;margin:0 0 8px}
+#fbScreen p{margin:0 0 18px;line-height:1.45}
+#fbScreen form{display:flex;flex-direction:column;gap:10px}
+#fbScreen input{font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:1.5px solid currentColor;background:transparent;color:inherit}
+.fb-btn{font:inherit;font-weight:700;font-size:17px;padding:12px 16px;border-radius:12px;border:0;background:var(--leaf,#1f4d36);color:var(--on-leaf,#fff);cursor:pointer}
+.fb-who{margin-top:8px;font-size:14px}
+.fb-who button{font:inherit;background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer}
+</style>
+</head>
+<body>
+<template id="shell">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="monstera" viewBox="0 0 200 220">
+      <path fill="currentColor" d="M100 212C42 204 6 156 10 98 14 42 58 8 100 10c42-2 86 32 90 88 4 58-32 106-90 114Z"></path>
+      <g stroke="var(--paper)" stroke-width="7" stroke-linecap="round" fill="none">
+        <path d="M100 30v170"></path>
+        <path d="M100 60 30 40M100 92 16 88M100 126 22 142M100 160 50 190"></path>
+        <path d="M100 60l70-20M100 92l84-4M100 126l78 16M100 160l50 30"></path>
+      </g>
+    </symbol>
+    <symbol id="g-glob" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M6 3h12c0 5-2 9-6 9s-6-4-6-9Zm6 9v8m-4 1h8"></path></symbol>
+    <symbol id="g-jar" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M7 3h10v3H7zM7 6c-1 1-1.5 2-1.5 3.5V19a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V9.5C18.5 8 18 7 17 6"></path></symbol>
+  </defs>
+</svg>
+<header>
+  <svg class="leafdeco" style="color:var(--sun)" aria-hidden="true"><use href="#monstera"></use></svg>
+  <svg class="leafdeco two" style="color:var(--on-leaf)" aria-hidden="true"><use href="#monstera"></use></svg>
+  <div class="brandrow">
+    <span class="brand">Cocktail Philosophy</span>
+    <button class="themebtn" id="themeBtn" type="button">Temă</button>
+  </div>
+  <h1 class="display">Rețetar<span class="yr">2026</span></h1>
+  <nav class="tabs" role="tablist" aria-label="Secțiuni">
+    <button role="tab" aria-selected="true" aria-controls="v-retete" data-view="retete">Rețete</button>
+    <button role="tab" aria-selected="false" aria-controls="v-evenimente" data-view="evenimente">Evenimente</button>
+    <button role="tab" aria-selected="false" aria-controls="v-antrenament" data-view="antrenament">Antrenament</button>
+  </nav>
+</header>
+<main>
+  <section class="view" id="v-retete" role="tabpanel">
+    <p class="notice" id="localNotice" hidden="">Modificările tale se salvează doar în acest browser. Verifică internetul și reîncarcă pagina ca să le vadă toată echipa.</p>
+    <div class="tools">
+      <input class="search" id="q" type="search" placeholder="Caută cocktail, spirt sau premix" aria-label="Caută">
+      <div class="seg" role="group" aria-label="Filtru">
+        <button type="button" data-f="all" aria-pressed="true">Toate</button>
+        <button type="button" data-f="alc" aria-pressed="false">Cu alcool</button>
+        <button type="button" data-f="zero" aria-pressed="false">0%</button>
+      </div>
+      <button class="btn primary edit-only" type="button" id="newBtn">Adaugă rețetă</button>
+    </div>
+    <ul class="list" id="list"></ul>
+  </section>
+  <section class="view" id="v-evenimente" role="tabpanel" hidden="">
+    <div class="ev-top">
+      <div><p class="ev-sub" id="evSub"></p><p class="ev-file" id="evFile"></p></div>
+      <div class="edit-only"><button class="btn primary" type="button" id="evUpload">Încarcă alt Excel</button><input type="file" id="evInput" accept=".xlsx,.xls,.xlsm,.ods" hidden=""></div>
+    </div>
+    <div class="ev-alert" id="evAlert" hidden=""></div>
+    <div class="ev-tabs" id="evTabs" aria-label="Evenimente"></div>
+    <div id="evView"></div>
+  </section>
+  <section class="view" id="v-antrenament" role="tabpanel" hidden="">
+    <div class="train">
+      <p class="lead">Pentru barmanii noi: încearcă să spui rețeta din memorie, apoi atinge cardul ca să verifici.</p>
+      <div class="card" id="card" tabindex="0" role="button" aria-label="Arată rețeta"></div>
+      <div class="tnav">
+        <button class="btn" type="button" id="prev">Înapoi</button>
+        <span class="count" id="count"></span>
+        <button class="btn primary" type="button" id="next">Următorul</button>
+      </div>
+      <div class="opts" style="justify-content:center"><button class="btn" type="button" id="shuffle">Amestecă ordinea</button></div>
+    </div>
+  </section>
+</main>
+<footer>Cocktail Philosophy · Str. Tractorului 4, Sibiu · <a href="tel:+40743785655">0743 785 655</a></footer>
+<div class="sheet" id="sheet" hidden=""><div class="panel" role="dialog" aria-modal="true" aria-labelledby="pname" id="panel"></div></div>
+<div class="toast" id="toast" role="status" hidden=""></div>
+</template>
+<script id="recipes-data" type="application/json">[{"id":"passiflora","name":"Passiflora","zero":false,"base":"Rom","glass":"","tech":"Shake","ing":[{"q":40,"u":"ml","n":"Rom Especial","k":"spirit"},{"q":20,"u":"ml","n":"Suc de lămâie","k":"juice"},{"q":20,"u":"ml","n":"Premix Passiflora","k":"premix"},{"q":40,"u":"ml","n":"Suc de portocale","k":"juice"}],"steps":["Amestecați viguros toate ingredientele în shaker cu gheață.","Agitați energic cu gheață și turnați în pahar."],"garnish":["Portocală deshidratată"]},{"id":"erasmus","name":"Erasmus","zero":false,"base":"Vodka","glass":"jar","tech":"Muddle · Shake · Build","ing":[{"q":40,"u":"ml","n":"Vodka","k":"spirit"},{"q":4,"u":"wedges","n":"Lime","k":"fruit"},{"q":20,"u":"ml","n":"Premix Erasmus","k":"premix"},{"q":20,"u":"ml","n":"Suc de măr verde","k":"juice"},{"q":null,"u":"top","n":"Apă minerală","k":"other"}],"steps":["Muddle: zdrobiți lime-ul împreună cu premixul în borcănaș.","Shake: adăugați sucul de măr, vodka și gheața; agitați direct în borcănaș.","Build: completați cu apă minerală și mentă."],"garnish":["Mentă","Măr deshidratat (dacă este disponibil)"]},{"id":"harmony","name":"Harmony","zero":false,"base":"Gin","glass":"","tech":"Shake","ing":[{"q":40,"u":"ml","n":"Gin","k":"spirit"},{"q":20,"u":"ml","n":"Suc de lămâie","k":"juice"},{"q":15,"u":"ml","n":"Premix Harmony","k":"premix"},{"q":40,"u":"ml","n":"Suc de cranberry","k":"juice"}],"steps":["Adăugați toate ingredientele în shaker.","Agitați energic cu gheață și turnați în pahar."],"garnish":["Portocală deshidratată"]},{"id":"whiskey-sour","name":"Whiskey Sour","zero":false,"base":"Whiskey","glass":"","tech":"Shake & Strain","ing":[{"q":40,"u":"ml","n":"Whiskey","k":"spirit"},{"q":20,"u":"ml","n":"Suc de lămâie","k":"juice"},{"q":10,"u":"ml","n":"Premix Whiskey Sour","k":"premix"},{"q":20,"u":"ml","n":"Suc de portocale","k":"juice"},{"q":null,"u":"stropi","n":"Angostura Bitter","k":"other"}],"steps":["Agitați energic ingredientele cu gheață în shaker.","Strecurați fin peste altă gheață proaspătă, direct în pahar."],"garnish":["Coajă de portocală"]},{"id":"platon","name":"Platon","zero":false,"base":"Gin","glass":"","tech":"Shake","ing":[{"q":40,"u":"ml","n":"Gin","k":"spirit"},{"q":20,"u":"ml","n":"Suc de lămâie","k":"juice"},{"q":10,"u":"ml","n":"Premix Platon","k":"premix"},{"q":60,"u":"ml","n":"Suc Aloe Vera","k":"juice"}],"steps":["Combinați toate ingredientele lichide.","Agitați energic cu gheață în shaker."],"garnish":["Grapefruit (gref) deshidratat","Crenguță de cimbrișor"]},{"id":"hugo","name":"Hugo","zero":false,"base":"Prosecco","glass":"glob","tech":"Muddle · Build · Top","ing":[{"q":null,"u":"top","n":"Prosecco","k":"spirit"},{"q":2,"u":"pepenași","n":"Lime","k":"fruit"},{"q":20,"u":"ml","n":"Premix Hugo","k":"premix"},{"q":null,"u":"top","n":"Apă minerală","k":"other"}],"steps":["Muddle: zdrobiți lime-ul împreună cu premixul direct în paharul glob.","Build: adăugați frunzele de mentă proaspătă și gheața.","Top: completați la final cu Prosecco și apă minerală."],"garnish":["Lime deshidratat sau măr deshidratat"]},{"id":"paloma","name":"Paloma","zero":false,"base":"Premix","glass":"glob","tech":"Stir","ing":[{"q":60,"u":"ml","n":"Premix Paloma","k":"premix"},{"q":0.5,"u":"buc","n":"Lime (stors proaspăt)","k":"fruit"},{"q":null,"u":"top","n":"Apă minerală","k":"other"}],"steps":["Combinați sucul din jumătatea de lime proaspăt stors cu premixul, direct în pahar.","Adăugați gheața și completați cu apă minerală.","Amestecați ușor pentru integrare."],"garnish":["Crustă (rim) de Tajin pe buza paharului"]},{"id":"negroni","name":"Negroni","zero":false,"base":"Premix","glass":"glob","tech":"Stir lung","ing":[{"q":60,"u":"ml","n":"Premix Negroni","k":"premix"}],"steps":["Turnați premixul peste gheață, direct în pahar.","Amestecați prelungit cu lingurița de bar, pentru diluție și răcire optime."],"garnish":["Portocală deshidratată","Zest de portocală, cu uleiurile exprimate deasupra"]},{"id":"villa-lobos","name":"Villa Lobos","zero":true,"base":"Cranberry","glass":"both","tech":"Build sau Shake","ing":[{"q":null,"u":"după gust","n":"Suc de cranberry","k":"juice"},{"q":20,"u":"ml","n":"Suc de lămâie","k":"juice"},{"q":20,"u":"ml","n":"Premix Harmony","k":"premix"},{"q":null,"u":"top","n":"Apă minerală","k":"other"}],"steps":["Turnați apa minerală în pahar prima dată.","Construiți băutura adăugând premixul și sucurile (lămâie, cranberry).","Amestecați puternic cu lingurița sau folosiți Shake înainte de a turna peste apa minerală."],"garnish":["Portocală"]},{"id":"socrate","name":"Socrate","zero":true,"base":"Aloe Vera","glass":"both","tech":"Build sau Shake","ing":[{"q":null,"u":"după gust","n":"Suc de Aloe Vera","k":"juice"},{"q":20,"u":"ml","n":"Suc de lămâie","k":"juice"},{"q":20,"u":"ml","n":"Premix Platon","k":"premix"},{"q":null,"u":"top","n":"Apă minerală","k":"other"}],"steps":["Bază: adăugați apa minerală în pahar prima dată.","Turnați restul ingredientelor (Aloe Vera, lămâie, premix Platon).","Amestecați puternic pentru omogenizare."],"garnish":["Grapefruit (gref)"]},{"id":"green-apple","name":"Special Green Apple","zero":true,"base":"Măr verde","glass":"both","tech":"Build sau Shake","ing":[{"q":null,"u":"după gust","n":"Suc de măr verde","k":"juice"},{"q":3,"u":"pepenași","n":"Lime","k":"fruit"},{"q":20,"u":"ml","n":"Premix Whiskey Sour","k":"premix"},{"q":null,"u":"top","n":"Apă minerală","k":"other"}],"steps":["Bază: apă minerală în pahar prima dată.","Adăugați bucățile de lime, premixul și sucul de măr.","Amestecați puternic pentru a integra aromele."],"garnish":["Măr deshidratat","Portocală deshidratată"]},{"id":"limonada-ghimbir","name":"Limonadă cu ghimbir","zero":true,"base":"Lămâie","glass":"both","tech":"Build","ing":[{"q":40,"u":"ml","n":"Fresh de lămâie","k":"juice"},{"q":40,"u":"ml","n":"Premix Erasmus","k":"premix"},{"q":null,"u":"top","n":"Apă minerală","k":"other"}],"steps":["Turnați apa minerală în pahar prima dată.","Adăugați fresh-ul de lămâie și premixul Erasmus (pentru notele de ghimbir).","Amestecați puternic cu lingurița de bar."],"garnish":["Mentă proaspătă"]},{"id":"epicur","name":"EPICUR","zero":false,"base":"FIN PROSECCO","glass":"","tech":"","ing":[{"q":40,"u":"ml","n":"GIN","k":"spirit"},{"q":20,"u":"ml","n":"PREMIX EPICUR","k":"premix"},{"q":20,"u":"ml","n":"FRESH LAMAIE","k":"juice"},{"q":60,"u":"ml","n":"PROSECCO","k":"other"},{"q":1,"u":"ml","n":"BUSUIOC PROASPAT","k":"other"}],"steps":["SHAKE gin, fresh si premix","turnat peste busuioc si prosecco"],"garnish":["1 frunza de busuioc","1 portocala deshidratata"]},{"id":"epicur-fara-alcool","name":"EPICUR FARA ALCOOL","zero":false,"base":"","glass":"","tech":"","ing":[{"q":150,"u":"ml","n":"APA MINERALA","k":"juice"},{"q":20,"u":"ml","n":"FRESH DE LAMAIE","k":"juice"},{"q":40,"u":"ml","n":"PREMIX EPICUR","k":"juice"}],"steps":["BUILD"],"garnish":["FRUNZE BUSUIOC"]}]</script>
+<script id="events-data" type="application/json">{"fileName": "26_septembrie_2026.xlsx", "aoa": [["SPECIFICAȚII / ARTICOLE", "alex obreja", "dekoration", "montana", "symphony PADURE", "sambata", null, "royal", "TOTAL"], ["NR PERSOANE", 25.0, 30.0, 350.0, 290.0, 290.0, null, null, null], ["ORA INCEPERE", "14.30", "18.00", null, "15.00", "15.00", null, null, null], ["ECHIPA", "sergiu", "ALPAR", "BUBU ANDRA PAUL", "IOANA SEBI", "LAU PICU", null, "LEVI magda sergiu", null], ["TRANSPORT", "doker", "doker", "toyota", "BUZ", "roomster remorca ", null, "BUZ", null], ["MENTIUNI SPECIALE", null, null, null, "cocktail cu si fara ", null, null, null, null], [null, null, null, null, "alcool EPICUR", null, null, null, null], [null, null, null, null, "-3 sticle premix", null, null, null, null], [null, null, null, null, "EPICUR", null, null, null, null], [null, null, null, null, null, null, null, null, null], ["BAR", "case", "CASE", "LOCATIE", "CASES VECHI", "Bar nou", null, "CASE URI VECHI", 0], ["MASA", "da", "DA", "NU", "DA", "DA", null, "DA", 0], ["MOCHETA", null, null, null, null, null, null, null, 0], ["SORTURI", "piele", "PIELE", "NOI", "NOI", "GRAFICA", null, "NOI", 0], ["MENIURI", 4.0, 4.0, "PERSONALIZATE", "33 EPICUR", 4.0, null, null, 12], ["CUVE BAR", null, null, null, null, null, null, null, 0], ["PAHARE", null, null, null, null, null, null, null, 0], ["VASE GARNISH", null, null, null, null, null, null, null, 0], ["STICLE", null, null, null, null, null, null, null, 0], ["TORT SHOTS", null, null, null, null, null, null, null, 0], ["LEDURI", null, null, null, null, null, null, null, 0], ["SERPISORI", null, null, null, null, null, null, null, 0], ["LADITE LEMN", null, null, null, null, null, null, null, 0], ["FRAPIERA", null, null, null, null, null, null, null, 0], ["SERVETELE", null, null, null, null, null, null, null, 0], ["COS SI SACI G", null, null, null, null, null, null, null, 0], ["LAVETE", null, null, null, null, null, null, null, 0], ["SPEED RAIL", null, null, "DA", null, null, null, null, 0], ["RECLAMA LUM", null, null, "da", null, null, null, null, 0], [null, null, null, null, null, null, null, null, null], ["PAIE", null, null, null, null, null, null, null, 0], ["MANUSI", null, null, null, null, null, null, null, 0], ["TINURI", null, null, null, null, null, null, null, 0], ["STRAINER", null, null, null, null, null, null, null, 0], ["LINGURITE", null, null, null, null, null, null, null, 0], ["PENSETA", null, null, null, null, null, null, null, 0], ["PALNIE", null, null, null, null, null, null, null, 0], ["JIGGER", null, null, null, null, null, null, null, 0], ["SQUEEZER", null, null, null, null, null, null, null, 0], ["CUTIT", null, null, null, null, null, null, null, 0], ["SCAFA", null, null, null, null, null, null, null, 0], ["CARPATOR", null, null, null, null, null, null, null, 0], ["POURERE", null, null, null, null, null, null, null, 0], ["MUDLER", null, null, null, null, null, null, null, 0], ["CAPACE BORC", null, null, null, null, null, null, null, 0], ["PEELER", null, null, null, null, null, null, null, 0], ["SHAKER XXL", null, null, null, null, null, null, null, 0], [null, null, null, null, null, null, null, null, null], ["GHEATA", 30.0, 30.0, 100.0, 80.0, 80.0, null, 80.0, 400], ["LADA LIME", 1.0, 1.0, 2.0, 2.0, 2.0, null, 2.0, 10], ["PORTO BUC", 7.0, 7.0, 12.0, 12.0, 12.0, null, 12.0, 62], ["GREF", 2.0, 2.0, 5.0, 5.0, 5.0, null, 5.0, 24], ["CIMBRISOR", 0.5, 0.5, 1.0, 1.0, 1.0, null, 1.0, 5], ["ROZMARIN", 0.5, 0.5, 1.0, 1.0, 1.0, null, 1.0, 5], ["MENTA", 0.5, 0.5, 1.0, 1.0, 1.0, null, 1.0, 5], ["DESHIDRATATE", 0.5, 0.5, 2.0, 1.0, 1.0, null, 1.0, 6], ["FLORI COMES", 0.5, 0.5, 1.0, 1.0, 1.0, null, 1.0, 5], [null, null, null, null, null, null, null, null, null], ["HARMONY", 2.0, 2.0, 4.0, 4.0, 4.0, null, 4.0, 20], ["PORNSTAR", 1.0, 1.0, 3.0, 3.0, 3.0, null, 3.0, 14], ["ERASMUS", 1.0, 1.0, 3.0, 2.0, 2.0, null, 2.0, 11], ["HUGO", 2.0, 2.0, 6.0, 5.0, 5.0, null, 5.0, 25], ["PLATON", 1.0, 1.0, 4.0, 4.0, 4.0, null, 4.0, null], ["WHISKEY SOUR", 1.0, 1.0, 4.0, 4.0, 4.0, null, 4.0, null], [null, null, null, null, null, null, null, null, null], ["NEGRONI", 1.0, 1.0, 4.0, 3.0, 3.0, null, 3.0, 15], ["PALOMA", 1.0, 1.0, 2.0, 2.0, 2.0, null, 2.0, 10], [null, null, null, null, null, null, null, null, null], ["ALOE 1,5L", 2.0, 2.0, 6.0, 5.0, 5.0, null, 5.0, 25], ["SAN PELEGRIN", 12.0, 12.0, 24.0, null, null, null, null, 48], ["KINLEY 1,5", null, null, 4.0, 8.0, 8.0, null, 8.0, 28], ["COLA 1 L", 3.0, 3.0, 15.0, 15.0, 15.0, null, 15.0, 66], ["CRANBERRY", 4.0, 4.0, 12.0, 12.0, 12.0, null, 12.0, 56], ["ORANGE", 2.0, 2.0, 10.0, 12.0, 12.0, null, 12.0, 50], ["MAR VERDE", 2.0, 2.0, 8.0, 8.0, 8.0, null, 8.0, 36], ["APA MINERALA", 6.0, 6.0, 18.0, 18.0, 18.0, null, 18.0, 84], ["FRESH LAMAIE", 3.0, 3.0, 14.0, 14.0, 14.0, null, 14.0, 62], [null, null, null, null, null, null, null, null, null], ["VODKA 1L", 1.0, 1.0, 2.0, 2.0, 2.0, null, 2.0, 10], ["ROM 1L", 2.0, 2.0, 10.0, 8.0, 8.0, null, 8.0, 38], ["GIN", 3.0, 3.0, 12.0, 12.0, "12 TANQUERAY", null, 12.0, 42], ["PROSECCO", 6.0, 6.0, 18.0, 18.0, 18.0, null, 18.0, 84], ["APEROL", 1.0, 1.0, 3.0, 3.0, 3.0, null, 3.0, 14], ["JAMESON", 2.0, 2.0, 10.0, 15.0, 15.0, null, 15.0, 59], ["AMARETTO ", null, null, null, null, null, null, null, 0], [null, null, null, null, null, null, null, null, 0]]}</script>
+<script id="app" type="text/plain">
+(function(){
+const HEAD = '<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n<title>Cocktail Philosophy · Rețetar și evenimente</title>\n<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">\n<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>\n';
+const shell = document.getElementById("shell");
+document.body.insertBefore(shell.content.cloneNode(true), shell);
+
+let R = JSON.parse(document.getElementById("recipes-data").textContent);
+let EVD = (()=>{try{return JSON.parse(document.getElementById("events-data").textContent)}catch(e){return null}})();
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store = {
+  get(k,d){try{const v=localStorage.getItem("cp-"+k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("cp-"+k,JSON.stringify(v))}catch(e){}}
+};
+const sess = {
+  get(k){try{return sessionStorage.getItem("cp-"+k)}catch(e){return null}},
+  set(k,v){try{v==null?sessionStorage.removeItem("cp-"+k):sessionStorage.setItem("cp-"+k,v)}catch(e){}}
+};
+const UNITS = ["ml","buc","wedges","pepenași","felii","top","stropi","după gust"];
+const NOQ = ["top","stropi","după gust"];
+const KINDS = {spirit:"Spirtoase",premix:"Premixuri",juice:"Sucuri",fruit:"Fructe",other:"Altele"};
+const fmt = n => (Math.round(n*10)/10).toLocaleString("ro-RO");
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+function qty(i,n){
+  if(i.q===null || NOQ.includes(i.u)) return cap(i.u||"după gust");
+  const v=i.q*n;
+  if(i.u==="ml") return fmt(v)+" ml";
+  if(i.u==="buc") return (v===0.5?"½":fmt(v))+" buc";
+  return fmt(v)+" "+i.u;
+}
+function stepHTML(s){const m=String(s).match(/^([^:]{1,24}):\s*(.*)$/);return m?`<strong>${esc(m[1])}:</strong> ${esc(m[2])}`:esc(s)}
+function glassHTML(g){
+  if(g==="glob") return `<div class="glass"><svg><use href="#g-glob"/></svg>Pahar glob</div>`;
+  if(g==="jar") return `<div class="glass"><svg><use href="#g-jar"/></svg>Pahar borcănaș</div>`;
+  if(g==="both") return `<div class="glass"><svg><use href="#g-glob"/></svg><svg><use href="#g-jar"/></svg>Glob sau borcănaș</div>`;
+  return "";
+}
+const nameHTML = r => esc(r.name)+(r.zero?` <span class="zero">0%</span>`:"");
+let toastT;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,4200)}
+
+/* ---------- Saving ---------- */
+let art = undefined, readOnly = false;
+const artReady = (async()=>{
+  try{ if(!window.claude || !window.claude.use) return null; return await window.claude.use("artifact"); }catch(e){ return null; }
+})();
+artReady.then(async a=>{
+  art=a;
+  if(!a){
+    const local=store.get("recipes",null);
+    if(Array.isArray(local)){R=local;refreshAll()}
+    $("#localNotice").hidden=false;
+    return;
+  }
+  try{
+    const u=await window.claude.use("user");
+    if(u && (await u.canEdit())===false) setReadOnly();
+  }catch(e){}
+});
+function setReadOnly(){readOnly=true;document.body.classList.add("readonly")}
+function buildHTML(list,ev){
+  const json=JSON.stringify(list).replace(/</g,"\\u003c");
+  const evj=JSON.stringify(ev===undefined?EVD:ev).replace(/</g,"\\u003c");
+  return "<!DOCTYPE html>\n<html lang=\"ro\">\n<head>\n"+HEAD+
+    "<style id=\"css\">"+document.getElementById("css").textContent+"</style>\n</head>\n<body>\n"+
+    "<template id=\"shell\">"+shell.innerHTML+"</template>\n"+
+    "<script id=\"recipes-data\" type=\"application/json\">"+json+"<\/script>\n"+
+    "<script id=\"events-data\" type=\"application/json\">"+evj+"<\/script>\n"+
+    "<script id=\"app\">"+document.getElementById("app").textContent+"<\/script>\n</body>\n</html>\n";
+}
+async function persist(next, openId, okMsg){
+  const a = await artReady;
+  if(!a){
+    R=next;store.set("recipes",R);refreshAll();
+    if(openId) openRecipe(openId); else closeSheet();
+    toast(okMsg+" (doar în acest browser)");
+    return true;
+  }
+  const attempt = () => a.publish(buildHTML(next));
+  sess.set("open",openId||"");sess.set("okmsg",okMsg);
+  try{ await attempt(); }
+  catch(e){
+    let code=e&&e.code;
+    if(code==="upstream_error"){ await new Promise(r=>setTimeout(r,800+Math.random()*900)); try{await attempt();code=null}catch(e2){code=e2&&e2.code||"upstream_error"} }
+    if(code){
+      sess.set("open",null);sess.set("okmsg",null);
+      if(code==="conflict") toast("Altcineva a salvat o versiune mai nouă. Pagina se reîncarcă; refă modificarea după aceea.");
+      else if(["not_writer","not_granted","consent_required","capability_disabled","capability_removed","not_declared"].includes(code)){setReadOnly();toast("Poți vedea rețetele, dar nu ai drept să le modifici.");closeSheet()}
+      else if(code==="rate_limited") toast("Prea multe salvări într-un timp scurt. Încearcă din nou peste un minut.");
+      else if(code==="too_large") toast("Rețetarul a depășit dimensiunea maximă și nu a fost salvat.");
+      else toast("Salvarea nu a reușit. Încearcă din nou.");
+      return false;
+    }
+  }
+  R=next;refreshAll();
+  return true;
+}
+
+/* ---------- Tabs & theme ---------- */
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+  document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="v-"+b.dataset.view);
+  store.set("tab",b.dataset.view);
+}));
+{const t=store.get("tab","retete");const b=document.querySelector(`nav.tabs button[data-view="${t}"]`);if(b)b.click();}
+const themes=[null,"light","dark"],tlabel={null:"Temă: auto",light:"Temă: luminoasă",dark:"Temă: întunecată"};
+let theme=store.get("theme",null);
+function applyTheme(){theme?document.documentElement.setAttribute("data-theme",theme):document.documentElement.removeAttribute("data-theme");$("#themeBtn").textContent=tlabel[theme]}
+$("#themeBtn").onclick=()=>{theme=themes[(themes.indexOf(theme)+1)%3];store.set("theme",theme);applyTheme()};
+applyTheme();
+
+/* ---------- List ---------- */
+let filter="all";
+function renderList(){
+  const q=$("#q").value.trim().toLowerCase();
+  const items=R.filter(r=>filter==="all"||(filter==="zero")===!!r.zero)
+    .filter(r=>!q||[r.name,r.base,r.tech,...r.ing.map(i=>i.n)].join(" ").toLowerCase().includes(q));
+  $("#list").innerHTML=items.length?items.map(r=>{
+    const pm=r.ing.find(i=>i.k==="premix");
+    return `<li><button class="row" type="button" data-id="${esc(r.id)}">
+      <span class="rname">${nameHTML(r)}</span>
+      <span class="rmeta">${[r.base,pm&&pm.n].filter(Boolean).map(esc).join(" · ")}</span>
+      <span class="rtech">${r.tech?`<span class="chip tech">${esc(r.tech)}</span>`:""}${r.zero?'<span class="chip nz">Fără alcool</span>':""}</span>
+    </button></li>`}).join(""):`<li class="empty">Niciun cocktail nu se potrivește căutării.</li>`;
+}
+$("#q").addEventListener("input",renderList);
+document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{filter=b.dataset.f;document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderList()}));
+$("#list").addEventListener("click",e=>{const b=e.target.closest(".row");if(b)openRecipe(b.dataset.id,b)});
+$("#newBtn").addEventListener("click",e=>{lastFocus=e.currentTarget;openEditor(null)});
+
+/* ---------- Detail ---------- */
+let current=null,servings=1,lastFocus=null;
+function showSheet(){$("#sheet").hidden=false;document.body.style.overflow="hidden";$("#panel").scrollTop=0}
+function closeSheet(){$("#sheet").hidden=true;document.body.style.overflow="";if(lastFocus&&document.contains(lastFocus))lastFocus.focus()}
+function openRecipe(id,from){const r=R.find(x=>x.id===id);if(!r)return;current=r;servings=1;if(from)lastFocus=from;renderDetail();showSheet();$("#panel .close").focus()}
+function renderDetail(){
+  const r=current;
+  $("#panel").className="panel"+(r.zero?" nz":"");
+  $("#panel").innerHTML=`
+    <div class="phead"><h2 class="pname display" id="pname">${nameHTML(r)}</h2>
+      <div class="pactions"><button class="btn edit-only" type="button" data-act="edit">Editează</button><button class="close" type="button" aria-label="Închide" data-act="close">×</button></div></div>
+    ${glassHTML(r.glass)}
+    <div class="servings"><span>Porții</span>
+      <div class="stepper"><button type="button" data-d="-1" aria-label="Mai puține porții">−</button><output>${servings}</output><button type="button" data-d="1" aria-label="Mai multe porții">+</button></div></div>
+    <div class="cols">
+      <section class="box ing"><h3>Ingrediente</h3><div class="in"><ul class="ings">
+        ${r.ing.map(i=>`<li><span class="q">${esc(qty(i,servings))}</span><span>${esc(i.n)}</span></li>`).join("")}
+      </ul></div></section>
+      <section class="box met"><h3>Metodă de preparare</h3><div class="in">
+        ${r.tech?`<p class="techline">Tehnică: <b>${esc(r.tech)}</b></p>`:""}
+        <ol class="steps">${r.steps.map(s=>`<li>${stepHTML(s)}</li>`).join("")}</ol></div></section>
+      <section class="box gar"><h3>Garnish</h3><div class="in">${r.garnish.map(g=>`<p>${esc(g)}</p>`).join("")}</div></section>
+    </div>`;
+}
+
+/* ---------- Editor ---------- */
+let editing=null;
+const opt=(v,l,sel)=>`<option value="${esc(v)}"${v===sel?" selected":""}>${esc(l)}</option>`;
+function ingRow(i){
+  i=i||{q:null,u:"ml",n:"",k:"juice"};const noq=NOQ.includes(i.u);
+  return `<div class="erow ing-row">
+    <input class="f-q" type="number" min="0" step="any" inputmode="decimal" aria-label="Cantitate" value="${i.q===null||noq?"":i.q}"${noq?" disabled":""}>
+    <select class="f-u" aria-label="Unitate">${UNITS.map(u=>opt(u,u,i.u)).join("")}</select>
+    <input class="f-n" type="text" aria-label="Ingredient" placeholder="Ingredient" value="${esc(i.n)}">
+    <select class="f-k" aria-label="Categorie în necesar">${Object.entries(KINDS).map(([k,l])=>opt(k,l,i.k||"other")).join("")}</select>
+    <button class="x" type="button" data-act="rm" aria-label="Elimină">×</button></div>`;
+}
+const txtRow=(v,ph)=>`<div class="erow txt-row"><input type="text" value="${esc(v||"")}" placeholder="${esc(ph)}" aria-label="${esc(ph)}"><button class="x" type="button" data-act="rm" aria-label="Elimină">×</button></div>`;
+function openEditor(r){
+  editing=r?r.id:null;
+  r=r||{name:"",zero:false,base:"",glass:"",tech:"",ing:[],steps:[],garnish:[]};
+  $("#panel").className="panel";
+  $("#panel").innerHTML=`<div class="editor">
+    <div class="phead"><h2 class="display" id="pname">${editing?"Editează rețeta":"Rețetă nouă"}</h2>
+      <button class="close" type="button" aria-label="Închide" data-act="cancel">×</button></div>
+    <p class="err" id="ferr"></p>
+    <div class="fgrid">
+      <label class="field">Nume<input type="text" id="f-name" value="${esc(r.name)}"></label>
+      <label class="field">Bază<input type="text" id="f-base" value="${esc(r.base)}" placeholder="ex. Gin"></label>
+      <label class="field">Tehnică<input type="text" id="f-tech" value="${esc(r.tech)}" placeholder="ex. Shake"></label>
+      <label class="field">Pahar<select id="f-glass">${opt("","Nespecificat",r.glass||"")}${opt("glob","Glob",r.glass)}${opt("jar","Borcănaș",r.glass)}${opt("both","Glob sau borcănaș",r.glass)}</select></label>
+      <label class="check" style="align-self:end;padding-bottom:10px"><input type="checkbox" id="f-zero"${r.zero?" checked":""}> Fără alcool (0%)</label>
+    </div>
+    <fieldset class="fset"><legend>Ingrediente</legend>
+      <p class="hint">„Top”, „stropi” și „după gust” nu au cantitate.</p>
+      <div id="f-ing">${r.ing.map(ingRow).join("")}</div>
+      <button class="add" type="button" data-act="add-ing">Adaugă ingredient</button></fieldset>
+    <fieldset class="fset"><legend>Pași de preparare</legend>
+      <p class="hint">Scrie „Muddle: …” ca prima parte să apară îngroșată.</p>
+      <div id="f-steps">${r.steps.map(s=>txtRow(s,"Pas")).join("")}</div>
+      <button class="add" type="button" data-act="add-step">Adaugă pas</button></fieldset>
+    <fieldset class="fset"><legend>Garnish</legend>
+      <div id="f-gar">${r.garnish.map(g=>txtRow(g,"Garnish")).join("")}</div>
+      <button class="add" type="button" data-act="add-gar">Adaugă garnish</button></fieldset>
+    <div class="ebar">
+      <div class="grp">${editing?`<button class="btn danger" type="button" data-act="del">Șterge rețeta</button>`:""}</div>
+      <div class="grp"><button class="btn" type="button" data-act="cancel">Renunță</button><button class="btn primary" type="button" data-act="save">Salvează</button></div>
+    </div></div>`;
+  if(!r.ing.length) $("#f-ing").insertAdjacentHTML("beforeend",ingRow());
+  if(!r.steps.length) $("#f-steps").insertAdjacentHTML("beforeend",txtRow("","Pas"));
+  if(!r.garnish.length) $("#f-gar").insertAdjacentHTML("beforeend",txtRow("","Garnish"));
+  showSheet();$("#f-name").focus();
+}
+function slug(s){return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"reteta"}
+function readForm(){
+  const name=$("#f-name").value.trim();
+  if(!name) return {error:"Scrie numele cocktailului."};
+  const ing=[...document.querySelectorAll("#f-ing .ing-row")].map(row=>{
+    const u=row.querySelector(".f-u").value,n=row.querySelector(".f-n").value.trim(),k=row.querySelector(".f-k").value;
+    const raw=row.querySelector(".f-q").value.replace(",",".");const q=NOQ.includes(u)||raw===""?null:parseFloat(raw);
+    return {q:Number.isFinite(q)?q:null,u:q===null&&!NOQ.includes(u)?"după gust":u,n,k};
+  }).filter(i=>i.n);
+  if(!ing.length) return {error:"Adaugă cel puțin un ingredient."};
+  const texts=sel=>[...document.querySelectorAll(sel+" input")].map(x=>x.value.trim()).filter(Boolean);
+  let id=editing;
+  if(!id){id=slug(name);let n=2,b=id;while(R.some(r=>r.id===id))id=b+"-"+n++;}
+  return {rec:{id,name,zero:$("#f-zero").checked,base:$("#f-base").value.trim(),glass:$("#f-glass").value,tech:$("#f-tech").value.trim(),ing,steps:texts("#f-steps"),garnish:texts("#f-gar")}};
+}
+async function withBusy(btn,fn){const all=[...document.querySelectorAll("#panel .ebar .btn")];all.forEach(b=>b.disabled=true);const t=btn.textContent;btn.textContent="Se salvează…";try{await fn()}finally{if(document.contains(btn)){all.forEach(b=>b.disabled=false);btn.textContent=t}}}
+
+$("#panel").addEventListener("click",async e=>{
+  const d=e.target.closest("[data-d]");
+  if(d){servings=Math.max(1,Math.min(50,servings+ +d.dataset.d));renderDetail();return}
+  const b=e.target.closest("[data-act]");if(!b)return;
+  const act=b.dataset.act;
+  if(act==="close")return closeSheet();
+  if(act==="edit")return openEditor(current);
+  if(act==="cancel"){const id=editing;editing=null;return id&&R.find(r=>r.id===id)?openRecipe(id):closeSheet()}
+  if(act==="rm"){b.closest(".erow").remove();return}
+  if(act==="add-ing"){$("#f-ing").insertAdjacentHTML("beforeend",ingRow());$("#f-ing .ing-row:last-child .f-q").focus();return}
+  if(act==="add-step"){$("#f-steps").insertAdjacentHTML("beforeend",txtRow("","Pas"));$("#f-steps .erow:last-child input").focus();return}
+  if(act==="add-gar"){$("#f-gar").insertAdjacentHTML("beforeend",txtRow("","Garnish"));$("#f-gar .erow:last-child input").focus();return}
+  if(act==="save"){
+    const f=readForm();if(f.error){$("#ferr").textContent=f.error;$("#panel").scrollTop=0;return}
+    const next=editing?R.map(r=>r.id===editing?f.rec:r):[...R,f.rec];
+    await withBusy(b,async()=>{const ok=await persist(next,f.rec.id,"Rețeta a fost salvată.");if(ok&&!$("#sheet").hidden&&R.some(r=>r.id===f.rec.id)){editing=null;openRecipe(f.rec.id)}});
+    return;
+  }
+  if(act==="del"){
+    if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Confirmă ștergerea";setTimeout(()=>{if(document.contains(b)){b.classList.remove("armed");b.textContent="Șterge rețeta"}},4000);return}
+    const id=editing;
+    await withBusy(b,async()=>{const ok=await persist(R.filter(r=>r.id!==id),"","Rețeta a fost ștearsă.");if(ok){editing=null;closeSheet()}});
+  }
+});
+$("#panel").addEventListener("change",e=>{
+  if(e.target.classList.contains("f-u")){const q=e.target.closest(".ing-row").querySelector(".f-q");const no=NOQ.includes(e.target.value);q.disabled=no;if(no)q.value=""}
+});
+$("#sheet").addEventListener("click",e=>{if(e.target.id==="sheet"&&!editing&&!document.querySelector("#panel .editor"))closeSheet()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#sheet").hidden&&!document.querySelector("#panel .editor"))closeSheet()});
+
+/* ---------- Training ---------- */
+let deck=[],pos=0,shown=false;
+function resetDeck(){deck=R.map((_,i)=>i);pos=Math.min(pos,Math.max(0,deck.length-1));shown=false}
+function renderCard(){
+  const c=$("#card");
+  if(!deck.length){c.className="card";c.innerHTML=`<p class="hint">Nu există rețete încă.</p>`;$("#count").textContent="";return}
+  const r=R[deck[pos]];
+  c.className="card"+(shown?" revealed":"")+(r.zero?" zero":"");
+  c.setAttribute("aria-label",shown?"Ascunde rețeta":"Arată rețeta");
+  c.innerHTML=`<svg class="leafdeco" aria-hidden="true"><use href="#monstera"/></svg>
+    <div><p class="cname display">${nameHTML(r)}</p>
+    ${shown?`<div class="reveal">${r.ing.map(i=>`<p><b>${esc(qty(i,1))}</b> ${esc(i.n)}</p>`).join("")}
+      <p style="margin-top:10px"><b>${esc(r.tech)}</b>${r.garnish.length?" · "+r.garnish.map(esc).join(", "):""}</p></div>`:""}</div>
+    <span class="hint">${shown?"Atinge din nou ca să ascunzi":"Ce conține? Atinge ca să verifici"}</span>`;
+  $("#count").textContent=`${pos+1} din ${deck.length}`;
+}
+const flip=()=>{shown=!shown;renderCard()};
+$("#card").addEventListener("click",flip);
+$("#card").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();flip()}});
+$("#next").onclick=()=>{if(!deck.length)return;pos=(pos+1)%deck.length;shown=false;renderCard()};
+$("#prev").onclick=()=>{if(!deck.length)return;pos=(pos-1+deck.length)%deck.length;shown=false;renderCard()};
+$("#shuffle").onclick=()=>{for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]]}pos=0;shown=false;renderCard()};
+
+function refreshAll(){renderList();resetDeck();renderCard();if(window.__evRefresh)window.__evRefresh()}
+refreshAll();
+
+/* ---------- Evenimente (din Excelul centralizator) ---------- */
+(function(){
+const CATS=[{id:"echip",name:"Echipament bar"},{id:"scule",name:"Scule și consumabile"},{id:"garnish",name:"Gheață, fructe și ierburi"},
+  {id:"premix",name:"Premixuri cocktail"},{id:"soft",name:"Soft și mixere"},{id:"alcool",name:"Alcool"},{id:"altele",name:"Altele"}];
+const QTY_CATS=["garnish","premix","soft","alcool","altele"];
+const KNOWN={
+  "BAR":["Bar","echip"],"MASA":["Masă","echip"],"MOCHETA":["Mochetă","echip"],"SORTURI":["Șorțuri","echip"],"MENIURI":["Meniuri","echip"],
+  "CUVE BAR":["Cuve bar","echip"],"PAHARE":["Pahare","echip"],"VASE GARNISH":["Vase garnish","echip"],"STICLE":["Sticle","echip"],
+  "TORT SHOTS":["Tort shots","echip"],"LEDURI":["Leduri","echip"],"SERPISORI":["Șerpișori","echip"],"LADITE LEMN":["Lădițe lemn","echip"],
+  "FRAPIERA":["Frapieră","echip"],"SERVETELE":["Șervețele","echip"],"COS SI SACI G":["Coș și saci gunoi","echip"],"LAVETE":["Lavete","echip"],
+  "SPEED RAIL":["Speed rail","echip"],"RECLAMA LUM":["Reclamă luminoasă","echip"],
+  "PAIE":["Paie","scule"],"MANUSI":["Mănuși","scule"],"TINURI":["Tinuri","scule"],"STRAINER":["Strainer","scule"],"LINGURITE":["Lingurițe","scule"],
+  "PENSETA":["Pensetă","scule"],"PALNIE":["Pâlnie","scule"],"JIGGER":["Jigger","scule"],"SQUEEZER":["Squeezer","scule"],"CUTIT":["Cuțit","scule"],
+  "SCAFA":["Scafă","scule"],"CARPATOR":["Carpator","scule"],"POURERE":["Pourere","scule"],"MUDLER":["Mudler","scule"],
+  "CAPACE BORC":["Capace borc","scule"],"PEELER":["Peeler","scule"],"SHAKER XXL":["Shaker XXL","scule"],
+  "GHEATA":["Gheață","garnish"],"LADA LIME":["Ladă lime","garnish"],"PORTO BUC":["Portocale (buc)","garnish"],"GREF":["Grapefruit","garnish"],
+  "CIMBRISOR":["Cimbrișor","garnish"],"ROZMARIN":["Rozmarin","garnish"],"MENTA":["Mentă","garnish"],"DESHIDRATATE":["Deshidratate","garnish"],
+  "FLORI COMES":["Flori comestibile","garnish"],
+  "HARMONY":["Harmony","premix"],"PORNSTAR":["Pornstar","premix"],"ERASMUS":["Erasmus","premix"],"HUGO":["Hugo","premix"],"PLATON":["Platon","premix"],
+  "WHISKEY SOUR":["Whiskey Sour","premix"],"NEGRONI":["Negroni","premix"],"PALOMA":["Paloma","premix"],
+  "ALOE 1,5L":["Aloe 1,5 L","soft"],"SAN PELEGRIN":["San Pellegrino","soft"],"KINLEY 1,5":["Kinley 1,5 L","soft"],"COLA 1 L":["Cola 1 L","soft"],
+  "CRANBERRY":["Cranberry","soft"],"ORANGE":["Orange","soft"],"MAR VERDE":["Măr verde","soft"],"APA MINERALA":["Apă minerală","soft"],
+  "FRESH LAMAIE":["Fresh lămâie","soft"],
+  "VODKA 1L":["Vodka 1 L","alcool"],"ROM 1L":["Rom 1 L","alcool"],"GIN":["Gin","alcool"],"PROSECCO":["Prosecco","alcool"],"APEROL":["Aperol","alcool"],
+  "JAMESON":["Jameson","alcool"],"AMARETTO":["Amaretto","alcool"]
+};
+const MONTHS=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+const DAYS=["Duminică","Luni","Marți","Miercuri","Joi","Vineri","Sâmbătă"];
+const norm=s=>String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/\s+/g," ").trim();
+const capL=s=>{s=String(s).trim();return s?s.charAt(0).toUpperCase()+s.slice(1).toLowerCase():s};
+const num=n=>String(Math.round(n*100)/100).replace(".",",");
+const blank=v=>v===null||v===undefined||String(v).trim()==="";
+const titleName=s=>String(s).trim().split(/\s+/).map(capL).join(" ");
+function fmtTime(v){
+  if(blank(v))return null;
+  if(typeof v==="number"){
+    if(v<1){const m=Math.round(v*1440);return `${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`}
+    const [h,m="00"]=v.toFixed(2).split(".");return `${h.padStart(2,"0")}:${m}`;
+  }
+  const s=String(v).trim(),m=s.match(/^(\d{1,2})\s*[.:,h]\s*(\d{1,2})/);
+  if(m)return `${m[1].padStart(2,"0")}:${m[2].padEnd(2,"0")}`;
+  const h=s.match(/^(\d{1,2})$/);if(h)return `${h[1].padStart(2,"0")}:00`;
+  return s;
+}
+function parseTitle(fileName){
+  const base=String(fileName||"").replace(/\.[^.]+$/,"").replace(/[_\-]+/g," ").trim();
+  const m=norm(base).match(/(\d{1,2}) ([A-Z]+) (\d{4})/);
+  if(m){const mi=MONTHS.findIndex(x=>norm(x)===m[2]);
+    if(mi>=0){const d=new Date(+m[3],mi,+m[1]);return {big:`${+m[1]} ${MONTHS[mi]}`,day:DAYS[d.getDay()]}}}
+  return {big:base||"Evenimente",day:""};
+}
+function parseAOA(aoa,fileName){
+  const header=aoa[0]||[];let totalCol=-1;const events=[];
+  for(let c=1;c<header.length;c++){
+    if(blank(header[c]))continue;
+    if(norm(header[c])==="TOTAL"){totalCol=c;continue}
+    events.push({col:c,id:"e"+c,name:titleName(header[c]),persons:null,time:null,team:[],transport:"",notesRaw:[],values:{},textQty:[]});
+  }
+  if(!events.length)throw new Error("Nu am găsit evenimente. Numele evenimentelor trebuie să fie pe primul rând, începând cu coloana B.");
+  events.forEach((e,i)=>e.c=`--c${i%8}`);
+  const items=[];let inNotes=false;
+  for(let r=1;r<aoa.length;r++){
+    const row=aoa[r]||[],label=row[0],L=norm(label);
+    if(blank(label)){if(inNotes)events.forEach(e=>{if(!blank(row[e.col]))e.notesRaw.push(String(row[e.col]).trim())});continue}
+    inNotes=false;
+    if(L.startsWith("NR PERSOANE")||L==="PERSOANE"){events.forEach(e=>{const v=row[e.col];if(!blank(v))e.persons=typeof v==="number"?v:(parseFloat(String(v).replace(",","."))||String(v))});continue}
+    if(L==="ORA"||L.startsWith("ORA ")){events.forEach(e=>e.time=fmtTime(row[e.col]));continue}
+    if(L.startsWith("ECHIPA")){events.forEach(e=>{if(!blank(row[e.col]))e.team=String(row[e.col]).split(/[\s,;\/+]+/).filter(Boolean).map(capL)});continue}
+    if(L.startsWith("TRANSPORT")){events.forEach(e=>{if(!blank(row[e.col]))e.transport=capL(row[e.col])});continue}
+    if(L.startsWith("MENTIUNI")){inNotes=true;events.forEach(e=>{if(!blank(row[e.col]))e.notesRaw.push(String(row[e.col]).trim())});continue}
+    const known=KNOWN[L],key="i"+r+"_"+L.replace(/[^A-Z0-9]/g,"");
+    const it={key,label:known?known[0]:capL(label),cat:known?known[1]:"altele",excelTotal:totalCol>=0?row[totalCol]:null};
+    items.push(it);
+    events.forEach(e=>{
+      let v=row[e.col];if(blank(v))return;
+      if(typeof v==="number"){e.values[key]={v};return}
+      v=String(v).trim();
+      const m=v.match(/^(\d+(?:[.,]\d+)?)\s*(.*)$/);
+      if(QTY_CATS.includes(it.cat)&&m){e.values[key]={v:parseFloat(m[1].replace(",",".")),note:m[2]?capL(m[2]):""};if(m[2])e.textQty.push({it,raw:v})}
+      else if(/^\d+(?:[.,]\d+)?$/.test(v))e.values[key]={v:parseFloat(v.replace(",","."))};
+      else e.values[key]={v:capL(v)};
+    });
+  }
+  events.forEach(e=>{e.notes=e.notesRaw.length?e.notesRaw.join(" ").replace(/\s+/g," ").split(/\s(?=-)/).map(s=>{s=s.replace(/^-\s*/,"−");return s.charAt(0).toUpperCase()+s.slice(1)}):[]});
+  return {fileName,events,items,totalCol,title:parseTitle(fileName)};
+}
+function buildChecks(D){
+  const out=[],who={};
+  D.events.forEach(e=>e.team.forEach(n=>{const k=norm(n);(who[k]=who[k]||{n,ev:[]}).ev.push(e)}));
+  Object.values(who).filter(x=>x.ev.length>1).forEach(x=>out.push(`<b>${esc(x.n)}</b> e trecut în echipă la ${x.ev.map(e=>esc(e.name)+(e.time?` (${esc(e.time)})`:"")).join(" și la ")}.`));
+  const names=a=>a.map(e=>`<b>${esc(e.name)}</b>`).join(", ");
+  [["time","Fără oră de începere"],["persons","Fără număr de persoane"]].forEach(([k,t])=>{const a=D.events.filter(e=>!e[k]);if(a.length)out.push(`${t}: ${names(a)}.`)});
+  const nt=D.events.filter(e=>!e.team.length);if(nt.length)out.push(`Fără echipă: ${names(nt)}.`);
+  const ntr=D.events.filter(e=>!e.transport);if(ntr.length)out.push(`Fără transport: ${names(ntr)}.`);
+  for(let i=0;i<D.events.length;i++)for(let j=i+1;j<D.events.length;j++){const a=D.events[i],b=D.events[j];
+    if(a.persons&&a.persons===b.persons&&a.time===b.time)out.push(`<b>${esc(a.name)}</b> și <b>${esc(b.name)}</b> au aceleași persoane și aceeași oră (${esc(a.persons)}${a.time?", "+esc(a.time):""}). Verifică dacă sunt evenimente diferite.`)}
+  D.events.forEach(e=>e.textQty.forEach(t=>out.push(`La <b>${esc(e.name)}</b>, ${esc(t.it.label)} e scris „${esc(t.raw)}”. Am socotit ${num(e.values[t.it.key].v)}.`)));
+  if(D.totalCol>=0)D.items.forEach(it=>{
+    const ns=D.events.map(e=>e.values[it.key]).filter(x=>x&&typeof x.v==="number");if(!ns.length)return;
+    const sum=ns.reduce((s,x)=>s+x.v,0),ex=it.excelTotal;
+    if(blank(ex))out.push(`În Excel lipsește totalul la <b>${esc(it.label)}</b> (ar trebui ${num(sum)}).`);
+    else if(typeof ex==="number"&&Math.abs(ex-sum)>0.001)out.push(`În Excel totalul la <b>${esc(it.label)}</b> e ${num(ex)}, dar suma reală e ${num(sum)}.`);
+  });
+  return out;
+}
+
+let D=null,CHECKS=[],route=store.get("evroute","ziua");
+/* Bife: comune pentru echipă (db) când pagina rulează publicată, altfel locale */
+let DB=null,UAPI=null,UID=null,canWrite=null,shared={},sharedDocs=new Set(),unsub=null,names={},dsSub=null;
+const queues={};
+const dsKey=()=>"d-"+String(D.fileName).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,150);
+const colRef=()=>DB.collection(`checks/${dsKey()}/events`);
+const ck=(ev,it)=>`ev:${D.fileName}:${ev}:${it}`;
+const isChecked=(ev,it)=>DB?!!(shared[ev]&&shared[ev][it]):store.get(ck(ev,it),false)===true;
+const whoInfo=(ev,it)=>DB&&shared[ev]&&shared[ev][it]||null;
+function setLocal(ev,it,v){try{v?localStorage.setItem("cp-"+ck(ev,it),"true"):localStorage.removeItem("cp-"+ck(ev,it))}catch(e){}}
+function queueWrite(ev,fn){
+  queues[ev]=(queues[ev]||Promise.resolve()).then(async()=>{
+    try{await fn()}catch(e){
+      if(e&&e.code==="unavailable"){await new Promise(r=>setTimeout(r,700+Math.random()*800));try{await fn();return}catch(e2){e=e2}}
+      if(e&&(e.code==="invalid_argument"||e.code==="not_granted")){canWrite=false;toast("Nu ai drept să bifezi pentru echipă.")}
+      else if(e&&e.code==="quota_exceeded")toast("Spațiul pentru bife e plin. Anunță-l pe Paul.");
+      else toast("Bifa nu s-a salvat. Încearcă din nou.");
+      subscribe();
+    }
+  });
+}
+function setChecked(ev,it,v){
+  if(!DB){setLocal(ev,it,v);return}
+  const val=v?{by:UID||"",at:new Date().toISOString()}:null;
+  (shared[ev]=shared[ev]||{})[it]=val;
+  queueWrite(ev,async()=>{
+    const ref=colRef().doc(ev);
+    if(sharedDocs.has(ev))await ref.update({items:{[it]:val}});
+    else{const body={};Object.entries(shared[ev]).forEach(([k,x])=>{if(x)body[k]=x});await ref.set({items:body});sharedDocs.add(ev)}
+  });
+}
+function resetEvent(ev,keys){
+  if(!DB){keys.forEach(k=>setLocal(ev,k,false));return}
+  shared[ev]={};
+  queueWrite(ev,async()=>{await colRef().doc(ev).set({items:{}});sharedDocs.add(ev)});
+}
+async function resolveNames(){
+  if(!UAPI)return;
+  const ids=new Set();Object.values(shared).forEach(m=>Object.values(m||{}).forEach(x=>{if(x&&x.by&&!(x.by in names))ids.add(x.by)}));
+  if(!ids.size)return;
+  try{const ps=await UAPI.profiles([...ids]);let changed=false;
+    ids.forEach(id=>{const p=ps&&ps[id];names[id]=p?(p.isMe?"tine":(p.name||"")):"";changed=true});
+    if(changed)rerender()}catch(e){}
+}
+function subscribe(){
+  if(!DB||!D)return;
+  subscribeRetur();
+  if(unsub&&dsSub===dsKey())return;
+  if(unsub){unsub();unsub=null}
+  shared={};sharedDocs=new Set();dsSub=dsKey();
+  unsub=colRef().onSnapshot(snap=>{
+    const next={},docs=new Set();
+    snap.docs.forEach(d=>{if(d.exists){docs.add(d.id);next[d.id]=Object.assign({},(d.data()||{}).items||{})}});
+    shared=next;sharedDocs=docs;rerender();resolveNames();
+  },err=>{unsub=null;DB=null;toast("Bifele comune nu sunt disponibile acum. Se salvează doar pe acest dispozitiv.");rerender()});
+}
+function rerender(){if(!D)return;const a=document.activeElement;if(a&&a.matches&&a.matches("#evView .ev-rin, #evView .ev-rnote")){pendingRender=true;return}pendingRender=false;const y=window.scrollY;render();window.scrollTo(0,y)}
+function whoText(x){
+  if(!x)return"";
+  const t=x.at?new Date(x.at):null;
+  const hm=t&&!isNaN(t)?`${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}`:"";
+  const n=x.by?names[x.by]:"";
+  return `Bifat${n?" de "+n:""}${hm?", "+hm:""}`;
+}
+const recipeFor=label=>{const n=norm(label);return R.find(r=>norm(r.name)===n)};
+
+/* ---------- Retur și consum ---------- */
+let returns={},returnDocs=new Set(),unsubR=null,dsSubR=null,evMode=store.get("evmode","incarcare"),pendingRender=false;
+const retRef=()=>DB.collection(`retur/${dsKey()}/events`);
+const lkR=ev=>`retur:${D.fileName}:${ev}`;
+function retFor(ev){const r=DB?returns[ev]:store.get(lkR(ev),null);return r&&typeof r==="object"?r:{items:{}}}
+function retVal(ev,k){const x=retFor(ev).items||{};return typeof x[k]==="number"?x[k]:null}
+function retSaveLocal(ev,r){store.set(lkR(ev),r)}
+function setReturn(ev,k,v){
+  const meta={by:UID||"",at:new Date().toISOString()};
+  if(!DB){const r=retFor(ev);r.items=r.items||{};r.items[k]=v;Object.assign(r,meta);retSaveLocal(ev,r);return}
+  const r=returns[ev]=returns[ev]||{items:{}};r.items=r.items||{};r.items[k]=v;Object.assign(r,meta);
+  queueWrite("r:"+ev,async()=>{const ref=retRef().doc(ev);
+    if(returnDocs.has(ev))await ref.update({items:{[k]:v},by:meta.by,at:meta.at});
+    else{const items={};Object.entries(r.items).forEach(([a,b])=>{if(typeof b==="number")items[a]=b});await ref.set({items,note:r.note||"",by:meta.by,at:meta.at});returnDocs.add(ev)}});
+}
+function setRetNote(ev,txt){
+  const meta={by:UID||"",at:new Date().toISOString()};
+  if(!DB){const r=retFor(ev);r.note=txt;Object.assign(r,meta);retSaveLocal(ev,r);return}
+  const r=returns[ev]=returns[ev]||{items:{}};r.note=txt;Object.assign(r,meta);
+  queueWrite("r:"+ev,async()=>{const ref=retRef().doc(ev);
+    if(returnDocs.has(ev))await ref.update({note:txt,by:meta.by,at:meta.at});
+    else{const items={};Object.entries(r.items||{}).forEach(([a,b])=>{if(typeof b==="number")items[a]=b});await ref.set({items,note:txt,by:meta.by,at:meta.at});returnDocs.add(ev)}});
+}
+function subscribeRetur(){
+  if(!DB||!D)return;
+  if(unsubR&&dsSubR===dsKey())return;
+  if(unsubR){unsubR();unsubR=null}
+  returns={};returnDocs=new Set();dsSubR=dsKey();
+  unsubR=retRef().onSnapshot(snap=>{
+    const next={},docs=new Set();
+    snap.docs.forEach(d=>{if(d.exists){docs.add(d.id);const x=d.data()||{};next[d.id]={items:Object.assign({},x.items||{}),note:x.note||"",by:x.by||"",at:x.at||""}}});
+    returns=next;returnDocs=docs;rerender();resolveNames();
+  },err=>{unsubR=null;toast("Returul comun nu e disponibil acum.")});
+}
+function lastEdit(x){
+  if(!x||!x.at)return"";
+  const t=new Date(x.at);if(isNaN(t))return"";
+  const p=n=>String(n).padStart(2,"0");
+  const n=x.by?names[x.by]:"";
+  return `Ultima modificare${n?" de "+n:""}, ${p(t.getDate())}.${p(t.getMonth()+1)} la ${p(t.getHours())}:${p(t.getMinutes())}.`;
+}
+function retRows(e){
+  return CATS.filter(c=>QTY_CATS.includes(c.id)).map(c=>({name:c.name,rows:D.items.filter(it=>it.cat===c.id)
+    .map(it=>({it,x:e.values[it.key]})).filter(p=>p.x&&typeof p.x.v==="number"&&p.x.v>0)})).filter(g=>g.rows.length);
+}
+function retStats(e){const all=retRows(e).flatMap(g=>g.rows);return {all,filled:all.filter(p=>retVal(e.id,p.it.key)!=null).length}}
+function segHTML(){
+  return `<div class="ev-seg" role="tablist"><button role="tab" data-mode="incarcare" aria-selected="${evMode!=="retur"}">Încărcare</button><button role="tab" data-mode="retur" aria-selected="${evMode==="retur"}">Retur și consum</button></div>`;
+}
+function consHTML(sent,rv){
+  if(rv==null)return `<small>Consum</small><b>—</b>`;
+  return `<small>Consum</small><b>${num(sent-rv)}</b>`;
+}
+function viewRetur(e){
+  const G=retRows(e),{all,filled}=retStats(e),r=retFor(e.id),ro=DB&&canWrite===false;
+  let h=`<div class="ev-progress"><div class="ev-pbar"><i id="evRetBar" style="width:${all.length?filled/all.length*100:0}%"></i></div><span class="ev-ptext" id="evRetCount">Retur notat la ${filled} din ${all.length}</span></div>
+    <p class="ev-mode">Scrie cât s-a întors din fiecare articol. Consumul se calculează singur: trimis minus retur. Lasă gol ce nu ați numărat. ${esc(lastEdit(r))}</p>`;
+  if(ro)h+=`<p class="ev-mode">Poți vedea returul, dar nu îl poți modifica.</p>`;
+  G.forEach(g=>{
+    h+=`<h2 class="ev-h2">${g.name}</h2><div class="ev-list">`;
+    g.rows.forEach(({it,x})=>{
+      const rv=retVal(e.id,it.key),over=rv!=null&&rv>x.v;
+      h+=`<div class="ev-ret ${rv!=null?"has":""} ${over?"over":""}"><div class="lbl">${esc(it.label)}<small>Trimis ${num(x.v)}${x.note?" "+esc(x.note):""}</small>${over?`<small class="warn">Retur mai mare decât ce s-a trimis</small>`:""}</div>
+        <input class="ev-rin" type="text" inputmode="decimal" autocomplete="off" data-k="${it.key}" data-sent="${x.v}" value="${rv==null?"":esc(num(rv))}" placeholder="retur" aria-label="Retur ${esc(it.label)}" ${ro?"disabled":""}>
+        <div class="cons">${consHTML(x.v,rv)}</div></div>`;
+    });
+    h+=`</div>`;
+  });
+  if(!G.length)h+=`<div class="ev-ok">La acest eveniment nu sunt cantități de marfă de returnat.</div>`;
+  h+=`<h2 class="ev-h2">Observații</h2><textarea class="ev-rnote" id="evRetNote" rows="3" placeholder="Spargeri, lipsuri, sticle deschise, orice altceva" ${ro?"disabled":""}>${esc(r.note||"")}</textarea>`;
+  return h;
+}
+function pagerHTML(prev,next){
+  return `<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>Anterior</small><b>${esc(prev.name)}</b></button>`:"<span></span>"}${next?`<button data-r="${next.id}"><small>Următor</small><b>${esc(next.name)}</b></button>`:"<span></span>"}</div>`;
+}
+function viewConsum(){
+  let h=`<div class="ev-timeline">`;
+  D.events.forEach(e=>{const {all,filled}=retStats(e);
+    h+=`<button class="ev-trow" data-rr="${e.id}" style="--c:var(${e.c})"><div class="ev-time ${e.time?"":"none"}">${esc(e.time||"—")}</div><div class="ev-bar"></div>
+      <div><div class="ev-name">${esc(e.name)}</div><div class="ev-meta">${e.persons?esc(e.persons)+" persoane, ":""}retur notat la ${filled} din ${all.length}</div>
+      ${!filled&&all.length?`<span class="ev-flag">retur nenotat</span>`:""}${retFor(e.id).note?`<div class="ev-meta">Observații: ${esc(retFor(e.id).note)}</div>`:""}</div></button>`});
+  h+=`</div>`;
+  let any=false;
+  CATS.filter(c=>QTY_CATS.includes(c.id)).forEach(c=>{
+    let rows="";
+    D.items.filter(it=>it.cat===c.id).forEach(it=>{
+      const parts=D.events.map(e=>{const x=e.values[it.key];if(!x||typeof x.v!=="number"||!(x.v>0))return null;const rv=retVal(e.id,it.key);return rv==null?null:{e,sent:x.v,cons:x.v-rv}}).filter(Boolean);
+      if(!parts.length)return;any=true;
+      const tot=parts.reduce((s,p)=>s+p.cons,0),sent=parts.reduce((s,p)=>s+p.sent,0),pos=parts.filter(p=>p.cons>0),pt=pos.reduce((s,p)=>s+p.cons,0);
+      rows+=`<div class="ev-trow2"><div>${esc(it.label)}<div class="ev-bd">${sent?Math.round(tot/sent*100)+"% din ce s-a trimis":""}</div></div><div class="n">${num(tot)}</div>
+        ${pt>0?`<div class="ev-stack">${pos.map(p=>`<span style="--c:var(${p.e.c});width:${p.cons/pt*100}%" title="${esc(p.e.name)}: ${num(p.cons)}"></span>`).join("")}</div>`:""}
+        <div class="ev-bd">${parts.map(p=>`${esc(p.e.name)} ${num(p.cons)} din ${num(p.sent)}`).join(", ")}</div></div>`;
+    });
+    if(rows)h+=`<h2 class="ev-h2">${c.name}</h2><div class="ev-list">${rows}</div>`;
+  });
+  if(!any)h+=`<h2 class="ev-h2">Consum</h2><div class="ev-ok">Nu s-a notat încă niciun retur. Deschide un eveniment și alege „Retur și consum”.</div>`;
+  else h=`<p class="ev-mode" style="margin:0 0 12px">Consumul apare doar la articolele la care s-a notat returul.</p>`+h;
+  return h;
+}
+function updateRetRow(inp,v){
+  const row=inp.closest(".ev-ret"),sent=parseFloat(inp.dataset.sent);
+  row.querySelector(".cons").innerHTML=consHTML(sent,v);
+  const over=v!=null&&v>sent;row.classList.toggle("has",v!=null);row.classList.toggle("over",over);
+  let w=row.querySelector(".lbl small.warn");
+  if(over&&!w){w=document.createElement("small");w.className="warn";w.textContent="Retur mai mare decât ce s-a trimis";row.querySelector(".lbl").appendChild(w)}
+  else if(!over&&w)w.remove();
+}
+function parseRet(s){s=String(s).trim().replace(",",".");if(s==="")return null;const n=Number(s);return isFinite(n)&&n>=0?n:NaN}
+
+function heading(){
+  const h=document.querySelector("h1");if(!h)return;
+  h.innerHTML=store.get("tab","retete")==="evenimente"&&D?`Evenimente<span class="yr">${esc(D.title.big)}</span>`:`Rețetar<span class="yr">2026</span>`;
+}
+function loadData(){
+  try{D=parseAOA(EVD.aoa,EVD.fileName)}catch(e){D=null}
+  CHECKS=D?buildChecks(D):[];
+  if(D){
+    const pers=D.events.reduce((s,e)=>s+(typeof e.persons==="number"?e.persons:0),0);
+    $("#evSub").textContent=`${D.title.day?D.title.day+", ":""}${D.events.length} ${D.events.length===1?"eveniment":"evenimente"}${pers?`, ${pers} persoane în total`:""}`;
+    $("#evFile").textContent=D.fileName;
+    if(route!=="ziua"&&route!=="total"&&route!=="consum"&&!D.events.some(e=>e.id===route))route="ziua";
+    subscribe();
+  }else{$("#evSub").textContent="Niciun eveniment încărcat";$("#evFile").textContent=""}
+  heading();
+}
+function showErr(msg){$("#evAlert").textContent=msg||"";$("#evAlert").hidden=!msg}
+function go(r){route=r;store.set("evroute",r);render();const t=$("#evTabs");if(t)t.scrollIntoView({block:"start"})}
+
+function renderTabs(){
+  let h=`<button class="ev-tab" data-r="ziua" aria-current="${route==="ziua"}">Ziua</button>`;
+  D.events.forEach(e=>{h+=`<button class="ev-tab" data-r="${e.id}" style="--c:var(${e.c})" aria-current="${route===e.id}"><span class="dot"></span>${esc(e.name)}${e.time?` <small>${esc(e.time)}</small>`:""}</button>`});
+  h+=`<button class="ev-tab" data-r="total" aria-current="${route==="total"}">Total marfă</button>`;
+  h+=`<button class="ev-tab" data-r="consum" aria-current="${route==="consum"}">Consum</button>`;
+  $("#evTabs").innerHTML=h;
+  const cur=$("#evTabs [aria-current=\"true\"]");if(cur)$("#evTabs").scrollLeft=cur.offsetLeft-$("#evTabs").clientWidth/2+cur.clientWidth/2;
+}
+function viewZiua(){
+  const s=[...D.events].sort((a,b)=>{const x=a.time||"99",y=b.time||"99";return x<y?-1:x>y?1:0});
+  let h=`<div class="ev-timeline">`;
+  s.forEach(e=>{
+    const miss=[];if(!e.time)miss.push("fără oră");if(!e.persons)miss.push("fără nr. persoane");
+    const meta=[e.persons?e.persons+" persoane":"",e.team.join(", "),e.transport].filter(Boolean).map(esc).join(", ");
+    const dn=D.items.filter(it=>isChecked(e.id,it.key)).length;
+    h+=`<button class="ev-trow" data-r="${e.id}" style="--c:var(${e.c})"><div class="ev-time ${e.time?"":"none"}">${esc(e.time||"oră necunoscută")}</div><div class="ev-bar"></div>
+      <div><div class="ev-name">${esc(e.name)}</div><div class="ev-meta">${meta}</div>${miss.length?`<span class="ev-flag">${miss.join(", ")}</span>`:""}${dn?`<div class="ev-meta"><b>${dn} din ${D.items.length} bifate</b></div>`:""}${(()=>{const st=retStats(e);return st.filled?`<div class="ev-meta">Retur notat la ${st.filled} din ${st.all.length}</div>`:""})()}</div></button>`;
+  });
+  h+=`</div><h2 class="ev-h2">De verificat</h2>`;
+  h+=CHECKS.length?`<div class="ev-checks"><ul>${CHECKS.map(c=>`<li>${c}</li>`).join("")}</ul></div>`:`<div class="ev-ok">Nu am găsit nimic de verificat.</div>`;
+  h+=`<p class="ev-help">Pentru alt weekend apasă „Încarcă alt Excel”. Păstrează aceeași structură: evenimentele pe primul rând, începând cu coloana B, și articolele pe rânduri în coloana A. Dacă numești fișierul ca „3_octombrie_2026”, data apare automat sus.</p>`;
+  return h;
+}
+function groups(e){
+  return CATS.map(c=>({name:c.name,rows:D.items.filter(it=>it.cat===c.id).map(it=>{const x=e.values[it.key];
+    return {k:it.key,label:it.label,sub:x&&x.note||"",q:!x?"—":typeof x.v==="number"?num(x.v):x.v,txt:!!x&&typeof x.v!=="number",blank:!x,rec:recipeFor(it.label)}})})).filter(g=>g.rows.length);
+}
+function viewEvent(e){
+  const G=groups(e),all=G.flatMap(g=>g.rows),done=all.filter(r=>isChecked(e.id,r.k)).length;
+  const idx=D.events.indexOf(e),prev=D.events[idx-1],next=D.events[idx+1];
+  const masa=D.items.find(it=>norm(it.label)==="MASA"),noMasa=masa&&e.values[masa.key]&&norm(e.values[masa.key].v)==="NU";
+  const noteRecs=R.filter(r=>e.notes.some(n=>norm(n).includes(norm(r.name))));
+  const fact=(k,v,miss)=>`<div class="ev-fact"><div class="k">${k}</div><div class="v ${v?"":"missing"}">${v?esc(v):miss}</div></div>`;
+  let h=`<div style="--c:var(${e.c})"><section class="ev-hero"><h2>${esc(e.name)}</h2><div class="ev-facts">
+    ${fact("Începe la",e.time,"Ora lipsește")}${fact("Persoane",e.persons,"Lipsește")}${fact("Transport",e.transport,"Lipsește")}
+    <div class="ev-fact"><div class="k">Echipa</div>${e.team.length?`<div class="ev-team">${e.team.map(n=>`<span class="ev-chip">${esc(n)}</span>`).join("")}</div>`:`<div class="v missing">Lipsește</div>`}</div></div>
+    ${e.notes.length?`<div class="ev-note"><div class="k">Mențiuni speciale</div>${e.notes.map(n=>`<p>${esc(n)}</p>`).join("")}${noteRecs.map(r=>`<button class="ev-rec" data-rec="${esc(r.id)}">Rețetă ${esc(r.name)}</button> `).join("")}</div>`:""}
+    ${noMasa?`<div class="ev-note"><div class="k">Atenție</div><p>Fără masă</p></div>`:""}</section>`;
+  h+=segHTML();
+  if(evMode==="retur"){h+=viewRetur(e)+pagerHTML(prev,next)+"</div>";return h}
+  h+=`<div class="ev-progress"><div class="ev-pbar"><i style="width:${all.length?done/all.length*100:0}%"></i></div><span class="ev-ptext">${done} din ${all.length} bifate</span>${DB&&canWrite===false?"":`<button class="ev-link" id="evReset">Debifează tot</button>`}</div>
+    <p class="ev-mode">${DB?(canWrite===false?"Vezi bifele echipei, dar nu poți bifa.":"Bifele se văd la toată echipa, în timp real."):"Bifele se salvează doar pe acest dispozitiv."}</p>`;
+  G.forEach(g=>{
+    const gf=g.rows.filter(r=>!r.blank).length;
+    h+=`<h2 class="ev-h2">${g.name} <span class="cnt">${gf?gf+" completate din "+g.rows.length:"nimic completat"}</span></h2><div class="ev-list">`;
+    g.rows.forEach(r=>{const c=isChecked(e.id,r.k),w=c?whoText(whoInfo(e.id,r.k)):"";
+      h+=`<div class="ev-item ${c?"done":""} ${r.blank?"blank":""}"><label><input type="checkbox" data-k="${r.k}" ${c?"checked":""} ${DB&&canWrite===false?"disabled":""}><span class="lbl">${esc(r.label)}${r.sub?`<small>${esc(r.sub)}</small>`:""}${w?`<small class="who">${esc(w)}</small>`:""}</span></label>
+        ${r.rec?`<button class="ev-rec" data-rec="${esc(r.rec.id)}">Rețetă</button>`:""}<span class="qv ${r.txt?"txt":""}">${esc(r.q)}</span></div>`});
+    h+=`</div>`;
+  });
+  h+=`<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>Anterior</small><b>${esc(prev.name)}</b></button>`:"<span></span>"}${next?`<button data-r="${next.id}"><small>Următor</small><b>${esc(next.name)}</b></button>`:"<span></span>"}</div></div>`;
+  return h;
+}
+function viewTotal(){
+  let h=`<div class="ev-legend">${D.events.map(e=>`<span style="--c:var(${e.c})"><i></i>${esc(e.name)}</span>`).join("")}</div>`;
+  CATS.forEach(c=>{
+    const its=D.items.filter(it=>it.cat===c.id);if(!its.length)return;
+    h+=`<h2 class="ev-h2">${c.name}</h2><div class="ev-list">`;
+    its.forEach(it=>{
+      const parts=D.events.map(e=>({e,x:e.values[it.key]})).filter(p=>p.x),ns=parts.filter(p=>typeof p.x.v==="number");
+      const tot=ns.reduce((s,p)=>s+p.x.v,0),allNum=parts.length&&ns.length===parts.length&&tot>0;
+      h+=`<div class="ev-trow2 ${parts.length?"":"blank"}"><div>${esc(it.label)}</div><div class="n">${!parts.length?"—":allNum?num(tot):""}</div>
+        ${allNum?`<div class="ev-stack">${ns.map(p=>`<span style="--c:var(${p.e.c});width:${p.x.v/tot*100}%" title="${esc(p.e.name)}: ${num(p.x.v)}"></span>`).join("")}</div>`:""}
+        <div class="ev-bd">${parts.length?parts.map(p=>`${esc(p.e.name)}: ${esc(typeof p.x.v==="number"?num(p.x.v):p.x.v)}${p.x.note?" "+esc(p.x.note):""}`).join(", "):"Necompletat la toate evenimentele"}</div></div>`;
+    });
+    h+=`</div>`;
+  });
+  return h;
+}
+function render(){
+  const v=$("#evView");
+  if(!D){$("#evTabs").innerHTML="";v.innerHTML=`<div class="ev-ok">Încarcă Excelul cu evenimentele ca să apară aici.</div>`;return}
+  renderTabs();
+  const e=D.events.find(x=>x.id===route);
+  v.innerHTML=e?viewEvent(e):route==="total"?viewTotal():route==="consum"?viewConsum():viewZiua();
+}
+$("#evTabs").addEventListener("click",ev=>{const b=ev.target.closest("[data-r]");if(b)go(b.dataset.r)});
+$("#evView").addEventListener("click",ev=>{
+  const rec=ev.target.closest("[data-rec]");if(rec){openRecipe(rec.dataset.rec,rec);return}
+  const md=ev.target.closest("[data-mode]");if(md){evMode=md.dataset.mode;store.set("evmode",evMode);rerender();return}
+  const rr=ev.target.closest("[data-rr]");if(rr){evMode="retur";store.set("evmode",evMode);go(rr.dataset.rr);return}
+  const b=ev.target.closest("[data-r]");if(b){go(b.dataset.r);return}
+  if(ev.target.id==="evReset"){const b=ev.target,e=D.events.find(x=>x.id===route);if(!e)return;
+    if(DB&&!b.dataset.armed){b.dataset.armed="1";b.textContent="Apasă din nou: debifează pentru toată echipa";setTimeout(()=>{if(document.contains(b)){delete b.dataset.armed;b.textContent="Debifează tot"}},4000);return}
+    resetEvent(e.id,groups(e).flatMap(g=>g.rows).map(r=>r.k));rerender()}
+});
+$("#evView").addEventListener("input",ev=>{
+  const t=ev.target;if(!t.matches(".ev-rin"))return;
+  const v=parseRet(t.value);updateRetRow(t,Number.isNaN(v)?null:v);
+});
+$("#evView").addEventListener("focusout",ev=>{
+  if(!pendingRender)return;
+  const nx=ev.relatedTarget;if(nx&&nx.matches&&nx.matches("#evView .ev-rin, #evView .ev-rnote"))return;
+  setTimeout(()=>{if(pendingRender)rerender()},0);
+});
+$("#evView").addEventListener("change",ev=>{
+  const t=ev.target;
+  if(t.matches(".ev-rin")){
+    const v=parseRet(t.value);
+    if(Number.isNaN(v)){toast("Scrie un număr, de exemplu 2 sau 0,5.");t.value="";updateRetRow(t,null);setReturn(route,t.dataset.k,null);return}
+    t.value=v==null?"":num(v);updateRetRow(t,v);setReturn(route,t.dataset.k,v);
+    const e=D.events.find(x=>x.id===route);if(e){const {all,filled}=retStats(e);const c=$("#evRetCount"),bar=$("#evRetBar");
+      if(c)c.textContent=`Retur notat la ${filled} din ${all.length}`;if(bar)bar.style.width=(all.length?filled/all.length*100:0)+"%"}
+    return;
+  }
+  if(t.id==="evRetNote"){setRetNote(route,t.value.trim());return}
+  const cb=t;if(!cb.matches("input[type=checkbox][data-k]"))return;
+  setChecked(route,cb.dataset.k,cb.checked);rerender();
+});
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",heading));
+
+$("#evUpload").onclick=()=>$("#evInput").click();
+$("#evInput").onchange=async ev=>{
+  const f=ev.target.files[0];ev.target.value="";if(!f)return;
+  if(typeof XLSX==="undefined"){showErr("Cititorul de Excel nu s-a încărcat. Verifică internetul și reîncarcă pagina.");return}
+  let next;
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+    const aoa=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:null})
+      .map(r=>{r=(r||[]).map(v=>blank(v)?null:v);while(r.length&&r[r.length-1]===null)r.pop();return r});
+    while(aoa.length&&!aoa[aoa.length-1].length)aoa.pop();
+    parseAOA(aoa,f.name);
+    next={fileName:f.name,aoa};
+  }catch(err){showErr(`Nu am putut citi „${f.name}”. ${err.message||""}`);return}
+  showErr("");
+  const btn=$("#evUpload"),label=btn.textContent;btn.disabled=true;btn.textContent="Se încarcă…";
+  const applyLocal=msg=>{EVD=next;store.set("events",EVD);route="ziua";store.set("evroute",route);loadData();render();toast(msg)};
+  const a=await artReady;
+  const t=parseTitle(f.name).big;
+  if(!a||readOnly){applyLocal(`Evenimentele pentru ${t} sunt încărcate doar în acest browser.`);btn.disabled=false;btn.textContent=label;return}
+  store.set("evroute","ziua");sess.set("open","");sess.set("okmsg",`Evenimentele pentru ${t} sunt încărcate pentru toată echipa.`);
+  try{await a.publish(buildHTML(R,next));EVD=next;route="ziua";loadData();render()}
+  catch(e){
+    sess.set("open",null);sess.set("okmsg",null);
+    const code=e&&e.code;
+    if(code==="conflict")toast("Altcineva a salvat o versiune mai nouă. Pagina se reîncarcă; încarcă Excelul din nou după aceea.");
+    else if(["not_writer","not_granted","consent_required","capability_disabled","capability_removed","not_declared"].includes(code)){setReadOnly();applyLocal("Nu ai drept să schimbi evenimentele pentru echipă. Le vezi doar în acest browser.")}
+    else if(code==="rate_limited")toast("Prea multe salvări într-un timp scurt. Încearcă din nou peste un minut.");
+    else toast("Încărcarea pentru echipă nu a reușit. Încearcă din nou.");
+  }finally{if(document.contains(btn)){btn.disabled=false;btn.textContent=label}}
+};
+
+artReady.then(a=>{if(!a){const l=store.get("events",null);if(l&&l.aoa){EVD=l;loadData();render()}}});
+window.__evRefresh=()=>{if(D)render()};
+(async()=>{
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const db=await window.claude.use("db");if(!db)return;
+    UAPI=await window.claude.use("user");
+    if(UAPI){try{UID=await UAPI.id()}catch(e){}try{const c=await UAPI.can("data.write");if(c===false)canWrite=false}catch(e){}}
+    DB=db;subscribe();rerender();
+  }catch(e){}
+})();
+loadData();render();
+})();
+
+
+/* After a save reloads the page, reopen what was being edited */
+{const id=sess.get("open"),msg=sess.get("okmsg");sess.set("open",null);sess.set("okmsg",null);
+ if(msg){toast(msg);if(id)openRecipe(id)}}
+})();
+</script>
+<script id="boot">
+(async function(){
+/* ---------- Cocktail Philosophy · conectare la Firebase ---------- */
+const CFG={
+  apiKey:"AIzaSyBdnMe0062NUOsIBlRZ1NqKlPniDwWXebI",
+  authDomain:"cocktail-philosophy-dc34b.firebaseapp.com",
+  projectId:"cocktail-philosophy-dc34b",
+  storageBucket:"cocktail-philosophy-dc34b.firebasestorage.app",
+  messagingSenderId:"924422421135",
+  appId:"1:924422421135:web:127a3c78598b64afb84efa"
+};
+const ADMIN_EMAIL="paul.georgescu.tiberiu@gmail.com";
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const escH=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function screen(html){
+  let o=document.getElementById("fbScreen");
+  if(!o){o=document.createElement("div");o.id="fbScreen";document.body.appendChild(o)}
+  o.innerHTML=`<div class="fb-box">${html}</div>`;return o;
+}
+function closeScreen(){const o=document.getElementById("fbScreen");if(o)o.remove()}
+function runApp(){
+  const src=document.getElementById("app");
+  const s=document.createElement("script");s.textContent=src.textContent;
+  document.body.appendChild(s);
+}
+
+/* Codul echipei vine din link (#k=...) și se ține minte pe dispozitiv */
+const m=location.hash.match(/k=([A-Za-z0-9]{20,})/);
+let T=m?m[1]:ls.get("cp-team");
+if(m)ls.set("cp-team",T);
+if(!T){
+  screen(`<h2>Cocktail Philosophy</h2><p>Deschide aplicația din linkul primit de la Paul. Linkul conține codul echipei.</p>`);
+  return;
+}
+if(!window.firebase){
+  screen(`<h2>Fără conexiune</h2><p>Aplicația nu s-a putut conecta. Verifică internetul și reîncarcă pagina.</p><button class="fb-btn" onclick="location.reload()">Reîncarcă</button>`);
+  return;
+}
+
+firebase.initializeApp(CFG);
+const auth=firebase.auth(), fs=firebase.firestore();
+const base=`echipe/${T}`;
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:"timeout"}),ms))]);
+
+try{await auth.getRedirectResult()}catch(e){}
+await new Promise(res=>{const u=auth.onAuthStateChanged(()=>{u();res()})});
+if(!auth.currentUser){
+  try{await withTimeout(auth.signInAnonymously(),15000)}
+  catch(e){
+    screen(`<h2>Nu mă pot conecta</h2><p>Verifică internetul și reîncarcă pagina.</p><button class="fb-btn" onclick="location.reload()">Reîncarcă</button>`);
+    return;
+  }
+}
+const me=auth.currentUser, UID=me.uid;
+const isAdmin=!me.isAnonymous&&me.email===ADMIN_EMAIL;
+
+/* Numele cu care apare la bife și retur */
+let NAME=ls.get("cp-name");
+if(!NAME&&isAdmin&&me.displayName)NAME=me.displayName.split(" ")[0];
+if(!NAME){
+  NAME=await new Promise(res=>{
+    const o=screen(`<h2>Bine ai venit!</h2><p>Scrie-ți numele. Așa vor vedea colegii cine a bifat și cine a notat returul.</p>
+      <form id="fbNameF"><input id="fbName" maxlength="30" autocomplete="given-name" placeholder="Prenumele tău" required><button class="fb-btn" type="submit">Intră</button></form>`);
+    o.querySelector("#fbName").focus();
+    o.querySelector("#fbNameF").onsubmit=e=>{e.preventDefault();const v=o.querySelector("#fbName").value.trim();if(v)res(v)};
+  });
+  closeScreen();
+}
+ls.set("cp-name",NAME);
+fs.doc(`${base}/oameni/${UID}`).set({name:NAME}).catch(()=>{});
+
+/* Rețetele și evenimentele curente, din baza de date */
+try{
+  const [rs,es]=await withTimeout(Promise.all([fs.doc(`${base}/config/retete`).get(),fs.doc(`${base}/config/evenimente`).get()]),10000);
+  if(rs.exists&&rs.data().json)document.getElementById("recipes-data").textContent=rs.data().json;
+  if(es.exists&&es.data().json)document.getElementById("events-data").textContent=es.data().json;
+}catch(e){}
+
+/* Puntea către aplicație (aceeași interfață pe care o folosea în Claude) */
+const errCode=e=>{const c=e&&e.code;return {code:c==="permission-denied"?"not_granted":c==="resource-exhausted"?"quota_exceeded":c||"unknown"}};
+const pick=(html,id)=>{const r=new RegExp(`<script id="${id}" type="application/json">([\\s\\S]*?)<\\/script>`).exec(html);return r?r[1]:null};
+const artifact={
+  async publish(html){
+    if(!isAdmin)throw {code:"not_writer"};
+    const rj=pick(html,"recipes-data"),ej=pick(html,"events-data");
+    const now=new Date().toISOString(),jobs=[];
+    if(rj!=null&&rj!==document.getElementById("recipes-data").textContent)jobs.push(fs.doc(`${base}/config/retete`).set({json:rj,at:now}));
+    if(ej!=null&&ej!==document.getElementById("events-data").textContent)jobs.push(fs.doc(`${base}/config/evenimente`).set({json:ej,at:now}));
+    try{await Promise.all(jobs)}catch(e){throw errCode(e)}
+    if(rj!=null)document.getElementById("recipes-data").textContent=rj;
+    if(ej!=null)document.getElementById("events-data").textContent=ej;
+  }
+};
+const user={
+  async id(){return UID},
+  async can(){return true},
+  async canEdit(){return isAdmin},
+  async profiles(ids){
+    const out={};
+    await Promise.all(ids.map(async id=>{
+      try{const d=await fs.doc(`${base}/oameni/${id}`).get();out[id]=d.exists?{name:d.data().name||"",isMe:id===UID}:null}catch(e){out[id]=null}
+    }));
+    return out;
+  }
+};
+const db={
+  collection(p){
+    const c=fs.collection(`${base}/${p}`);
+    return {
+      doc(id){const d=c.doc(id);return{
+        set:x=>d.set(x).catch(e=>{throw errCode(e)}),
+        update:x=>d.set(x,{merge:true}).catch(e=>{throw errCode(e)})
+      }},
+      onSnapshot:(ok,err)=>c.onSnapshot(ok,e=>err&&err(errCode(e)))
+    };
+  }
+};
+window.claude={use:async n=>n==="artifact"?artifact:n==="user"?user:n==="db"?db:null};
+
+runApp();
+
+/* Rândul de jos: cine ești și intrarea de administrator */
+const foot=document.querySelector("footer");
+if(foot){
+  const w=document.createElement("div");w.className="fb-who";
+  w.innerHTML=`Ești <b>${escH(NAME)}</b>${isAdmin?" (administrator)":""} · <button type="button" id="fbRename">Schimbă numele</button> · `+
+    (isAdmin?`<button type="button" id="fbOut">Ieși din administrare</button>`:`<button type="button" id="fbIn">Intră ca administrator</button>`);
+  foot.appendChild(w);
+  w.querySelector("#fbRename").onclick=()=>{const v=prompt("Numele tău:",NAME);if(v&&v.trim()){ls.set("cp-name",v.trim());fs.doc(`${base}/oameni/${UID}`).set({name:v.trim()}).finally(()=>location.reload())}};
+  const bIn=w.querySelector("#fbIn"),bOut=w.querySelector("#fbOut");
+  if(bIn)bIn.onclick=async()=>{
+    const p=new firebase.auth.GoogleAuthProvider();
+    try{await auth.signInWithPopup(p);location.reload()}
+    catch(e){if(e&&(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment"))auth.signInWithRedirect(p);else if(e&&e.code!=="auth/popup-closed-by-user")alert("Intrarea nu a reușit: "+(e.code||e.message))}
+  };
+  if(bOut)bOut.onclick=async()=>{await auth.signOut();location.reload()};
+  if(!me.isAnonymous&&!isAdmin){const n=document.createElement("p");n.className="notice";n.textContent="Contul "+me.email+" nu este de administrator. Poți bifa și nota returul, dar nu poți schimba rețetele.";document.querySelector("main")?.prepend(n)}
+}
+})();
+</script>
+</body>
+</html>
