@@ -326,6 +326,16 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .st-in small{display:block;color:var(--muted);font-size:.8rem}
 .st-save{position:sticky;bottom:0;padding:14px 0;background:linear-gradient(transparent,var(--paper) 30%);display:flex;justify-content:flex-end}
 .st-save .btn{padding:13px 22px;font-size:1.05rem}
+.st-ai{background:var(--card);border:1.5px dashed var(--ink);border-radius:14px;padding:14px 16px;margin:0 0 16px}
+.st-ai .btn{margin-bottom:6px}
+.st-rev{margin:0 0 18px}
+.st-rl{display:grid;grid-template-columns:1fr minmax(120px,190px) 84px;gap:10px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
+.ev-list>.st-rl:first-child{border-top:0}
+.st-rl.off .st-rt{opacity:.55}
+.st-rt small{display:block;color:var(--muted);font-size:.8rem}
+.st-rl select{min-width:0;width:100%;padding:9px 8px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
+.st-revb{margin-top:12px}
+@media (max-width:560px){.st-rl{grid-template-columns:1fr 84px}.st-rl .st-rt{grid-column:1/-1}}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -1127,6 +1137,137 @@ const dsKey=f=>"d-"+String(f).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,150);
 let extraCat={}, docs={}, rets={}, retSubs={}, sub=null, mode="list", q="", open=null, confirmDel=null, busy=false, form=null;
 const admin=()=>!!(F&&F.isAdmin);
 
+/* ---------- Citire factură din poză (Gemini prin Firebase AI Logic) ---------- */
+const AI_VER="12.19.0", AI_MODELS=["gemini-3.5-flash","gemini-3.5-flash-lite"];
+let aiP=null, aliasMap=null;
+const hashK=s=>{let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))>>>0;return "a"+h.toString(36)};
+function aiReady(){return !!(F&&F.recaptcha)}
+function loadAI(){
+  if(!aiP)aiP=(async()=>{
+    const u=m=>`https://www.gstatic.com/firebasejs/${AI_VER}/firebase-${m}.js`;
+    const [appM,acM,aiM]=await Promise.all([import(u("app")),import(u("app-check")),import(u("ai"))]);
+    const app=appM.initializeApp(F.cfg,"cp-ai");
+    acM.initializeAppCheck(app,{provider:new acM.ReCaptchaEnterpriseProvider(F.recaptcha),isTokenAutoRefreshEnabled:true});
+    return {aiM,ai:aiM.getAI(app,{backend:new aiM.GoogleAIBackend()})};
+  })().catch(e=>{aiP=null;throw e});
+  return aiP;
+}
+async function loadAliases(){
+  if(aliasMap)return aliasMap;
+  aliasMap={};
+  try{const s=await F.fs.collection(`${F.base}/alias`).get();s.docs.forEach(d=>{const x=d.data();if(x&&x.text)aliasMap[x.text]=x})}catch(e){}
+  return aliasMap;
+}
+function fileToPart(f){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>rej(new Error("read"));
+    if(f.type==="application/pdf"){fr.onload=()=>res({inlineData:{data:String(fr.result).split(",")[1],mimeType:"application/pdf"}});fr.readAsDataURL(f);return}
+    fr.onload=()=>{const img=new Image();img.onerror=()=>rej(new Error("img"));img.onload=()=>{
+      const M=2200,s=Math.min(1,M/Math.max(img.width,img.height)),c=document.createElement("canvas");
+      c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      res({inlineData:{data:c.toDataURL("image/jpeg",0.85).split(",")[1],mimeType:"image/jpeg"}})};img.src=fr.result};
+    fr.readAsDataURL(f);
+  });
+}
+function invoicePrompt(cat,al){
+  const list=Object.entries(cat).map(([k,x])=>`${k} | ${x.label}`).join("\n");
+  const ex=Object.values(al).slice(-150).map(a=>`"${a.text}" -> ${a.k} (x${a.f})`).join("\n");
+  return `Ești asistentul unui catering de cocktailuri din România. Primești poza (sau PDF-ul) unei facturi de la un furnizor.
+Citește TOATE rândurile de produse și răspunde DOAR cu JSON, exact în forma:
+{"furnizor":"","nr":"","data":"AAAA-LL-ZZ","linii":[{"text":"","cantitate":0,"unitate":"","pret_unitar":null,"articol":null,"cantitate_stoc":null}]}
+
+Reguli:
+- "furnizor" = firma care emite factura (nu cumpărătorul Cocktail Philosophy). "nr" = numărul facturii, cu seria. "data" = data facturii.
+- "text" = denumirea produsului exact cum apare pe factură. "cantitate" = cantitatea de pe factură, ca număr. "unitate" = unitatea de pe factură (BUC, BAX, CUT, KG, L etc.).
+- "articol" = codul din LISTA DE STOC de mai jos care corespunde produsului, sau null dacă nu se potrivește niciunul. Mărcile se pun la articolul general (de ex. orice gin -> GIN, Coca-Cola 1L -> COLA 1 L), dacă nu există un cod mai precis.
+- Stocul se ține în bucăți: sticle, cutii, saci, lăzi, ca în listă. "cantitate_stoc" = câte bucăți din articolul de stoc reprezintă rândul. Dacă factura e la bax/cutie și denumirea arată câte bucăți are (de ex. "6X1L", "BAX 12"), înmulțește. Dacă nu ești sigur de conversie, pune cantitatea de pe factură.
+- Rândurile care nu sunt marfă (transport, garanție SGR, ambalaje, discount) au "articol": null.
+- Nu inventa rânduri. Dacă un câmp nu se citește, pune "" sau null.
+
+LISTA DE STOC (cod | denumire):
+${list}
+${ex?`\nPotriviri confirmate anterior de proprietar (text de pe factură -> cod, factor de conversie):\n${ex}`:""}`;
+}
+function parseJSON(t){
+  t=String(t||"").trim().replace(/^```(?:json)?\s*/i,"").replace(/```\s*$/,"");
+  const i=t.indexOf("{"),j=t.lastIndexOf("}");if(i<0||j<i)throw new Error("json");
+  return JSON.parse(t.slice(i,j+1));
+}
+function aiErr(e){
+  const m=String(e&&(e.message||e.code)||e);
+  if(/app.?check|appcheck|recaptcha|403|permission/i.test(m))return "Google a refuzat cererea: protecția App Check nu e încă activă. Verifică pașii de configurare din Firebase.";
+  if(/429|quota|exhausted|rate/i.test(m))return "S-a atins limita gratuită de citiri pentru moment. Încearcă peste câteva minute sau mâine.";
+  if(/fetch|network|import|load/i.test(m))return "Nu m-am putut conecta la serviciul de citire. Verifică internetul și încearcă din nou.";
+  if(/json/i.test(m))return "Nu am înțeles răspunsul. Încearcă o poză mai clară, dreaptă și bine luminată.";
+  return "Citirea facturii nu a reușit. Încearcă din nou sau completează manual.";
+}
+async function readInvoice(files){
+  form.aiBusy=true;form.aiErr="";render();
+  try{
+    const [parts,{aiM,ai},al]=await Promise.all([Promise.all([...files].map(fileToPart)),loadAI(),loadAliases()]);
+    const cat=catalog(),prompt=invoicePrompt(cat,al);
+    let res,last;
+    for(const m of AI_MODELS){
+      try{const model=aiM.getGenerativeModel(ai,{model:m,generationConfig:{responseMimeType:"application/json",temperature:0}});
+        res=await model.generateContent([prompt,...parts]);break}
+      catch(e){last=e;if(!/not.?found|404|unsupported|is not available|invalid.*model/i.test(String(e&&e.message)))throw e}
+    }
+    if(!res)throw last;
+    const j=parseJSON(res.response.text());
+    const lines=(Array.isArray(j.linii)?j.linii:[]).filter(l=>l&&String(l.text||"").trim()).map(l=>{
+      const text=String(l.text).trim(),q=Number(l.cantitate)||0,a=al[norm(text)];
+      let k=l.articol&&cat[l.articol]?l.articol:null,qs=l.cantitate_stoc!=null&&isFinite(+l.cantitate_stoc)?+l.cantitate_stoc:q;
+      if(a&&cat[a.k]){k=a.k;qs=Math.round(q*a.f*1000)/1000}
+      return {text,q,u:String(l.unitate||""),p:l.pret_unitar,k,qs,learned:!!a};
+    });
+    if(!lines.length)throw new Error("json");
+    if(j.furnizor&&!form.furnizor)form.furnizor=String(j.furnizor).trim();
+    if(j.nr&&!form.nr)form.nr=String(j.nr).trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(j.data||""))form.data=j.data;
+    form.ai={lines};
+  }catch(e){form.aiErr=aiErr(e);console.warn("AI",e)}
+  form.aiBusy=false;render();
+  const r=V.querySelector(".st-rev,.st-ai");if(r)r.scrollIntoView({block:"start"});
+}
+function aiBlock(){
+  if(mode!=="factura")return "";
+  if(!aiReady())return `<div class="st-ai"><p class="ev-file">Citirea facturii din poză nu e încă pornită.</p></div>`;
+  if(form.aiBusy)return `<div class="st-ai"><p class="ev-sub">Se citește factura…</p><p class="ev-file">Durează de obicei 10–30 de secunde.</p></div>`;
+  if(form.ai){
+    const cat=catalog(),opts=groups(()=>true);
+    let h=`<div class="st-rev"><h2 class="ev-h2">Ce am citit de pe factură<span class="cnt">${form.ai.lines.length} rânduri</span></h2>
+      <p class="ev-file">Verifică fiecare rând: articolul din stoc și câte bucăți intră. Aplicația ține minte alegerile tale pentru facturile următoare.</p><div class="ev-list">`;
+    form.ai.lines.forEach((l,i)=>{
+      h+=`<div class="st-rl${l.k?"":" off"}"><div class="st-rt"><b>${esc(l.text)}</b><small>${num(l.q)} ${esc(l.u)}${l.p!=null&&l.p!==""?` · preț ${esc(l.p)} lei`:""}${l.learned?" · potrivire ținută minte":""}</small></div>
+        <select data-ai="${i}" aria-label="Articol din stoc"><option value="">Nu intră în stoc</option>${opts.map(g=>`<optgroup label="${esc(g.c.name)}">${g.rows.map(([k,x])=>`<option value="${esc(k)}"${l.k===k?" selected":""}>${esc(x.label)}</option>`).join("")}</optgroup>`).join("")}</select>
+        <input class="ev-rin" inputmode="decimal" data-aiq="${i}" value="${l.qs!=null?esc(num(l.qs)):""}" aria-label="Bucăți în stoc"></div>`;
+    });
+    h+=`</div><div class="st-acts st-revb"><button class="btn primary" data-a="aiapply">Pune cantitățile în factură</button><button class="btn" data-a="aidrop">Renunță la citire</button></div></div>`;
+    return h;
+  }
+  return `<div class="st-ai"><button class="btn primary" data-a="foto">Citește factura din poză</button>
+    <input type="file" id="stFoto" accept="image/*,application/pdf" multiple hidden>
+    <p class="ev-file">Fă o poză dreaptă, cu toată factura în cadru. Dacă are mai multe pagini, alege toate pozele odată.</p>
+    ${form.aiErr?`<p class="ev-alert">${esc(form.aiErr)}</p>`:""}</div>`;
+}
+function grabAI(){
+  if(!form||!form.ai)return;
+  V.querySelectorAll("select[data-ai]").forEach(s=>{form.ai.lines[+s.dataset.ai].k=s.value||null});
+  V.querySelectorAll("input[data-aiq]").forEach(i=>{const v=pnum(i.value);form.ai.lines[+i.dataset.aiq].qs=v==null||isNaN(v)?null:v});
+}
+async function applyAI(){
+  grabAI();let n=0;const learn=[];
+  form.ai.lines.forEach(l=>{
+    if(!l.k||!(l.qs>0))return;
+    form.items[l.k]=num((pnum(form.items[l.k])||0)+l.qs);n++;
+    if(l.q>0)learn.push({text:norm(l.text),k:l.k,f:Math.round(l.qs/l.q*1000)/1000});
+  });
+  form.ai=null;render();
+  toast(n?`Am pus ${n} ${n===1?"rând":"rânduri"} în factură. Verifică și apasă Salvează factura.`:"Niciun rând nu a fost pus în stoc.");
+  for(const a of learn){aliasMap&&(aliasMap[a.text]=a);F.fs.doc(`${F.base}/alias/${hashK(a.text)}`).set({...a,at:new Date().toISOString()}).catch(()=>{})}
+}
+
 /* Articolele cunoscute: din lista fixă, din Excelul curent și din mișcările salvate */
 function catalog(){
   const out={};
@@ -1231,6 +1372,7 @@ function viewForm(){
   const cat=catalog(),t=totals(),inv=mode==="inventar";
   let h=`<div class="st-top"><div><p class="ev-sub">${inv?"Inventar":"Factură nouă"}</p><p class="ev-file">${inv?"Scrie doar ce ai numărat. Articolele lăsate goale rămân neschimbate.":"Scrie cantitățile în aceleași unități ca în Excel (sticle, baxuri, saci)."}</p></div>
     <div class="st-acts"><button class="btn" data-a="cancel">Renunță</button></div></div>`;
+  h+=aiBlock();
   if(!inv)h+=`<div class="st-meta"><label>Furnizor<input id="stF" list="stFL" value="${esc(form.furnizor||"")}" autocomplete="off"></label>
     <label>Nr. factură<input id="stN" value="${esc(form.nr||"")}"></label><label>Data<input id="stD" type="date" value="${esc(form.data||today())}"></label>
     <datalist id="stFL">${[...new Set(Object.values(docs).map(d=>d.furnizor).filter(Boolean))].map(f=>`<option value="${esc(f)}">`).join("")}</datalist></div>`;
@@ -1256,6 +1398,7 @@ function render(){
 }
 function grab(){
   if(mode==="list")return;
+  grabAI();
   V.querySelectorAll("input[data-k]").forEach(i=>{if(i.value.trim()!=="")form.items[i.dataset.k]=i.value;else delete form.items[i.dataset.k]});
   const v=id=>{const e=V.querySelector(id);return e?e.value.trim():""};
   if(mode==="factura"){form.furnizor=v("#stF");form.nr=v("#stN");form.data=v("#stD")}else form.note=v("#stNote");
@@ -1271,6 +1414,9 @@ V.addEventListener("click",async e=>{
   const b=e.target.closest("[data-a]");if(!b||busy)return;
   const act=b.dataset.a;
   if(act==="factura"||act==="inventar"){mode=act;form={items:{},extra:{}};render();window.scrollTo(0,V.offsetTop-10);return}
+  if(act==="foto"){const i=$("#stFoto");if(i){i.onchange=()=>{const fs=i.files;if(fs&&fs.length){grab();readInvoice(fs)}};i.click()}return}
+  if(act==="aiapply"){grab();await applyAI();return}
+  if(act==="aidrop"){grab();form.ai=null;render();return}
   if(act==="cancel"){mode="list";form=null;extraCat={};render();return}
   if(act==="scade"){busy=true;b.disabled=true;await window.__stocIesire(CP.evd());busy=false;return}
   if(act==="addnew"){
@@ -1325,6 +1471,8 @@ const CFG={
   messagingSenderId:"924422421135",
   appId:"1:924422421135:web:127a3c78598b64afb84efa"
 };
+/* Cheia publică reCAPTCHA v3 (site key), pentru citirea facturilor din poză */
+const RECAPTCHA_SITE_KEY="6LforeItAAAAADua-qYPn8qJ0c7DlI_lapQPpwmo";
 const ADMIN_EMAIL="paul.georgescu.tiberiu@gmail.com";
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 const escH=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -1434,7 +1582,7 @@ const db={
 };
 window.claude={use:async n=>n==="artifact"?artifact:n==="user"?user:n==="db"?db:null};
 
-window.CPFS={fs,base,isAdmin,NAME,UID};
+window.CPFS={fs,base,isAdmin,NAME,UID,cfg:CFG,recaptcha:RECAPTCHA_SITE_KEY};
 runApp();
 
 /* Rândul de jos: cine ești și intrarea de administrator */
