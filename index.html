@@ -336,6 +336,8 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .st-rl select{min-width:0;width:100%;padding:9px 8px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
 .st-revb{margin-top:12px}
 @media (max-width:560px){.st-rl{grid-template-columns:1fr 84px}.st-rl .st-rt{grid-column:1/-1}}
+.ev-day{margin-top:22px}
+.ev-day:first-child{margin-top:4px}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -708,26 +710,44 @@ function fmtTime(v){
 }
 function parseTitle(fileName){
   const base=String(fileName||"").replace(/\.[^.]+$/,"").replace(/[_\-]+/g," ").trim();
-  const m=norm(base).match(/(\d{1,2}) ([A-Z]+) (\d{4})/);
-  if(m){const mi=MONTHS.findIndex(x=>norm(x)===m[2]);
-    if(mi>=0){const d=new Date(+m[3],mi,+m[1]);return {big:`${+m[1]} ${MONTHS[mi]}`,day:DAYS[d.getDay()]}}}
+  const m=norm(base).match(/(\d{1,2}) ([0A-Z]+) (\d{4})/);
+  if(m){const mn=m[2].replace(/^0/,"O"),mi=MONTHS.findIndex(x=>norm(x)===mn);
+    if(mi>=0){const d=new Date(+m[3],mi,+m[1]);return {big:`${+m[1]} ${MONTHS[mi]}`,day:DAYS[d.getDay()],date:d}}}
   return {big:base||"Evenimente",day:""};
 }
+function parseDate(v,ref){
+  if(blank(v))return null;
+  const Y=ref?ref.getFullYear():new Date().getFullYear();
+  if(typeof v==="number"){if(v>20000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())}return null}
+  if(v instanceof Date)return new Date(v.getFullYear(),v.getMonth(),v.getDate());
+  const s=norm(v);
+  let m=s.match(/(\d{1,2})\s*[.\/\-]\s*(\d{1,2})(?:\s*[.\/\-]\s*(\d{2,4}))?/);
+  if(m){let y=m[3]?+m[3]:Y;if(y<100)y+=2000;const d=new Date(y,+m[2]-1,+m[1]);return isNaN(d)?null:d}
+  m=s.match(/(\d{1,2})\s*([0A-Z]{3,})(?:\s*(\d{4}))?/);
+  if(m){const t=m[2].replace(/^0/,"O"),mi=MONTHS.findIndex(x=>norm(x).startsWith(t.slice(0,3)));if(mi>=0)return new Date(m[3]?+m[3]:Y,mi,+m[1])}
+  const wd=DAYS.findIndex(x=>s.startsWith(norm(x).slice(0,3)));
+  if(wd>=0&&ref){for(let k=-3;k<=3;k++){const d=new Date(ref.getFullYear(),ref.getMonth(),ref.getDate()+k);if(d.getDay()===wd)return d}}
+  return null;
+}
+const dKey=d=>d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`:"";
+const dLong=d=>d?`${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`:"";
+const dShort=d=>d?`${DAYS[d.getDay()].slice(0,3)} ${d.getDate()}.${String(d.getMonth()+1).padStart(2,"0")}`:"";
 function parseAOA(aoa,fileName){
   const header=aoa[0]||[];let totalCol=-1;const events=[];
   for(let c=1;c<header.length;c++){
     if(blank(header[c]))continue;
     if(norm(header[c])==="TOTAL"){totalCol=c;continue}
-    events.push({col:c,id:"e"+c,name:titleName(header[c]),persons:null,time:null,team:[],transport:"",notesRaw:[],values:{},textQty:[]});
+    events.push({col:c,id:"e"+c,name:titleName(header[c]),date:null,dateRaw:null,persons:null,time:null,team:[],transport:"",notesRaw:[],values:{},textQty:[]});
   }
   if(!events.length)throw new Error("Nu am găsit evenimente. Numele evenimentelor trebuie să fie pe primul rând, începând cu coloana B.");
   events.forEach((e,i)=>e.c=`--c${i%8}`);
-  const items=[];let inNotes=false;
+  const items=[];let inNotes=false,hasDate=false;const ttl=parseTitle(fileName);
   for(let r=1;r<aoa.length;r++){
     const row=aoa[r]||[],label=row[0],L=norm(label);
     if(blank(label)){if(inNotes)events.forEach(e=>{if(!blank(row[e.col]))e.notesRaw.push(String(row[e.col]).trim())});continue}
     inNotes=false;
     if(L.startsWith("NR PERSOANE")||L==="PERSOANE"){events.forEach(e=>{const v=row[e.col];if(!blank(v))e.persons=typeof v==="number"?v:(parseFloat(String(v).replace(",","."))||String(v))});continue}
+    if(L==="DATA"||L.startsWith("DATA ")||L==="ZIUA"||L==="DATA EVENIMENT"){hasDate=true;events.forEach(e=>{const v=row[e.col];if(!blank(v)){e.dateRaw=v;e.date=parseDate(v,ttl.date)}});continue}
     if(L==="ORA"||L.startsWith("ORA ")){events.forEach(e=>e.time=fmtTime(row[e.col]));continue}
     if(L.startsWith("ECHIPA")){events.forEach(e=>{if(!blank(row[e.col]))e.team=String(row[e.col]).split(/[\s,;\/+]+/).filter(Boolean).map(capL)});continue}
     if(L.startsWith("TRANSPORT")){events.forEach(e=>{if(!blank(row[e.col]))e.transport=capL(row[e.col])});continue}
@@ -746,18 +766,22 @@ function parseAOA(aoa,fileName){
     });
   }
   events.forEach(e=>{e.notes=e.notesRaw.length?e.notesRaw.join(" ").replace(/\s+/g," ").split(/\s(?=-)/).map(s=>{s=s.replace(/^-\s*/,"−");return s.charAt(0).toUpperCase()+s.slice(1)}):[]});
-  return {fileName,events,items,totalCol,title:parseTitle(fileName)};
+  if(!hasDate&&ttl.date)events.forEach(e=>e.date=ttl.date);
+  const days=[...new Set(events.map(e=>dKey(e.date)).filter(Boolean))].sort();
+  return {fileName,events,items,totalCol,title:ttl,hasDate,days};
 }
 function buildChecks(D){
   const out=[],who={};
-  D.events.forEach(e=>e.team.forEach(n=>{const k=norm(n);(who[k]=who[k]||{n,ev:[]}).ev.push(e)}));
-  Object.values(who).filter(x=>x.ev.length>1).forEach(x=>out.push(`<b>${esc(x.n)}</b> e trecut în echipă la ${x.ev.map(e=>esc(e.name)+(e.time?` (${esc(e.time)})`:"")).join(" și la ")}.`));
+  D.events.forEach(e=>e.team.forEach(n=>{const k=norm(n)+"|"+dKey(e.date);(who[k]=who[k]||{n,ev:[]}).ev.push(e)}));
+  Object.values(who).filter(x=>x.ev.length>1).forEach(x=>out.push(`<b>${esc(x.n)}</b> e trecut în echipă la ${x.ev.map(e=>esc(e.name)+(e.time?` (${esc(e.time)})`:"")).join(" și la ")}${x.ev[0].date&&D.days.length>1?`, ambele ${esc(dLong(x.ev[0].date).toLowerCase())}`:""}.`));
+  if(D.hasDate){const nd=D.events.filter(e=>!e.date&&blank(e.dateRaw));if(nd.length)out.push(`Fără dată: ${nd.map(e=>`<b>${esc(e.name)}</b>`).join(", ")}.`);
+    D.events.filter(e=>!e.date&&!blank(e.dateRaw)).forEach(e=>out.push(`La <b>${esc(e.name)}</b> nu am înțeles data „${esc(e.dateRaw)}”. Scrie-o ca 10.10.2026.`))}
   const names=a=>a.map(e=>`<b>${esc(e.name)}</b>`).join(", ");
   [["time","Fără oră de începere"],["persons","Fără număr de persoane"]].forEach(([k,t])=>{const a=D.events.filter(e=>!e[k]);if(a.length)out.push(`${t}: ${names(a)}.`)});
   const nt=D.events.filter(e=>!e.team.length);if(nt.length)out.push(`Fără echipă: ${names(nt)}.`);
   const ntr=D.events.filter(e=>!e.transport);if(ntr.length)out.push(`Fără transport: ${names(ntr)}.`);
   for(let i=0;i<D.events.length;i++)for(let j=i+1;j<D.events.length;j++){const a=D.events[i],b=D.events[j];
-    if(a.persons&&a.persons===b.persons&&a.time===b.time)out.push(`<b>${esc(a.name)}</b> și <b>${esc(b.name)}</b> au aceleași persoane și aceeași oră (${esc(a.persons)}${a.time?", "+esc(a.time):""}). Verifică dacă sunt evenimente diferite.`)}
+    if(a.persons&&a.persons===b.persons&&a.time===b.time&&dKey(a.date)===dKey(b.date))out.push(`<b>${esc(a.name)}</b> și <b>${esc(b.name)}</b> au aceleași persoane și aceeași oră (${esc(a.persons)}${a.time?", "+esc(a.time):""}). Verifică dacă sunt evenimente diferite.`)}
   D.events.forEach(e=>e.textQty.forEach(t=>out.push(`La <b>${esc(e.name)}</b>, ${esc(t.it.label)} e scris „${esc(t.raw)}”. Am socotit ${num(e.values[t.it.key].v)}.`)));
   if(D.totalCol>=0)D.items.forEach(it=>{
     const ns=D.events.map(e=>e.values[it.key]).filter(x=>x&&typeof x.v==="number");if(!ns.length)return;
@@ -953,7 +977,7 @@ function loadData(){
   CHECKS=D?buildChecks(D):[];
   if(D){
     const pers=D.events.reduce((s,e)=>s+(typeof e.persons==="number"?e.persons:0),0);
-    $("#evSub").textContent=`${D.title.day?D.title.day+", ":""}${D.events.length} ${D.events.length===1?"eveniment":"evenimente"}${pers?`, ${pers} persoane în total`:""}`;
+    $("#evSub").textContent=`${D.days.length>1?(()=>{const ds=D.events.map(e=>e.date).filter(Boolean).sort((a,b)=>a-b),a=ds[0],b=ds[ds.length-1];return `${DAYS[a.getDay()]} ${a.getDate()}${a.getMonth()!==b.getMonth()?" "+MONTHS[a.getMonth()]:""} – ${DAYS[b.getDay()]} ${b.getDate()} ${MONTHS[b.getMonth()]}, `})():D.days.length===1&&D.hasDate?dLong(D.events.find(e=>e.date).date)+", ":D.title.day?D.title.day+", ":""}${D.events.length} ${D.events.length===1?"eveniment":"evenimente"}${pers?`, ${pers} persoane în total`:""}`;
     $("#evFile").textContent=D.fileName;
     if(route!=="ziua"&&route!=="total"&&route!=="consum"&&!D.events.some(e=>e.id===route))route="ziua";
     subscribe();
@@ -965,16 +989,18 @@ function go(r){route=r;store.set("evroute",r);render();const t=$("#evTabs");if(t
 
 function renderTabs(){
   let h=`<button class="ev-tab" data-r="ziua" aria-current="${route==="ziua"}">Ziua</button>`;
-  D.events.forEach(e=>{h+=`<button class="ev-tab" data-r="${e.id}" style="--c:var(${e.c})" aria-current="${route===e.id}"><span class="dot"></span>${esc(e.name)}${e.time?` <small>${esc(e.time)}</small>`:""}</button>`});
+  D.events.forEach(e=>{h+=`<button class="ev-tab" data-r="${e.id}" style="--c:var(${e.c})" aria-current="${route===e.id}"><span class="dot"></span>${esc(e.name)}${(D.days.length>1&&e.date)||e.time?` <small>${D.days.length>1&&e.date?esc(dShort(e.date))+(e.time?" · ":""):""}${e.time?esc(e.time):""}</small>`:""}</button>`});
   h+=`<button class="ev-tab" data-r="total" aria-current="${route==="total"}">Total marfă</button>`;
   h+=`<button class="ev-tab" data-r="consum" aria-current="${route==="consum"}">Consum</button>`;
   $("#evTabs").innerHTML=h;
   const cur=$("#evTabs [aria-current=\"true\"]");if(cur)$("#evTabs").scrollLeft=cur.offsetLeft-$("#evTabs").clientWidth/2+cur.clientWidth/2;
 }
 function viewZiua(){
-  const s=[...D.events].sort((a,b)=>{const x=a.time||"99",y=b.time||"99";return x<y?-1:x>y?1:0});
-  let h=`<div class="ev-timeline">`;
+  const s=[...D.events].sort((a,b)=>{const x=(dKey(a.date)||"9999")+(a.time||"99"),y=(dKey(b.date)||"9999")+(b.time||"99");return x<y?-1:x>y?1:0});
+  const multi=D.days.length>1;let h="",lastDay=null;
+  if(!multi)h+=`<div class="ev-timeline">`;
   s.forEach(e=>{
+    if(multi&&dKey(e.date)!==lastDay){if(lastDay!==null)h+=`</div>`;lastDay=dKey(e.date);h+=`<h2 class="ev-h2 ev-day">${esc(e.date?dLong(e.date):"Fără dată")}</h2><div class="ev-timeline">`}
     const miss=[];if(!e.time)miss.push("fără oră");if(!e.persons)miss.push("fără nr. persoane");
     const meta=[e.persons?e.persons+" persoane":"",e.team.join(", "),e.transport].filter(Boolean).map(esc).join(", ");
     const dn=D.items.filter(it=>isChecked(e.id,it.key)).length;
@@ -997,7 +1023,7 @@ function viewEvent(e){
   const noteRecs=R.filter(r=>e.notes.some(n=>norm(n).includes(norm(r.name))));
   const fact=(k,v,miss)=>`<div class="ev-fact"><div class="k">${k}</div><div class="v ${v?"":"missing"}">${v?esc(v):miss}</div></div>`;
   let h=`<div style="--c:var(${e.c})"><section class="ev-hero"><h2>${esc(e.name)}</h2><div class="ev-facts">
-    ${fact("Începe la",e.time,"Ora lipsește")}${fact("Persoane",e.persons,"Lipsește")}${fact("Transport",e.transport,"Lipsește")}
+    ${D.hasDate||D.days.length?fact("Data",e.date?dLong(e.date):"",e.dateRaw?"Data neclară: "+esc(e.dateRaw):"Data lipsește"):""}${fact("Începe la",e.time,"Ora lipsește")}${fact("Persoane",e.persons,"Lipsește")}${fact("Transport",e.transport,"Lipsește")}
     <div class="ev-fact"><div class="k">Echipa</div>${e.team.length?`<div class="ev-team">${e.team.map(n=>`<span class="ev-chip">${esc(n)}</span>`).join("")}</div>`:`<div class="v missing">Lipsește</div>`}</div></div>
     ${e.notes.length?`<div class="ev-note"><div class="k">Mențiuni speciale</div>${e.notes.map(n=>`<p>${esc(n)}</p>`).join("")}${noteRecs.map(r=>`<button class="ev-rec" data-rec="${esc(r.id)}">Rețetă ${esc(r.name)}</button> `).join("")}</div>`:""}
     ${noMasa?`<div class="ev-note"><div class="k">Atenție</div><p>Fără masă</p></div>`:""}</section>`;
