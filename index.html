@@ -1080,20 +1080,22 @@ const CX_SECT=[
   {id:"consum",name:"CONSUMABILE",color:"3C78D8"}];
 const CX_CAT2SECT={alcool:"alcool",soft:"suc",premix:"piure",garnish:"fructe",altele:"consum",echip:"consum",scule:"consum"};
 const cxR=(s,tip,brand,unit,pret,k,f)=>({s,tip,brand,unit,pret,k:k||"",f:f||1});
+/* Siropurile păstrate (din oct. 2026): toate la 700 ml */
+const CX_SYRUPS=()=>[cxR("piure","Whiskey sour","","sticla 700 ml",39.00,"WHISKEY SOUR"),cxR("piure","Platon","","sticla 700 ml",28.00,"PLATON"),
+  cxR("piure","Hugo","","sticla 700 ml",28.00,"HUGO"),cxR("piure","Erasmus","","sticla 700 ml",53.50,"ERASMUS"),
+  cxR("piure","Passiflora","Pornstar","sticla 700 ml",53.50,"PORNSTAR"),cxR("piure","Harmony","","sticla 700 ml",53.50,"HARMONY")];
 const CX_DEFAULT={furnizor:"BETA PLUS",discPct:8,discLabel:"BETA PLUS SRL",rows:[
   cxR("alcool","Vodka","ABSOLUT","sticla 700 ml",85.99,"VODKA 1L"),cxR("alcool","Rom","HAVANA","sticla 700 ml",92.40,"ROM 1L"),
   cxR("alcool","WHISKEY","JAMESON","sticla 700 ml",111.60,"JAMESON"),cxR("alcool","Bitter","APEROL","sticla 700 ml",82.40,"APEROL"),
   cxR("alcool","Gin","BEEFEATER","sticla 700 ml",94.00,"GIN"),cxR("alcool","Gin","TANQUERAY","sticla 700 ml",89.00,"GIN"),
   cxR("alcool","Amaretto","Disaronno","sticla 700 ml",105.00,"AMARETTO"),cxR("alcool","Prosecco","ZAZ","sticla 700 ml",33.00,"PROSECCO"),
   cxR("alcool","PALOMA","prebatch","sticla 700 ml",84.00,"PALOMA"),cxR("alcool","NEGRONI","prebatch","sticla 500 ml",67.00,"NEGRONI"),
-  cxR("alcool","BITTER","RAMAZOTTI","sticla 700 ml",80.00,""),
+  cxR("alcool","BITTER","RAMAZOTTI","sticla 700 ml",80.00,""),cxR("alcool","Whiskey","JACK DANIELS","",145.00,"JACK DANIELS"),
   cxR("suc","Aloe Vera","KING / BABU","sticlă 1500 ml",16.00,"ALOE 1,5L"),cxR("suc","PFANNER","CRANBERRY","cutie 1000 ml",12.79,"CRANBERRY"),
   cxR("suc","PFANNER","ORANGE","cutie 1000 ml",14.17,"ORANGE"),cxR("suc","PFANNER","MAR VERDE","cutie 1000 ml",10.71,"MAR VERDE"),
   cxR("suc","Cola","COCA COLA","sticla 1000 ml",7.50,"COLA 1 L"),cxR("suc","Apa tonica","kinley","sticla 1500 ml",8.40,"KINLEY 1,5"),
-  cxR("suc","Apa MINER","PERLA HARGHITEI","sticla 1000 ml",2.97,"APA MINERALA"),
-  cxR("piure","Lychee","","sticla 700 ml",53.50,""),cxR("piure","Scortisoara","","sticla 700 ml",29.00,""),cxR("piure","Soc","","sticla 700 ml",29.00,""),
-  cxR("piure","Pasiunii SI VANILIE","","sticla 750 ml",53.50,""),cxR("piure","Whiskey sour","","sticla 750 ml",39.00,"WHISKEY SOUR"),
-  cxR("piure","Menta","","sticla 700 ml",29.00,""),cxR("piure","GHIMBIR SI PERE","","sticla 700 ml",49.00,""),cxR("piure","cocos","","",49.00,""),
+  cxR("suc","Apa MINER","PERLA HARGHITEI","sticla 1000 ml",2.97,"APA MINERALA"),cxR("suc","San Pellegrino","","",8.50,"SAN PELEGRIN"),
+  ...CX_SYRUPS(),
   cxR("fructe","Lime","","kg",19.00,"LADA LIME"),cxR("fructe","Portocale","","kg",7.00,"PORTO BUC"),cxR("fructe","Flori decor","","buc",13.50,"FLORI COMES"),
   cxR("fructe","FRUCTE DECOR","","buc",14.50,""),cxR("fructe","Fructe deshidratate","","buc",39.00,"DESHIDRATATE"),cxR("fructe","Menta","","kg",75.00,"MENTA"),
   cxR("fructe","Bitter ANGOSTURA","","sticla 330 ml",78.60,""),cxR("fructe","FRESH LAMAIE","","sticlă 1000 ml",29.00,"FRESH LAMAIE"),
@@ -1103,7 +1105,7 @@ const CX_DEFAULT={furnizor:"BETA PLUS",discPct:8,discLabel:"BETA PLUS SRL",rows:
 const CX_LITRE_CATS=["alcool"],CX_NOCONV=["PROSECCO"];
 function cxAutoF(r){const m=String(r.unit||"").match(/(\d+(?:[.,]\d+)?)\s*ml/i),kn=KNOWN[r.k],cat=kn?kn[1]:null;
   if(!m||!cat||!CX_LITRE_CATS.includes(cat)||CX_NOCONV.includes(r.k))return null;const ml=parseFloat(m[1].replace(",","."));return ml>0?Math.round(1000/ml*10000)/10000:null}
-CX_DEFAULT.rows.forEach(r=>{const f=cxAutoF(r);if(f)r.f=f});CX_DEFAULT.v=3;
+CX_DEFAULT.rows.forEach(r=>{const f=cxAutoF(r);if(f)r.f=f});CX_DEFAULT.v=4;
 let PRICES=null,pricesP=null,pDraft=null,pMsg="";
 const cxAdmin=()=>!!(window.CPFS&&window.CPFS.isAdmin);
 const cxKey=s=>norm(s).replace(/[.\/\[\]*~`#$]/g," ").replace(/\s+/g," ").trim();
@@ -1112,7 +1114,13 @@ function loadPrices(){
   if(!pricesP)pricesP=(async()=>{
     try{const F=window.CPFS;const d=await F.fs.doc(`${F.base}/privat/preturi`).get();PRICES=d.exists&&d.data()&&Array.isArray(d.data().rows)?d.data():JSON.parse(JSON.stringify(CX_DEFAULT));PRICES._saved=d.exists;
       if(PRICES._saved&&!(PRICES.v>=3)){const old=r=>{const m=String(r.unit||"").match(/(\d+(?:[.,]\d+)?)\s*ml/i);return m?Math.round(1000/parseFloat(m[1].replace(",","."))*10000)/10000:null};
-        PRICES.rows.forEach(r=>{const f=cxAutoF(r),cur=Number(r.f)||1;if(f){if(cur===1)r.f=f}else if(old(r)===cur)r.f=1});PRICES.v=3;PRICES._saved=false;PRICES._migr=true}}
+        PRICES.rows.forEach(r=>{const f=cxAutoF(r),cur=Number(r.f)||1;if(f){if(cur===1)r.f=f}else if(old(r)===cur)r.f=1});PRICES.v=3;PRICES._saved=false;PRICES._migr=true}
+      if(!(PRICES.v>=4)){const ins=PRICES.rows.findIndex(r=>r.s==="piure"),keep=PRICES.rows.filter(r=>r.s!=="piure");
+        const at=ins<0?keep.findIndex(r=>r.s==="fructe"):ins;keep.splice(at<0?keep.length:at,0,...CX_SYRUPS());PRICES.rows=keep;
+        if(!PRICES.rows.some(r=>r.k==="SAN PELEGRIN")){const i=PRICES.rows.map(r=>r.s).lastIndexOf("suc");PRICES.rows.splice(i+1,0,cxR("suc","San Pellegrino","","",8.50,"SAN PELEGRIN"))}
+        if(!PRICES.rows.some(r=>r.k==="JACK DANIELS")){const i=PRICES.rows.map(r=>r.s).lastIndexOf("alcool");PRICES.rows.splice(i+1,0,cxR("alcool","Whiskey","JACK DANIELS","",145.00,"JACK DANIELS"))}
+        PRICES.rows=PRICES.rows.filter(r=>!(r.s==="consum"&&/jack/i.test(r.tip)));
+        PRICES.v=4;PRICES._saved=false;PRICES._migr="sir"}}
     catch(e){PRICES=JSON.parse(JSON.stringify(CX_DEFAULT));PRICES._saved=false;PRICES._err=true}
     return PRICES;
   })();
@@ -1214,7 +1222,7 @@ function viewPreturi(){
   if(!pDraft)pDraft=JSON.parse(JSON.stringify(PRICES));
   const arts=cxArticles(),opt=k=>`<option value="">— nelegat —</option>${Object.entries(arts).sort((a,b)=>a[1].label.localeCompare(b[1].label,"ro")).map(([key,x])=>`<option value="${esc(key)}"${key===k?" selected":""}>${esc(x.label)}</option>`).join("")}`;
   let h=`<p class="ev-mode">Fiecare rând apare în Excelul de consumație. Leagă-l de articolul din aplicație ca să i se pună cantitatea consumată. „× factor” transformă unitatea din aplicație în unitatea de aici. La alcool (fără Prosecco și premixuri), aplicația numără sticle de 1 L, deci pentru sticla de 700 ml factorul e 1,4286 (1 L = 1,43 sticle de 0,7 L). Prosecco și premixurile rămân cu factor 1. Când schimbi unitatea, factorul se recalculează singur. La fructe pui tu factorul (de ex. 1 ladă lime = 5 kg → 5). Dacă un articol are mai multe rânduri (de ex. Gin Beefeater și Tanqueray), merge la cel al cărui brand e scris lângă cantitate în Excel, altfel la primul.</p>
-    ${PRICES._saved?"":`<div class="ev-alert">${PRICES._migr?"Am pus factorii pentru sticlele de 1 L la alcool (fără Prosecco și premixuri).":"Lista e precompletată după modelul tău."} Verifică legăturile și factorii, apoi apasă Salvează.</div>`}
+    ${PRICES._saved?"":`<div class="ev-alert">${PRICES._migr==="sir"?"Am actualizat siropurile (Whiskey sour, Platon, Hugo, Erasmus, Passiflora, Harmony, toate la 700 ml) și am adăugat San Pellegrino și Jack Daniels.":PRICES._migr?"Am pus factorii pentru sticlele de 1 L la alcool (fără Prosecco și premixuri).":"Lista e precompletată după modelul tău."} Verifică legăturile și factorii, apoi apasă Salvează.</div>`}
     ${pMsg?`<div class="ev-ok">${esc(pMsg)}</div>`:""}
     <div class="st-meta"><label>Furnizor (sub „Pret furnizor”)<input data-pf="furnizor" value="${esc(pDraft.furnizor||"")}"></label>
     <label>Discount la alcool (%)<input data-pf="discPct" inputmode="decimal" value="${esc(pDraft.discPct??"")}"></label>
@@ -1255,7 +1263,7 @@ function cxClick(t){
   return false;
 }
 async function savePrices(sv){grabPrices();sv.disabled=true;sv.textContent="Se salvează…";
-    const data={v:3,furnizor:pDraft.furnizor||"",discPct:Number(pDraft.discPct)||0,discLabel:pDraft.discLabel||"",rows:pDraft.rows.map(({s,tip,brand,unit,pret,k,f})=>({s,tip:tip||"",brand:brand||"",unit:unit||"",pret:pret==null||pret===""?null:Number(pret),k:k||"",f:Number(f)||1})),at:new Date().toISOString()};
+    const data={v:4,furnizor:pDraft.furnizor||"",discPct:Number(pDraft.discPct)||0,discLabel:pDraft.discLabel||"",rows:pDraft.rows.map(({s,tip,brand,unit,pret,k,f})=>({s,tip:tip||"",brand:brand||"",unit:unit||"",pret:pret==null||pret===""?null:Number(pret),k:k||"",f:Number(f)||1})),at:new Date().toISOString()};
     try{const F=window.CPFS;await F.fs.doc(`${F.base}/privat/preturi`).set(data);PRICES={...data,_saved:true};pDraft=null;pMsg="Lista de prețuri a fost salvată.";render();window.scrollTo(0,0)}
     catch(e){toast(e&&e.code==="permission-denied"?"Nu ai drept să salvezi. Verifică regulile din Firebase (privat).":"Salvarea nu a reușit. Încearcă din nou.");sv.disabled=false;sv.textContent="Salvează lista"}
 }
