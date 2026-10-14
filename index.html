@@ -361,6 +361,12 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ct-chip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:.85rem;cursor:pointer;color:var(--ink)}
 .ct-chip.on{background:var(--sage);border-color:var(--sage);font-weight:700}
 .ct-q{width:100%;margin:0 0 6px}
+.ct-opt{display:flex;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer}
+.ev-list>.ct-opt:first-child{border-top:0}
+.ct-opt>input{width:20px;height:20px;flex:none}
+.ct-opt span{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ct-mini{width:60px!important;padding:6px!important}
+.ct-opt select{padding:6px 8px;border:1.5px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink)}
 .ct-sig{max-width:280px;width:100%;display:block;margin:0 0 8px;background:#fff;border-radius:8px}
 nav.tabs{overflow-x:auto;scrollbar-width:none}
 
@@ -1800,7 +1806,7 @@ const up=s=>String(s||"").trim().toLocaleUpperCase("ro-RO");
 function cnpOk(c){c=String(c||"").replace(/\D/g,"");if(c.length!==13||!/[1-9]/.test(c[0]))return false;const w="279146358279";let s=0;for(let i=0;i<12;i++)s+=+c[i]*+w[i];let k=s%11;if(k===10)k=1;return k===+c[12]}
 const BLANK=()=>({id:null,nume:"",strada:"",nr:"",bl:"",sc:"",et:"",ap:"",localitate:"",judet:"",serie:"",nrCI:"",cnp:"",tel:"",
   dataContract:today(),obiect:"COCKTAIL CATERING",dataEv:"",locatie:"",invitati:"",pret:"",moneda:"EURO",unitate:"/ PERSOANĂ",tva:"fără TVA",
-  ore:"10",semn:"Da",avans:"",monedaAvans:"RON",dataRest:"",plata:"în numerar",avansPlatit:false,restPlatit:false,ocr:{}});
+  ore:"10",semn:"Da",c1:true,c2:true,c3:true,c4:true,infl:"10",transport:"se achită separat",vase:"beneficiar",avans:"",monedaAvans:"RON",dataRest:"",plata:"în numerar",avansPlatit:false,restPlatit:false,ocr:{}});
 let sig=null,list=[],sub=null,mode="list",f=null,firma=null,q="",confirmDel=null,ocrMsg="",ocrBusy=false,errs=[];
 
 function subscribe(){
@@ -1906,12 +1912,19 @@ function viewForm(){
     ${inp("localitate","Localitate",{ph:"SIBIU"})}${inp("judet","Județ",{ph:"SIBIU"})}</div>
     <h2 class="ev-h2">Eveniment</h2><div class="st-meta">
     ${inp("dataContract","Data contractului",{type:"date"})}${inp("dataEv","Data evenimentului",{type:"date"})}${inp("locatie","Locația",{ph:"SYMPHONY"})}
-    ${inp("invitati","Nr. minim de invitați",{im:"numeric"})}${inp("obiect","Obiectul contractului")}${inp("ore","Ore de servire",{im:"numeric"})}</div>
+    ${inp("invitati","Nr. minim de invitați",{im:"numeric"})}${inp("obiect","Obiectul contractului")}</div>
     <h2 class="ev-h2">Preț și plată</h2><div class="st-meta">
     ${inp("pret","Preț",{im:"decimal"})}${sel("moneda","Moneda",["EURO","RON"])}${sel("unitate","Unitate",["/ PERSOANĂ","TOTAL"])}${sel("tva","TVA",["fără TVA","cu TVA inclus"])}</div>
     <div class="st-meta">${inp("avans","Avans (cu TVA inclus)",{im:"decimal"})}${sel("monedaAvans","Moneda avansului",["RON","EURO"])}
     ${inp("dataRest","Data plății diferenței",{type:"date"})}${sel("plata","Plata se face",["în numerar","prin transfer bancar","în numerar sau prin transfer bancar"])}
     ${sig?sel("semn","Semnătura și ștampila mea pe PDF",["Da","Nu"]):""}</div>
+    <h2 class="ev-h2">Condiții de preț (3.1.x)</h2><p class="ev-file">Bifează ce intră în contract. Numerotarea se reface singură.</p>
+    <div class="ev-list ct-opts">
+      <label class="ct-opt"><input type="checkbox" data-cb="c1"${on(f.c1)?" checked":""}><span>Ajustare cu inflația (INS), maximum <input class="ev-rin ct-mini" data-f="infl" inputmode="numeric" value="${esc(f.infl)}">%</span></label>
+      <label class="ct-opt"><input type="checkbox" data-cb="c2"${on(f.c2)?" checked":""}><span>Prețul e valabil pentru <input class="ev-rin ct-mini" data-f="ore" inputmode="numeric" value="${esc(f.ore)}"> ore de servire</span></label>
+      <label class="ct-opt"><input type="checkbox" data-cb="c3"${on(f.c3)?" checked":""}><span>Transportul Sibiu - locație - Sibiu <select data-f="transport">${["se achită separat","este inclus în preț"].map(v=>`<option${f.transport===v?" selected":""}>${v}</option>`).join("")}</select></span></label>
+      <label class="ct-opt"><input type="checkbox" data-cb="c4"${on(f.c4)?" checked":""}><span>„Taxa de vase” a locației e suportată de <select data-f="vase">${["beneficiar","prestator"].map(v=>`<option${f.vase===v?" selected":""}>${v}</option>`).join("")}</select></span></label>
+    </div>
     ${errs.length?`<div class="ev-alert" id="ctErr"><b>Mai am nevoie de:</b><ul>${errs.map(e=>`<li>${esc(e.m)}</li>`).join("")}</ul></div>`:""}
     <div class="st-save"><button class="btn" data-c="save">Salvează</button> <button class="btn primary" data-c="pdf">Salvează și descarcă PDF</button></div>`;
   return h;
@@ -1964,7 +1977,8 @@ function render(){
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
 }
-function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v})}
+function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
+  V.querySelectorAll("[data-cb]").forEach(el=>{f[el.dataset.cb]=el.checked})}
 const clean=x=>{const o={...x};delete o.id;delete o.ocr;["nume","strada","localitate","judet","serie","locatie","obiect"].forEach(k=>o[k]=k==="strada"?String(o[k]||"").trim():up(o[k]));o.cnp=String(o.cnp||"").replace(/\D/g,"");o.at=new Date().toISOString();return o};
 async function save(){
   const data=clean(f);
@@ -1980,6 +1994,14 @@ function loadPdfMake(){
     return window.pdfMake})().catch(e=>{pmP=null;throw e});
   return pmP;
 }
+/* Clauzele 3.1.x, fiecare opțională; numerotarea se reface după ce rămâne bifat */
+const on=v=>v!==false&&v!=="false";
+function clauses31(c){const o=[];
+  if(on(c.c1))o.push(`Prețul se ajustează, în caz de nevoie, cu rata anuală a inflației conform INS, dar nu mai mult de ${c.infl||10}%!`);
+  if(on(c.c2))o.push(`Prețul este valabil pentru ${c.ore||10} ore de servire din momentul începerii evenimentului!`);
+  if(on(c.c3))o.push(c.transport==="este inclus în preț"?"Transportul de la Sibiu - locație - Sibiu este inclus în prețul prestației.":"Prețul transportului de la Sibiu - locație - Sibiu se achită separat.");
+  if(on(c.c4))o.push(`În cazul unei eventuale „taxe de vase” solicitate de locația gazdă, aceasta este suportată de către ${c.vase||"beneficiar"}!`);
+  return o}
 function contractDoc(c,F0){
   const B=t=>({text:String(t||"").trim()||" ",bold:true}),P=(...parts)=>({text:parts,margin:[0,2,0,2]}),H=t=>({text:t,bold:true,margin:[0,12,0,4]});
   const adr=[c.strada,c.nr?`nr. ${c.nr}`:"",c.bl?`bl. ${c.bl}`:"",c.sc?`sc. ${c.sc}`:"",c.et?`etaj ${c.et}`:"",c.ap?`ap. ${c.ap}`:""].filter(Boolean).join(", ");
@@ -2001,10 +2023,7 @@ function contractDoc(c,F0){
     P("2.4. Număr de invitați minim: ",B(c.invitati)),
     H("3. PREȚUL STABILIT ȘI MODALITĂȚI DE PLATĂ"),
     P("3.1. Prețul prestației este de ",B(`${c.pret} ${c.moneda} ${c.unitate==="TOTAL"?"(TOTAL)":"/ PERSOANĂ"} (${c.tva})`)),
-    L("3.1.1. Prețul se ajustează, în caz de nevoie, cu rata anuală a inflației conform INS, dar nu mai mult de 10%!"),
-    L(`3.1.2. Prețul este valabil pentru ${c.ore||10} ore de servire din momentul începerii evenimentului!`),
-    L("3.1.3. Prețul transportului de la Sibiu - locație - Sibiu se achită separat."),
-    L("3.1.4. În cazul unei eventuale „taxe de vase” solicitate de locația gazdă, aceasta este suportată de către beneficiar!"),
+    ...clauses31(c).map((t,i)=>L(`3.1.${i+1}. ${t}`)),
     P(`3.2. Se va achita prestatorului de către beneficiar ${c.plata} astfel: un avans (cu TVA inclus) de `,B(`${c.avans} ${c.monedaAvans}`)," la data semnării prezentului contract și diferența în data de: ",B(bigDate(c.dataRest))),
     H("4. OBLIGAȚIILE PĂRȚILOR"),
     P("4.1. Prestatorul de servicii se obligă:"),
