@@ -13,6 +13,8 @@
 .cp-calc .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .cp-calc input[type=range]{flex:1 1 220px;accent-color:var(--accent);height:32px;min-width:0;background:none;border:0;padding:0;margin:0}
 .cp-calc input[type=number]{width:110px;font:700 26px var(--display);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:0;height:auto}
+.cp-calc input[type=number],.cp-calc input[type=number]:hover,.cp-calc input[type=number]:focus,.cp-calc input[type=number]:active{background:#0b0b0b!important;color:#f4f1ec!important;-webkit-text-fill-color:#f4f1ec!important;caret-color:#ff8a1f;border:1px solid #2c2924!important;box-shadow:none!important}
+.cp-calc input[type=number]:focus{border-color:#ff8a1f!important}
 .cp-calc input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .cp-calc .result{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .cp-calc .cell{display:grid;gap:2px;min-width:0}
