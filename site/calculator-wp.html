@@ -1,0 +1,90 @@
+<!-- wp:html -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;500;700;800&family=Barlow:wght@400;600&display=swap">
+<style>
+.cp-calc{--bg:#0b0b0b;--panel:#161513;--line:#2c2924;--fg:#f4f1ec;--muted:#a8a29a;--accent:#ff8a1f;--yellow:#ffd23f;--wa:#25d366;--display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;--body:"Barlow",Arial,sans-serif;
+  background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;border-radius:16px;box-sizing:border-box;max-width:820px;margin:0 auto;padding:36px max(16px,4vw) 44px;display:grid;gap:26px}
+.cp-calc *{box-sizing:border-box}
+.cp-calc .brand{font-family:var(--display);font-weight:300;letter-spacing:.04em;font-size:22px;color:var(--fg)}
+.cp-calc .brand b{font-weight:800}
+.cp-calc h2{font-family:var(--display);font-weight:800;font-size:clamp(38px,8vw,62px);line-height:.95;margin:0;text-transform:uppercase;color:var(--accent);letter-spacing:0}
+.cp-calc .lead{color:var(--muted);margin:0;max-width:60ch}
+.cp-calc .calc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;gap:20px}
+.cp-calc label{font-family:var(--display);font-size:20px;font-weight:500;letter-spacing:.03em;text-transform:uppercase;color:var(--fg);margin:0}
+.cp-calc .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.cp-calc input[type=range]{flex:1 1 220px;accent-color:var(--accent);height:32px;min-width:0;background:none;border:0;padding:0;margin:0}
+.cp-calc input[type=number]{width:110px;font:700 26px var(--display);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:0;height:auto}
+.cp-calc input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cp-calc .result{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cp-calc .cell{display:grid;gap:2px;min-width:0}
+.cp-calc .cap{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.cp-calc .big{font-family:var(--display);font-weight:800;font-size:clamp(42px,10vw,70px);line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.cp-calc .big.total{color:var(--fg)}
+.cp-calc .tag{display:inline-block;background:var(--yellow);color:#111;font:800 18px var(--display);padding:2px 10px;transform:rotate(-3deg);justify-self:start}
+.cp-calc .tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cp-calc .t{border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;font-variant-numeric:tabular-nums;transition:background .2s,border-color .2s}
+.cp-calc .t span{display:block;font-size:12px;color:var(--muted)}
+.cp-calc .t strong{font:700 20px var(--display);color:var(--fg)}
+.cp-calc .t.on{border-color:var(--accent);background:#2a1a0b}
+.cp-calc .note{font-size:14px;color:var(--muted);margin:0}
+.cp-calc .cta{display:flex;gap:12px;flex-wrap:wrap}
+.cp-calc .btn{display:inline-flex;align-items:center;justify-content:center;font:700 19px var(--display);letter-spacing:.03em;text-decoration:none;padding:12px 22px;border-radius:999px;color:#fff;border:0}
+.cp-calc .btn.wa{background:var(--wa);color:#062}
+.cp-calc .btn.call{background:var(--accent);color:#1a0d00}
+.cp-calc .btn.pdf{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.cp-calc .contact{font-size:15px;color:var(--muted);margin:0}
+.cp-calc .contact strong{color:var(--fg)}
+@media (max-width:520px){.cp-calc .tiers{grid-template-columns:repeat(2,1fr)}.cp-calc .result{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.cp-calc .t{transition:none}}
+</style>
+<div class="cp-calc" id="calculator">
+  <div class="brand">COCKTAIL <b>PHILOSOPHY</b>®</div>
+  <h2>Calculează prețul all inclusive</h2>
+  <p class="lead">Introdu numărul de invitați (fără staff și copii). Prețul pe persoană scade treptat cu cât sunt mai mulți invitați, iar consumația este nelimitată.</p>
+  <section class="calc" aria-live="polite">
+    <label for="cpN">Număr invitați</label>
+    <div class="row">
+      <input type="range" id="cpR" min="20" max="500" step="5" value="120" aria-label="Număr invitați">
+      <input type="number" id="cpN" min="1" max="2000" value="120" inputmode="numeric">
+    </div>
+    <div class="result">
+      <div class="cell"><span class="cap">Preț estimat / persoană</span><span class="big" id="cpPP">–</span></div>
+      <div class="cell"><span class="cap">Total estimat</span><span class="big total" id="cpTot">–</span></div>
+    </div>
+    <span class="tag">all you can drink*</span>
+    <div class="tiers" id="cpTiers"></div>
+    <p class="note">*Consumație nelimitată pentru invitații tăi. Estimarea este orientativă; prețul final îl confirmăm în cotația scrisă și nu poate crește față de ea. La semnarea contractului se achită un avans de 100 EUR.</p>
+  </section>
+  <div class="cta">
+    <a class="btn wa" href="https://wa.me/40743785655?text=Bun%C4%83%2C%20a%C8%99%20dori%20o%20ofert%C4%83%20all%20inclusive" target="_blank" rel="noopener">Cere oferta pe WhatsApp</a>
+    <a class="btn call" href="tel:+40743785655">Sună</a>
+    <a class="btn pdf" href="https://cocktailphilosophy.ro/wp-content/uploads/2026/03/OFERTA-ALL-INCLUSIVE.pdf" target="_blank" rel="noopener">Vezi oferta completă</a>
+  </div>
+  <p class="contact">Paul Georgescu · <strong>0743 785 655</strong> · cocktailphilosophy.ro</p>
+</div>
+<script>
+(function(){
+var TIERS=[[0,50,18.9],[50,100,15.9],[100,150,12.9],[150,200,10.9],[200,250,9.9],[250,300,8.9],[300,350,7.9],[350,null,6.9]];
+var PTS=TIERS.map(function(t){return [t[1]===null?375:(t[0]+t[1])/2,t[2]]});
+function price(n){
+  if(n<=PTS[0][0])return PTS[0][1];
+  var last=PTS[PTS.length-1];if(n>=last[0])return last[1];
+  for(var i=1;i<PTS.length;i++){var a=PTS[i-1],b=PTS[i];
+    if(n<=b[0])return Math.round((a[1]+(b[1]-a[1])*(n-a[0])/(b[0]-a[0]))*10)/10;}
+}
+function fmt(v){return v.toLocaleString('ro-RO',{minimumFractionDigits:1,maximumFractionDigits:1})}
+var r=document.getElementById('cpR'),n=document.getElementById('cpN'),te=document.getElementById('cpTiers');
+te.innerHTML=TIERS.map(function(t,i){return '<div class="t"><span>'+(t[1]===null?t[0]+'+':t[0]+'–'+t[1])+'</span><strong>'+fmt(t[2])+' €</strong></div>'}).join('');
+function update(v){
+  v=Math.max(1,Math.min(2000,Math.round(+v||0)));
+  var p=price(v);
+  document.getElementById('cpPP').textContent=fmt(p)+' €';
+  document.getElementById('cpTot').textContent=Math.round(p*v).toLocaleString('ro-RO')+' €';
+  TIERS.forEach(function(t,i){te.children[i].classList.toggle('on',(v>t[0]&&(t[1]===null||v<=t[1]))||(i===0&&v<=50))});
+  return v;
+}
+r.addEventListener('input',function(){n.value=r.value;update(r.value)});
+n.addEventListener('input',function(){var v=update(n.value);r.value=Math.min(500,v)});
+update(120);
+})();
+</script>
+<!-- /wp:html -->
