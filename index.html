@@ -2123,14 +2123,17 @@ window.__ct={parseMRZ,parseVisual,cnpOk,contractDoc,FIRMA_DEF};
 const V=$("#v-oferte"),F=window.CPFS;
 if(!V||!F)return;
 const DEF=[
-  {id:"meniu",titlu:"Meniu 2026",desc:"Meniul de cocktailuri Cocktail Philosophy · 4 pagini",fisier:"meniu-2026.pdf",cover:"meniu-2026.jpg",toti:true},
-  {id:"allinc",titlu:"Ofertă All Inclusive",desc:"Băuturi la discreție, de la 7,9 la 19,9 € / persoană · 8 pagini",fisier:"oferta-all-inclusive.pdf",cover:"oferta-all-inclusive.jpg",toti:false},
-  {id:"barmani",titlu:"Ofertă Barmani",desc:"Servicii de barman: 1 barman 350 €, 2 barmani 520 €, 3 barmani 690 €, 4 barmani 860 € · 8 pagini",fisier:"oferta-barmani.pdf",cover:"oferta-barmani.jpg",toti:false}];
+  {id:"meniu",titlu:"Meniu 2026",desc:"Meniul de cocktailuri Cocktail Philosophy · 4 pagini",fisier:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/MENIU-2026-GOLD.pdf",cover:"meniu-2026.jpg",toti:true},
+  {id:"allinc",titlu:"Ofertă All Inclusive",desc:"Băuturi la discreție, de la 7,9 la 19,9 € / persoană · 8 pagini",fisier:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/OFERTA-ALL-INCLUSIVE.pdf",cover:"oferta-all-inclusive.jpg",toti:false},
+  {id:"barmani",titlu:"Ofertă Barmani",desc:"Servicii de barman: 1 barman 350 €, 2 barmani 520 €, 3 barmani 690 €, 4 barmani 860 € · 8 pagini",fisier:"https://cocktailphilosophy.ro/wp-content/uploads/2023/04/PACHET-BARMANI-2023-compressed.pdf",cover:"oferta-barmani.jpg",toti:false}];
 let docs=null,editing=null,saved=false;
+/* linkurile vechi către GitHub trec pe site-ul cocktailphilosophy.ro */
+const SITE_URL={"meniu-2026.pdf": "https://cocktailphilosophy.ro/wp-content/uploads/2026/03/MENIU-2026-GOLD.pdf", "oferta-all-inclusive.pdf": "https://cocktailphilosophy.ro/wp-content/uploads/2026/03/OFERTA-ALL-INCLUSIVE.pdf", "oferta-barmani.pdf": "https://cocktailphilosophy.ro/wp-content/uploads/2023/04/PACHET-BARMANI-2023-compressed.pdf"};
+const fixUrls=L=>L.map(d=>SITE_URL[d.fisier]?{...d,fisier:SITE_URL[d.fisier]}:d);
 const adm=()=>!!F.isAdmin;
 const url=p=>{try{return new URL(p,location.href.split("#")[0]).href}catch(e){return p}};
 async function load(){
-  try{const d=await F.fs.doc(`${F.base}/config/oferte`).get();docs=d.exists&&Array.isArray(d.data().docs)?d.data().docs:DEF.map(x=>({...x}));saved=d.exists}
+  try{const d=await F.fs.doc(`${F.base}/config/oferte`).get();docs=d.exists&&Array.isArray(d.data().docs)?fixUrls(d.data().docs):DEF.map(x=>({...x}));saved=d.exists}
   catch(e){docs=DEF.map(x=>({...x}))}
   render();
 }
@@ -2153,7 +2156,7 @@ function viewList(){
     ${adm()?`<div class="st-acts"><button class="btn" data-oadd="1">Adaugă document</button></div>`:""}</div>`;
   if(!L.length)return h+`<div class="ev-ok">Nu e niciun document încă.</div>`;
   h+=`<div class="of-grid">${L.map(([d,i])=>card(d,i)).join("")}</div>`;
-  if(adm())h+=`<p class="ev-help">Ca să actualizezi o ofertă: urcă pe GitHub fișierul nou cu <b>același nume</b> (de ex. oferta-barmani.pdf). Pentru un document nou, urcă PDF-ul pe GitHub și apasă „Adaugă document”. Atenție: oricine are linkul unui PDF îl poate deschide, așa că pune acolo doar ce poți trimite clienților.</p>`;
+  if(adm())h+=`<p class="ev-help">Ca să actualizezi o ofertă: în WordPress, la Media, deschide fișierul și folosește „Înlocuiește media”, cu opțiunea de a înlocui doar fișierul. Adresa rămâne aceeași, deci site-ul și aplicația arată imediat noua variantă. Pentru un document nou, urcă-l în WordPress, copiază-i adresa și apasă „Adaugă document”. Atenție: oricine are linkul unui PDF îl poate deschide, așa că pune acolo doar ce poți trimite clienților.</p>`;
   return h;
 }
 function viewEdit(){
