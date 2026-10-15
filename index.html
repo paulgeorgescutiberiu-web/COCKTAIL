@@ -2124,12 +2124,12 @@ const V=$("#v-oferte"),F=window.CPFS;
 if(!V||!F)return;
 const DEF=[
   {id:"meniu",titlu:"Meniu 2026",desc:"Meniul de cocktailuri Cocktail Philosophy · 4 pagini",fisier:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/MENIU-2026-GOLD.pdf",cover:"meniu-2026.jpg",toti:true},
-  {id:"allinc",titlu:"Ofertă All Inclusive",desc:"Băuturi la discreție, de la 7,9 la 19,9 € / persoană · 8 pagini",fisier:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/OFERTA-ALL-INCLUSIVE.pdf",cover:"oferta-all-inclusive.jpg",toti:false},
+  {id:"allinc",titlu:"Ofertă All Inclusive",desc:"Băuturi la discreție, de la 6,9 la 18,9 € / persoană · 8 pagini",fisier:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/OFERTA-ALL-INCLUSIVE.pdf",cover:"oferta-all-inclusive.jpg",toti:false},
   {id:"barmani",titlu:"Ofertă Barmani",desc:"Servicii de barman: 1 barman 350 €, 2 barmani 520 €, 3 barmani 690 €, 4 barmani 860 € · 8 pagini",fisier:"https://cocktailphilosophy.ro/wp-content/uploads/2023/04/PACHET-BARMANI-2023-compressed.pdf",cover:"oferta-barmani.jpg",toti:false}];
 let docs=null,editing=null,saved=false;
 /* linkurile vechi către GitHub trec pe site-ul cocktailphilosophy.ro */
 const SITE_URL={"meniu-2026.pdf": "https://cocktailphilosophy.ro/wp-content/uploads/2026/03/MENIU-2026-GOLD.pdf", "oferta-all-inclusive.pdf": "https://cocktailphilosophy.ro/wp-content/uploads/2026/03/OFERTA-ALL-INCLUSIVE.pdf", "oferta-barmani.pdf": "https://cocktailphilosophy.ro/wp-content/uploads/2023/04/PACHET-BARMANI-2023-compressed.pdf"};
-const fixUrls=L=>L.map(d=>SITE_URL[d.fisier]?{...d,fisier:SITE_URL[d.fisier]}:d);
+const fixUrls=L=>L.map(d=>{d=SITE_URL[d.fisier]?{...d,fisier:SITE_URL[d.fisier]}:d;if(d.id==="allinc"&&d.desc)d={...d,desc:d.desc.replace("7,9 la 19,9","6,9 la 18,9")};return d});
 const adm=()=>!!F.isAdmin;
 const url=p=>{try{return new URL(p,location.href.split("#")[0]).href}catch(e){return p}};
 async function load(){
