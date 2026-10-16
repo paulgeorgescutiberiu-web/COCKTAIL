@@ -1818,7 +1818,7 @@ const up=s=>String(s||"").trim().toLocaleUpperCase("ro-RO");
 function cnpOk(c){c=String(c||"").replace(/\D/g,"");if(c.length!==13||!/[1-9]/.test(c[0]))return false;const w="279146358279";let s=0;for(let i=0;i<12;i++)s+=+c[i]*+w[i];let k=s%11;if(k===10)k=1;return k===+c[12]}
 const BLANK=()=>({id:null,nume:"",strada:"",nr:"",bl:"",sc:"",et:"",ap:"",localitate:"",judet:"",serie:"",nrCI:"",cnp:"",tel:"",
   dataContract:today(),obiect:"COCKTAIL CATERING",dataEv:"",locatie:"",invitati:"",pret:"",moneda:"EURO",unitate:"/ PERSOANĂ",tva:"fără TVA",
-  ore:"10",semn:"Da",c1:true,c2:true,c3:true,c4:true,infl:"10",transport:"se achită separat",vase:"beneficiar",avans:"",monedaAvans:"RON",dataRest:"",plata:"în numerar",avansPlatit:false,restPlatit:false,ocr:{}});
+  ore:"10",semn:"Da",c1:true,c2:true,c3:true,c4:true,infl:"10",transport:"se achită separat",vase:"beneficiar",avans:"",monedaAvans:"RON",dataRest:"",plata:"în numerar",avansPlatit:false,restPlatit:false,oraEv:"",driveId:"",calId:"",ocr:{}});
 let sig=null,list=[],sub=null,mode="list",f=null,firma=null,q="",confirmDel=null,ocrMsg="",ocrBusy=false,errs=[];
 
 function subscribe(){
@@ -1924,7 +1924,7 @@ function viewForm(){
     ${inp("localitate","Localitate",{ph:"SIBIU"})}${inp("judet","Județ",{ph:"SIBIU"})}</div>
     <h2 class="ev-h2">Eveniment</h2><div class="st-meta">
     ${inp("dataContract","Data contractului",{type:"date"})}${inp("dataEv","Data evenimentului",{type:"date"})}${inp("locatie","Locația",{ph:"SYMPHONY"})}
-    ${inp("invitati","Nr. minim de invitați",{im:"numeric"})}${inp("obiect","Obiectul contractului")}</div>
+    ${inp("oraEv","Ora începerii (pentru calendar)",{type:"time"})}${inp("invitati","Nr. minim de invitați",{im:"numeric"})}${inp("obiect","Obiectul contractului")}</div>
     <h2 class="ev-h2">Preț și plată</h2><div class="st-meta">
     ${inp("pret","Preț",{im:"decimal"})}${sel("moneda","Moneda",["EURO","RON"])}${sel("unitate","Unitate",["/ PERSOANĂ","TOTAL"])}${sel("tva","TVA",["fără TVA","cu TVA inclus"])}</div>
     <div class="st-meta">${inp("avans","Avans (cu TVA inclus)",{im:"decimal"})}${sel("monedaAvans","Moneda avansului",["RON","EURO"])}
@@ -1938,7 +1938,7 @@ function viewForm(){
       <label class="ct-opt"><input type="checkbox" data-cb="c4"${on(f.c4)?" checked":""}><span>„Taxa de vase” a locației e suportată de <select data-f="vase">${["beneficiar","prestator"].map(v=>`<option${f.vase===v?" selected":""}>${v}</option>`).join("")}</select></span></label>
     </div>
     ${errs.length?`<div class="ev-alert" id="ctErr"><b>Mai am nevoie de:</b><ul>${errs.map(e=>`<li>${esc(e.m)}</li>`).join("")}</ul></div>`:""}
-    <div class="st-save"><button class="btn" data-c="save">Salvează</button> <button class="btn primary" data-c="pdf">Salvează și descarcă PDF</button></div>`;
+    <div class="st-save"><button class="btn" data-c="save">Salvează</button> <button class="btn" data-c="pdf">Salvează și descarcă PDF</button> <button class="btn primary" data-c="gsync">Salvează în Drive + calendar</button></div>${gPick()}`;
   return h;
 }
 function viewList(){
@@ -1947,6 +1947,7 @@ function viewList(){
     .sort((a,b)=>{const fa=(a.dataEv||"")>=now,fb=(b.dataEv||"")>=now;if(fa!==fb)return fa?-1:1;return fa?String(a.dataEv).localeCompare(b.dataEv):String(b.dataEv).localeCompare(a.dataEv)});
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length} ${list.length===1?"contract":"contracte"}</p><p class="ev-file">Le vezi doar tu. Barmanii nu au acces la contracte.</p></div>
     <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button></div></div>`;
+  h+=gPick();
   if(!list.length)return h+`<div class="ev-ok">Niciun contract încă. Apasă „Contract nou”.</div>`;
   h+=`<input class="search ct-q" type="search" placeholder="Caută client sau locație" value="${esc(q)}">`;
   let lastPast=null;
@@ -1956,7 +1957,7 @@ function viewList(){
       <div class="ct-m">${esc(c.pret||"")} ${esc(c.moneda||"")} ${esc(c.unitate==="TOTAL"?"total":"/ persoană")} · avans ${esc(c.avans||"—")} ${esc(c.monedaAvans||"")} · diferența la ${esc(shortDate(c.dataRest)||"—")}</div>
       <div class="ct-b"><button class="ct-chip ${c.avansPlatit?"on":""}" data-tog="avansPlatit" data-id="${c.id}">${c.avansPlatit?"✓ Avans încasat":"Avans neîncasat"}</button>
       <button class="ct-chip ${c.restPlatit?"on":""}" data-tog="restPlatit" data-id="${c.id}">${c.restPlatit?"✓ Diferență încasată":"Diferență neîncasată"}</button></div>
-      <div class="ct-b"><button class="btn" data-pdf="${c.id}">PDF</button><button class="btn" data-ed="${c.id}">Editează</button><button class="btn" data-dup="${c.id}">Copie</button>
+      <div class="ct-b"><button class="btn" data-pdf="${c.id}">PDF</button><button class="btn${c.calId?"":" primary"}" data-gs="${c.id}">${c.calId?"✓ Actualizează Drive + calendar":"Drive + calendar"}</button><button class="btn" data-ed="${c.id}">Editează</button><button class="btn" data-dup="${c.id}">Copie</button>
       <button class="btn st-del" data-del="${c.id}">${confirmDel===c.id?"Sigur? Șterge":"Șterge"}</button></div></div>`});
   return h;
 }
@@ -1970,6 +1971,8 @@ function viewFirma(){
     <p class="ev-file">Fă o poză cu semnătura și ștampila pe o foaie albă. Fundalul alb dispare singur. Imaginea se păstrează doar în zona ta privată, nu pe site.</p>
     <div class="st-acts"><button class="btn primary" data-c="sigup">${sig?"Înlocuiește":"Încarcă"} semnătura</button>${sig?`<button class="btn" data-c="sigdel">Șterge semnătura</button>`:""}</div>
     <input type="file" id="ctSig" accept="image/*" hidden></div>
+    <h2 class="ev-h2">Google Drive și Calendar</h2><p class="ev-file">Pentru butonul „Drive + calendar”. Contractele se salvează în Drive, în dosarul Evenimente / Evenimente ANUL, iar evenimentul apare în calendarul de mai jos.</p>
+    <div class="st-meta">${row("gClient","Google Client ID (OAuth, aplicație web)")}<label>Calendarul evenimentelor<input data-fi="gCal" value="${esc(x.gCal||"cocktailphilosophy@gmail.com")}"></label></div>
     <div class="st-save"><button class="btn primary" data-c="savefirma">Salvează</button></div>`;
 }
 function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
@@ -2082,10 +2085,125 @@ async function downloadPDF(c,btn){
   if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent=lbl}
 }
 
+/* ---------- Google Drive + Calendar ---------- */
+const G={tok:null,exp:0,tc:null,pick:null};
+const fold=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+const tcase=s=>String(s||"").toLocaleLowerCase("ro-RO").replace(/(^|[\s-])(\p{L})/gu,(m,a,b)=>a+b.toLocaleUpperCase("ro-RO"));
+const surname=n=>tcase(String(n||"").trim().split(/\s+/)[0]||"Client");
+const fileName=c=>`${c.dataEv}_${fold(surname(c.nume))}_${fold(tcase(c.locatie))||"Eveniment"}_Contract.pdf`;
+const money=v=>String(v||"").trim();
+function evDesc(c){
+  const cur=c.moneda==="EURO"?"€":"RON",un=c.unitate==="TOTAL"?"total":"/ persoană";
+  const L=[`CLIENT: ${tcase(c.nume)}${c.tel?" · "+c.tel:""}`,`LOCAȚIE: ${tcase(c.locatie)}`];
+  if(c.oraEv)L.push(`ORA: ${c.oraEv}`);
+  if(String(c.invitati||"").trim())L.push(`INVITAȚI: minim ${c.invitati}`);
+  L.push(`PACHET: ${tcase(c.obiect)}${on(c.c2)?` · ${c.ore||10} ore de servire`:""}`);
+  L.push(`PREȚ: ${money(c.pret)} ${cur} ${un} ${c.tva}`);
+  L.push(`AVANS: ${money(c.avans)} ${c.monedaAvans} (${c.avansPlatit?"încasat":"de încasat"} · contract din ${shortDate(c.dataContract)})`);
+  L.push(`REST DE PLATĂ: ${shortDate(c.dataRest)||"—"}${c.restPlatit?" · încasat":""} · ${c.plata}`);
+  if(on(c.c3)||on(c.c4))L.push([on(c.c3)?`TRANSPORT: ${c.transport}`:"",on(c.c4)?`taxa de vase: ${c.vase}`:""].filter(Boolean).join(" · "));
+  return L.join("\n")+"\n\nContract atașat mai jos · completat din aplicația Cocktail Philosophy.";
+}
+const MARK="completat din aplicația Cocktail Philosophy";
+function loadGIS(){return loadScript("https://accounts.google.com/gsi/client","google").then(()=>window.google.accounts.oauth2)}
+async function gToken(){
+  if(G.tok&&Date.now()<G.exp-60000)return G.tok;
+  const cid=(firma&&firma.gClient||"").trim();
+  if(!cid)throw {msg:"Lipsește Google Client ID. Completează-l la „Datele firmei” → Google Drive și Calendar."};
+  const oa=await loadGIS().catch(()=>{throw {msg:"Nu s-a încărcat conectarea Google. Verifică internetul."}});
+  return new Promise((res,rej)=>{
+    G.tc=oa.initTokenClient({client_id:cid,scope:"https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/calendar.events",hint:"cocktailphilosophy@gmail.com",
+      callback:r=>{if(r&&r.access_token){G.tok=r.access_token;G.exp=Date.now()+(+r.expires_in||3600)*1000;res(G.tok)}else rej({msg:"Conectarea la Google nu a reușit."})},
+      error_callback:e=>rej({msg:e&&e.type==="popup_closed"?"Ai închis fereastra Google înainte de final.":"Conectarea la Google nu a reușit (fereastra a fost blocată?)."})});
+    G.tc.requestAccessToken({prompt:G.tok?"":"consent"});
+  });
+}
+async function gf(url,o={}){
+  const t=await gToken();const r=await fetch(url,{...o,headers:{Authorization:"Bearer "+t,...(o.headers||{})}});
+  if(r.status===401){G.tok=null;throw {msg:"Sesiunea Google a expirat. Apasă din nou."}}
+  if(!r.ok){let m="";try{m=(await r.json()).error.message}catch(e){}throw {msg:`Google a refuzat operația (${r.status}). ${m}`}}
+  return r.status===204?null:r.json();
+}
+const DQ=q=>gf("https://www.googleapis.com/drive/v3/files?fields=files(id,name)&pageSize=10&q="+encodeURIComponent(q));
+async function folderFor(year){
+  const fq=(n,p)=>`name='${n}' and mimeType='application/vnd.google-apps.folder' and trashed=false`+(p?` and '${p}' in parents`:" and 'root' in parents");
+  const mk=(n,p)=>gf("https://www.googleapis.com/drive/v3/files?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:n,mimeType:"application/vnd.google-apps.folder",...(p?{parents:[p]}:{})})});
+  let root=(await DQ(fq("Evenimente"))).files[0];if(!root)root=await mk("Evenimente");
+  const yn=`Evenimente ${year}`;let y=(await DQ(fq(yn,root.id))).files[0];if(!y)y=await mk(yn,root.id);return y.id;
+}
+function pdfBlob(c){return loadPdfMake().then(pm=>new Promise(res=>pm.createPdf(contractDoc(c,firma||FIRMA_DEF)).getBlob(res)))}
+async function uploadPdf(c,blob){
+  const name=fileName(c),meta={name,mimeType:"application/pdf"};
+  if(c.driveId){
+    try{return await gf(`https://www.googleapis.com/upload/drive/v3/files/${c.driveId}?uploadType=multipart&fields=id,name,webViewLink`,{method:"PATCH",body:mp({name},blob)})}
+    catch(e){if(!/404/.test(e.msg||""))throw e}
+  }
+  meta.parents=[await folderFor(c.dataEv.slice(0,4))];
+  return gf("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",{method:"POST",body:mp(meta,blob)});
+}
+function mp(meta,blob){const fd=new FormData();fd.append("metadata",new Blob([JSON.stringify(meta)],{type:"application/json"}));fd.append("file",blob);return fd}
+const calId=()=>encodeURIComponent((firma&&firma.gCal)||"cocktailphilosophy@gmail.com");
+const CAL=p=>`https://www.googleapis.com/calendar/v3/calendars/${calId()}/events${p||""}`;
+function dayISO(d,add){const x=new Date(d+"T00:00:00");x.setDate(x.getDate()+(add||0));return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`}
+function evTimes(c){
+  if(!c.oraEv)return {start:{date:c.dataEv},end:{date:dayISO(c.dataEv,1)}};
+  const [h,m]=c.oraEv.split(":").map(Number),e=`${String((h+1)%24).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+  return {start:{dateTime:`${c.dataEv}T${c.oraEv}:00`,timeZone:"Europe/Bucharest"},end:{dateTime:`${c.dataEv}T${e}:00`,timeZone:"Europe/Bucharest"}};
+}
+async function dayEvents(d){
+  const tz=new Date(d+"T00:00:00").getTimezoneOffset(),off=(tz>0?"-":"+")+String(Math.abs(tz/60)|0).padStart(2,"0")+":00";
+  const r=await gf(CAL(`?singleEvents=true&orderBy=startTime&timeMin=${encodeURIComponent(d+"T00:00:00"+off)}&timeMax=${encodeURIComponent(dayISO(d,1)+"T00:00:00"+off)}`));
+  return (r.items||[]).filter(e=>e.status!=="cancelled");
+}
+async function writeEvent(c,file,targetId){
+  const att={fileUrl:`https://drive.google.com/file/d/${file.id}/view?usp=drivesdk`,fileId:file.id,title:file.name,mimeType:"application/pdf"};
+  const desc=evDesc(c);
+  if(targetId){
+    const ex=await gf(CAL("/"+encodeURIComponent(targetId)));
+    const old=String(ex.description||"").trim(),keep=old&&!old.includes(MARK)?"\n\n— Note anterioare —\n"+old:"";
+    const atts=(ex.attachments||[]).filter(a=>a.fileId!==file.id&&!(c.driveId&&a.fileId===c.driveId));atts.push(att);
+    const body={description:desc+keep,location:ex.location||tcase(c.locatie),attachments:atts};
+    if(c.oraEv)Object.assign(body,evTimes(c));
+    return gf(CAL("/"+encodeURIComponent(targetId)+"?supportsAttachments=true&sendUpdates=none"),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  }
+  const sum=[tcase(c.locatie),String(c.invitati||"").trim(),surname(c.nume)].filter(Boolean).join(" ");
+  return gf(CAL("?supportsAttachments=true&sendUpdates=none"),{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({summary:sum,location:tcase(c.locatie),description:desc,attachments:[att],...evTimes(c)})});
+}
+function gPick(){
+  if(!G.pick)return "";
+  const P=G.pick;
+  return `<div class="ev-alert" id="gPick"><b>În ${esc(shortDate(P.c.dataEv))} ai deja ${P.items.length===1?"un eveniment":P.items.length+" evenimente"} în calendar.</b>
+    <p class="ev-file">Alege unde pun contractul. Dacă îl completez, păstrez și notele pe care le aveai în descriere.</p>
+    <div class="ct-b">${P.items.map(e=>`<button class="btn primary" data-gp="${esc(e.id)}">Completează „${esc(e.summary||"Fără titlu")}”${e.start&&e.start.dateTime?" · "+esc(e.start.dateTime.slice(11,16)):""}</button>`).join("")}
+    <button class="btn" data-gp="__new">Eveniment nou</button><button class="btn" data-gp="__cancel">Renunță</button></div></div>`;
+}
+async function gsync(c,btn,target){
+  const lbl=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent="Se salvează în Google…"}
+  try{
+    if(!c.dataEv)throw {msg:"Completează data evenimentului."};
+    let tgt=target;
+    if(tgt===undefined){
+      if(c.calId){try{const ex=await gf(CAL("/"+encodeURIComponent(c.calId)));if(ex&&ex.status!=="cancelled")tgt=c.calId}catch(e){}}
+      if(tgt===undefined){const items=await dayEvents(c.dataEv);
+        if(items.length){G.pick={c,items};render();const el=$("#gPick");if(el)el.scrollIntoView({block:"center"});return}
+        tgt=null}
+    }
+    const blob=await pdfBlob(c),file=await uploadPdf(c,blob),ev=await writeEvent(c,file,tgt||null);
+    await F.fs.doc(`${F.base}/contracte/${c.id}`).set({driveId:file.id,calId:ev.id},{merge:true});
+    if(f&&f.id===c.id){f.driveId=file.id;f.calId=ev.id}
+    G.pick=null;toast(`Gata: contractul e în Drive (${file.name}) și ${tgt?"evenimentul a fost completat":"evenimentul a fost creat"} în calendar.`);
+    if(mode==="form"){mode="list";f=null}render();
+  }catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut salva în Google. Încearcă din nou.")}
+  finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent=lbl}}
+}
+
 V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render()}});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
+  const gs=t.closest("[data-gs]");if(gs){const c=list.find(x=>x.id===gs.dataset.gs);if(c){G.pick=null;gsync(c,gs)}return}
+  const gp=t.closest("[data-gp]");if(gp&&G.pick){const v=gp.dataset.gp,c=G.pick.c;if(v==="__cancel"){G.pick=null;render();return}gsync(c,gp,v==="__new"?null:v);return}
   const pd=t.closest("[data-pdf]");if(pd){const c=list.find(x=>x.id===pd.dataset.pdf);if(c)downloadPDF(c,pd);return}
   const ed=t.closest("[data-ed]");if(ed){const c=list.find(x=>x.id===ed.dataset.ed);if(c){f={...BLANK(),...c,ocr:{}};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)}return}
   const du=t.closest("[data-dup]");if(du){const c=list.find(x=>x.id===du.dataset.dup);if(c){f={...BLANK(),...c,id:null,ocr:{},dataContract:today(),dataEv:"",dataRest:"",avansPlatit:false,restPlatit:false};errs=[];ocrMsg="Copie după contractul existent: completează data evenimentului și verifică restul.";mode="form";render();window.scrollTo(0,V.offsetTop-10)}return}
@@ -2103,7 +2221,10 @@ V.addEventListener("click",async e=>{
       catch(e2){toast(e2&&e2.message==="empty"?"Nu am găsit semnătura în poză. Încearcă pe fundal alb.":"Nu am putut salva semnătura.")}};i.click();return}
   if(a==="sigdel"){try{await F.fs.doc(`${F.base}/privat/semnatura`).delete();sig=null;render();toast("Semnătura a fost ștearsă.")}catch(e2){toast("Nu am putut șterge semnătura.")}return}
   if(a==="foto"){const i=$("#ctFoto");i.onchange=()=>{if(i.files&&i.files[0])readID(i.files[0])};i.click();return}
-  if(a==="save"||a==="pdf"){grab();errs=check(f);
+  if(a==="save"||a==="pdf"||a==="gsync"){grab();errs=check(f);G.pick=null;
+    if(a==="gsync"&&!errs.length&&!f.dataEv)errs=[{k:"dataEv",m:"Lipsește: Data evenimentului"}];
+    if(a==="gsync"&&errs.length){render();const el=$("#ctErr");if(el)el.scrollIntoView({block:"center"});return}
+    if(a==="gsync"){b.disabled=true;const ok=await save();b.disabled=false;if(!ok)return;await gsync({...clean(f),id:f.id,driveId:f.driveId||"",calId:f.calId||""},b);return}
     if(a==="pdf"&&errs.length){render();const el=$("#ctErr");if(el)el.scrollIntoView({block:"center"});return}
     if(a==="save"&&!f.nume.trim()){errs=[{k:"nume",m:"Scrie măcar numele clientului."}];render();return}
     b.disabled=true;const ok=await save();b.disabled=false;if(!ok)return;
