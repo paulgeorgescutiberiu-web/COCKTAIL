@@ -356,6 +356,8 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ct-msg ul,.ev-alert ul{margin:6px 0 0;padding-left:18px}
 .ct-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
 .ct-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ct-rt{display:table!important;width:100%!important;border-collapse:collapse;margin:4px 0 12px}.ct-rt td{padding:7px 4px;border-bottom:1px solid var(--line)}.ct-rt td:last-child{text-align:right;font-variant-numeric:tabular-nums}.ct-rt .tot td{font-weight:800;font-size:1.1rem;border-bottom:0}
+.ct-note{margin:8px 0 0;line-height:1.45}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
 .ct-h span,.ct-m{color:var(--muted);font-size:.9rem}
 .ct-b{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .ct-chip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:.85rem;cursor:pointer;color:var(--ink)}
@@ -1300,7 +1302,7 @@ async function savePrices(sv){grabPrices();sv.disabled=true;sv.textContent="Se s
     catch(e){toast(e&&e.code==="permission-denied"?"Nu ai drept să salvezi. Verifică regulile din Firebase (privat).":"Salvarea nu a reușit. Încearcă din nou.");sv.disabled=false;sv.textContent="Salvează lista"}
 }
 
-window.__cx={loadPrices,loadExcelJS};
+window.__cx={loadPrices,loadExcelJS,buildRows,dKey,getD:()=>D};
 
 function render(){
   const v=$("#evView");
@@ -1819,7 +1821,7 @@ function cnpOk(c){c=String(c||"").replace(/\D/g,"");if(c.length!==13||!/[1-9]/.t
 const BLANK=()=>({id:null,nume:"",strada:"",nr:"",bl:"",sc:"",et:"",ap:"",localitate:"",judet:"",serie:"",nrCI:"",cnp:"",tel:"",
   dataContract:today(),obiect:"COCKTAIL CATERING",dataEv:"",locatie:"",invitati:"",pret:"",moneda:"EURO",unitate:"/ PERSOANĂ",tva:"fără TVA",
   ore:"10",semn:"Da",c1:true,c2:true,c3:true,c4:true,infl:"10",transport:"se achită separat",vase:"beneficiar",avans:"",monedaAvans:"RON",dataRest:"",plata:"în numerar",avansPlatit:false,restPlatit:false,oraEv:"",driveId:"",calId:"",ocr:{}});
-let sig=null,list=[],sub=null,mode="list",f=null,firma=null,q="",confirmDel=null,ocrMsg="",ocrBusy=false,errs=[];
+let sig=null,list=[],sub=null,mode="list",f=null,cur=null,rentMsg="",noteDel=null,firma=null,q="",confirmDel=null,ocrMsg="",ocrBusy=false,errs=[];
 
 function subscribe(){
   if(sub)return;
@@ -1949,6 +1951,9 @@ function viewList(){
     <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button></div></div>`;
   h+=gPick();
   if(!list.length)return h+`<div class="ev-ok">Niciun contract încă. Apasă „Contract nou”.</div>`;
+  const R=list.filter(c=>c.rent&&c.rent.calc&&(c.dataEv||"")<now);
+  if(R.length){const v=R.reduce((a,c)=>a+c.rent.calc.venit,0),pr=R.reduce((a,c)=>a+c.rent.calc.profit,0);
+    h+=`<div class="ct-card"><div class="ct-h"><b>Rentabilitate, evenimente trecute</b><span>${R.length} ${R.length===1?"eveniment":"evenimente"} calculate</span></div><div class="ct-m">Venit ${lei(v)} · profit <b>${lei(pr)}</b> · marjă medie ${pct(v?pr/v:0)}</div></div>`}
   h+=`<input class="search ct-q" type="search" placeholder="Caută client sau locație" value="${esc(q)}">`;
   let lastPast=null;
   L.forEach(c=>{const past=(c.dataEv||"")<now;
@@ -1957,6 +1962,8 @@ function viewList(){
       <div class="ct-m">${esc(c.pret||"")} ${esc(c.moneda||"")} ${esc(c.unitate==="TOTAL"?"total":"/ persoană")} · avans ${esc(c.avans||"—")} ${esc(c.monedaAvans||"")} · diferența la ${esc(shortDate(c.dataRest)||"—")}</div>
       <div class="ct-b"><button class="ct-chip ${c.avansPlatit?"on":""}" data-tog="avansPlatit" data-id="${c.id}">${c.avansPlatit?"✓ Avans încasat":"Avans neîncasat"}</button>
       <button class="ct-chip ${c.restPlatit?"on":""}" data-tog="restPlatit" data-id="${c.id}">${c.restPlatit?"✓ Diferență încasată":"Diferență neîncasată"}</button></div>
+      ${c.rent&&c.rent.calc?`<div class="ct-m">Rentabilitate: venit ${lei(c.rent.calc.venit)} · profit <b>${lei(c.rent.calc.profit)}</b> (${pct(c.rent.calc.marja)})</div>`:""}
+      <div class="ct-b"><button class="btn" data-rent="${c.id}">Rentabilitate</button><button class="btn" data-notes="${c.id}">Notițe${(c.notes||[]).length?` (${c.notes.length})`:""}</button></div>
       <div class="ct-b"><button class="btn" data-pdf="${c.id}">PDF</button><button class="btn${c.calId?"":" primary"}" data-gs="${c.id}">${c.calId?"✓ Actualizează Drive + calendar":"Drive + calendar"}</button><button class="btn" data-ed="${c.id}">Editează</button><button class="btn" data-dup="${c.id}">Copie</button>
       <button class="btn st-del" data-del="${c.id}">${confirmDel===c.id?"Sigur? Șterge":"Șterge"}</button></div></div>`});
   return h;
@@ -1988,7 +1995,7 @@ function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();
   o.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height);res(o.toDataURL("image/png"))};im.src=fr.result};fr.readAsDataURL(file)})}
 function render(){
   const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("ct-q");
-  V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():viewList();
+  V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():viewList();
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
 }
@@ -2085,6 +2092,73 @@ async function downloadPDF(c,btn){
   if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent=lbl}
 }
 
+/* ---------- Rentabilitate pe eveniment ---------- */
+const nr=v=>{const n=Number(String(v??"").replace(/\s/g,"").replace(",","."));return isFinite(n)?n:0};
+const lei=v=>`${Math.round(v).toLocaleString("ro-RO")} lei`;
+const pct=v=>`${Math.round((v||0)*100)}%`;
+const TVA=0.21;
+function rentDefaults(c){const r=c.rent||{};return {invitati:r.invitati??(c.invitati||""),curs:r.curs??"5",barmani:r.barmani??"",tarif:r.tarif??"",transport:r.transport??"",alte:r.alte??"",
+  bauturaClient:r.bauturaClient??(c.unitate==="TOTAL"),costBautura:r.costBautura??"",consum:r.consum||null}}
+function rentCalc(c,r){
+  const curs=c.moneda==="EURO"?nr(r.curs)||0:1,brut=(c.unitate==="TOTAL"?nr(c.pret):nr(c.pret)*nr(r.invitati))*curs;
+  const venit=c.tva==="cu TVA inclus"?brut/(1+TVA):brut;
+  const bautura=r.bauturaClient?0:nr(r.costBautura),personal=nr(r.barmani)*nr(r.tarif),transport=nr(r.transport),alte=nr(r.alte);
+  const cost=bautura+personal+transport+alte,profit=venit-cost;
+  return {venit,bautura,personal,transport,alte,cost,profit,marja:venit?profit/venit:0};
+}
+function viewRent(){
+  const c=cur,r=rentDefaults(c),k=rentCalc(c,r),ri=(key,label,o={})=>`<label>${label}<input data-r="${key}" value="${esc(r[key]??"")}" inputmode="decimal"${o.ph?` placeholder="${esc(o.ph)}"`:""}></label>`;
+  const X=window.__cx||{},DD=X.getD?X.getD():null,evs=(DD&&DD.events?DD.events:[]).filter(e=>e.date&&X.dKey(e.date)===c.dataEv).sort((a,b)=>{const m=e=>{const l=fold(c.locatie||"").toLowerCase(),n=fold(e.name||"").toLowerCase();return l&&n&&(l.includes(n)||n.includes(l))?0:1};return m(a)-m(b)});
+  let h=`<div class="st-top"><div><p class="ev-sub">Rentabilitate · ${esc(c.nume||"")}</p><p class="ev-file">${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""} · ${esc(c.pret||"")} ${esc(c.moneda||"")} ${c.unitate==="TOTAL"?"total":"/ persoană"} (${esc(c.tva||"")})</p></div>
+    <div class="st-acts"><button class="btn" data-c="back">Înapoi</button></div></div>
+    <h2 class="ev-h2">Venit</h2><div class="st-meta">${c.unitate==="TOTAL"?"":ri("invitati","Invitați reali (fără staff și copii)")}${c.moneda==="EURO"?ri("curs","Curs EUR (lei)"):""}</div>
+    <h2 class="ev-h2">Costuri</h2>
+    <label class="ct-opt"><input type="checkbox" data-rcb="bauturaClient"${r.bauturaClient?" checked":""}><span>Băutura o plătește clientul separat (pachet barmani), nu intră la costuri</span></label>
+    ${r.bauturaClient?"":`<div class="st-meta">${ri("costBautura","Cost băutură (lei, fără TVA)")}</div>
+    <div class="st-ai">${evs.length?`<p class="ev-file">Ia costul din consumul evenimentului din Excelul încărcat în Evenimente (trimis minus retur, la prețurile furnizorului, cu discountul la alcool):</p><div class="ct-b">${evs.map(e=>`<button class="btn primary" data-rcons="${esc(e.id)}">Ia consumul: ${esc(e.name)}</button>`).join("")}</div>`
+      :`<p class="ev-file">Excelul cu acest eveniment nu e încărcat acum în Evenimente. Poți scrie costul băuturii de mână sau îl iei când încarci Excelul săptămânii.</p>`}
+    ${r.consum?`<p class="ev-file">Consum luat din „${esc(r.consum.ev)}” · ${r.consum.items.length} articole${r.consum.fara?` · ${r.consum.fara} fără preț în listă (nu intră în cost)`:""}${r.consum.noRet?` · ${r.consum.noRet} fără retur notat (socotite integral)`:""}</p>`:""}${rentMsg?`<p class="ev-alert ct-msg">${esc(rentMsg)}</p>`:""}</div>`}
+    <div class="st-meta">${ri("barmani","Nr. barmani")}${ri("tarif","Plată / barman (lei)")}${ri("transport","Transport (lei)")}${ri("alte","Alte costuri: gheață, fructe, pahare sparte (lei)")}</div>
+    <h2 class="ev-h2">Rezultat</h2>
+    <table class="ct-rt"><tbody>
+      <tr><td>Venit${c.tva==="cu TVA inclus"?" (fără TVA)":""}</td><td>${lei(k.venit)}</td></tr>
+      ${r.bauturaClient?"":`<tr><td>Băutură</td><td>− ${lei(k.bautura)}</td></tr>`}
+      <tr><td>Barmani</td><td>− ${lei(k.personal)}</td></tr><tr><td>Transport</td><td>− ${lei(k.transport)}</td></tr><tr><td>Alte costuri</td><td>− ${lei(k.alte)}</td></tr>
+      <tr class="tot"><td>Profit</td><td>${lei(k.profit)} · ${pct(k.marja)}</td></tr></tbody></table>
+    <div class="st-save"><button class="btn primary" data-c="saverent">Salvează</button></div>`;
+  return h;
+}
+function grabRent(){const r=rentDefaults(cur);V.querySelectorAll("[data-r]").forEach(i=>r[i.dataset.r]=i.value.trim());V.querySelectorAll("[data-rcb]").forEach(i=>r[i.dataset.rcb]=i.checked);cur.rent={...(cur.rent||{}),...r};return cur.rent}
+async function pullConsum(e,btn){
+  grabRent();btn.disabled=true;
+  try{const X=window.__cx,P=await X.loadPrices(),{rows,noRet}=X.buildRows(e,P),disc=(Number(P.discPct)||0)/100;
+    let tot=0,fara=0;const items=[];
+    rows.filter(x=>x.q>0).forEach(x=>{if(x.pret==null||x.pret===""){fara++;items.push({l:x.tip+(x.brand?" "+x.brand:""),q:x.q,v:null});return}
+      const v=x.q*Number(x.pret)*(x.s==="alcool"?1-disc:1);tot+=v;items.push({l:x.tip+(x.brand?" "+x.brand:""),q:Math.round(x.q*100)/100,v:Math.round(v*100)/100})});
+    cur.rent.costBautura=String(Math.round(tot));cur.rent.consum={ev:e.name,items,fara,noRet,at:new Date().toISOString()};
+    rentMsg="";render();toast(`Costul băuturii: ${lei(tot)}. Verifică și apasă Salvează.`)}
+  catch(err){console.warn(err);rentMsg="Nu am putut calcula consumul. Încearcă din nou.";render()}
+}
+async function saveRent(){const r=grabRent(),calc=rentCalc(cur,r);r.calc={venit:Math.round(calc.venit),profit:Math.round(calc.profit),marja:Math.round(calc.marja*1000)/1000};
+  try{await F.fs.doc(`${F.base}/contracte/${cur.id}`).set({rent:r},{merge:true});toast(`Salvat: profit ${lei(calc.profit)} (${pct(calc.marja)}).`);mode="list";cur=null;render()}
+  catch(e){toast("Nu am putut salva. Verifică internetul.")}}
+
+/* ---------- Notițe cu clientul ---------- */
+function viewNotes(){
+  const c=cur,L=[...(c.notes||[])].map((n,i)=>({...n,i})).sort((a,b)=>String(b.d||b.at).localeCompare(String(a.d||a.at)));
+  let h=`<div class="st-top"><div><p class="ev-sub">Notițe · ${esc(c.nume||"")}</p><p class="ev-file">${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""}. Le vezi doar tu. Intră și în descrierea din calendar la următorul „Drive + calendar”.</p></div>
+    <div class="st-acts"><button class="btn" data-c="back">Înapoi</button></div></div>
+    <div class="st-ai"><div class="st-meta"><label>Data discuției<input type="date" id="ntD" value="${today()}"></label></div>
+    <label class="ct-full">Ce s-a discutat<textarea id="ntT" rows="6" placeholder="ex: vor 2 cocktailuri personalizate cu numele lor, fără alcool pentru 15 copii, bar afară până la 23:00, nașii plătesc avansul…"></textarea></label>
+    <div class="st-save"><button class="btn primary" data-c="addnote">Adaugă notița</button></div></div>`;
+  if(!L.length)return h+`<div class="ev-ok">Nicio notiță încă.</div>`;
+  h+=`<h2 class="ev-h2">Discuțiile de până acum</h2>`;
+  L.forEach(n=>{h+=`<div class="ct-card"><div class="ct-h"><b>${esc(shortDate(n.d)||shortDate(String(n.at).slice(0,10)))}</b><button class="btn st-del" data-ndel="${n.i}">${noteDel===n.i?"Sigur? Șterge":"Șterge"}</button></div><p class="ct-note">${esc(n.t).replace(/\n/g,"<br>")}</p></div>`});
+  return h;
+}
+async function saveNotes(arr,msg){try{await F.fs.doc(`${F.base}/contracte/${cur.id}`).set({notes:arr},{merge:true});cur.notes=arr;noteDel=null;render();toast(msg)}catch(e){toast("Nu am putut salva notița. Verifică internetul.")}}
+const notesTxt=c=>{const L=[...(c.notes||[])].sort((a,b)=>String(a.d||a.at).localeCompare(String(b.d||b.at)));return L.length?"\n\nDISCUȚII CU CLIENTUL:\n"+L.map(n=>`${shortDate(n.d)||""} — ${n.t}`).join("\n"):""};
+
 /* ---------- Google Drive + Calendar ---------- */
 const G={tok:null,exp:0,tc:null,pick:null};
 const fold=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
@@ -2102,7 +2176,7 @@ function evDesc(c){
   L.push(`AVANS: ${money(c.avans)} ${c.monedaAvans} (${c.avansPlatit?"încasat":"de încasat"} · contract din ${shortDate(c.dataContract)})`);
   L.push(`REST DE PLATĂ: ${shortDate(c.dataRest)||"—"}${c.restPlatit?" · încasat":""} · ${c.plata}`);
   if(on(c.c3)||on(c.c4))L.push([on(c.c3)?`TRANSPORT: ${c.transport}`:"",on(c.c4)?`taxa de vase: ${c.vase}`:""].filter(Boolean).join(" · "));
-  return L.join("\n")+"\n\nContract atașat mai jos · completat din aplicația Cocktail Philosophy.";
+  return L.join("\n")+notesTxt(c)+"\n\nContract atașat mai jos · completat din aplicația Cocktail Philosophy.";
 }
 const MARK="completat din aplicația Cocktail Philosophy";
 function loadGIS(){return loadScript("https://accounts.google.com/gsi/client","google").then(()=>window.google.accounts.oauth2)}
@@ -2202,6 +2276,11 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
+  const rb=t.closest("[data-rent]");if(rb){const c=list.find(x=>x.id===rb.dataset.rent);if(c){cur={...c};rentMsg="";mode="rent";render();window.scrollTo(0,V.offsetTop-10)}return}
+  const nb=t.closest("[data-notes]");if(nb){const c=list.find(x=>x.id===nb.dataset.notes);if(c){cur={...c};noteDel=null;mode="notes";render();window.scrollTo(0,V.offsetTop-10)}return}
+  const rc=t.closest("[data-rcons]");if(rc&&cur){const DD=window.__cx&&window.__cx.getD(),e=DD&&DD.events.find(x=>x.id===rc.dataset.rcons);if(e)pullConsum(e,rc);return}
+  const rcb=t.closest("[data-rcb]");if(rcb&&cur){grabRent();render();return}
+  const nd=t.closest("[data-ndel]");if(nd&&cur){const i=+nd.dataset.ndel;if(noteDel!==i){noteDel=i;render();return}const arr=(cur.notes||[]).filter((_,j)=>j!==i);saveNotes(arr,"Notița a fost ștearsă.");return}
   const gs=t.closest("[data-gs]");if(gs){const c=list.find(x=>x.id===gs.dataset.gs);if(c){G.pick=null;gsync(c,gs)}return}
   const gp=t.closest("[data-gp]");if(gp&&G.pick){const v=gp.dataset.gp,c=G.pick.c;if(v==="__cancel"){G.pick=null;render();return}gsync(c,gp,v==="__new"?null:v);return}
   const pd=t.closest("[data-pdf]");if(pd){const c=list.find(x=>x.id===pd.dataset.pdf);if(c)downloadPDF(c,pd);return}
@@ -2211,7 +2290,10 @@ V.addEventListener("click",async e=>{
     confirmDel=null;F.fs.doc(`${F.base}/contracte/${id}`).delete().then(()=>toast("Contractul a fost șters.")).catch(()=>toast("Nu am putut șterge."));return}
   if(!b)return;const a=b.dataset.c;
   if(a==="new"){f=BLANK();errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10);return}
-  if(a==="back"){mode="list";f=null;errs=[];render();return}
+  if(a==="back"){mode="list";f=null;cur=null;errs=[];render();return}
+  if(a==="saverent"){saveRent();return}
+  if(a==="addnote"){const tx=($("#ntT").value||"").trim(),d=$("#ntD").value||today();if(!tx){toast("Scrie ce s-a discutat.");return}
+    saveNotes([...(cur.notes||[]),{d,t:tx,at:new Date().toISOString()}],"Notița a fost salvată.");return}
   if(a==="firma"){mode="firma";render();return}
   if(a==="savefirma"){const x={};V.querySelectorAll("[data-fi]").forEach(i=>x[i.dataset.fi]=i.value.trim());
     try{await F.fs.doc(`${F.base}/privat/firma`).set(x);firma={...FIRMA_DEF,...x};mode="list";render();toast("Datele firmei au fost salvate.")}catch(e2){toast("Nu am putut salva datele firmei.")}return}
