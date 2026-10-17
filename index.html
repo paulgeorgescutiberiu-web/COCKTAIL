@@ -357,7 +357,7 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ct-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
 .ct-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .ct-rt{display:table!important;width:100%!important;border-collapse:collapse;margin:4px 0 12px}.ct-rt td{padding:7px 4px;border-bottom:1px solid var(--line)}.ct-rt td:last-child{text-align:right;font-variant-numeric:tabular-nums}.ct-rt .tot td{font-weight:800;font-size:1.1rem;border-bottom:0}
-.ct-note{margin:8px 0 0;line-height:1.45}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
+.ct-note{margin:8px 0 0;line-height:1.45}.ct-sg{align-items:center}.ct-sg a.ct-chip{text-decoration:none}.ct-up{cursor:pointer}.ct-up.busy{opacity:.6;pointer-events:none}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
 .ct-h span,.ct-m{color:var(--muted);font-size:.9rem}
 .ct-b{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .ct-chip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:.85rem;cursor:pointer;color:var(--ink)}
@@ -1962,6 +1962,8 @@ function viewList(){
       <div class="ct-m">${esc(c.pret||"")} ${esc(c.moneda||"")} ${esc(c.unitate==="TOTAL"?"total":"/ persoană")} · avans ${esc(c.avans||"—")} ${esc(c.monedaAvans||"")} · diferența la ${esc(shortDate(c.dataRest)||"—")}</div>
       <div class="ct-b"><button class="ct-chip ${c.avansPlatit?"on":""}" data-tog="avansPlatit" data-id="${c.id}">${c.avansPlatit?"✓ Avans încasat":"Avans neîncasat"}</button>
       <button class="ct-chip ${c.restPlatit?"on":""}" data-tog="restPlatit" data-id="${c.id}">${c.restPlatit?"✓ Diferență încasată":"Diferență neîncasată"}</button></div>
+      <div class="ct-b ct-sg">${c.signedId?`<a class="ct-chip on" href="https://drive.google.com/file/d/${esc(c.signedId)}/view" target="_blank" rel="noopener">✓ Semnat de client${c.signedAt?" · "+esc(shortDate(c.signedAt)):""} · vezi</a>`:`<span class="ct-chip">Nesemnat de client</span>`}
+      <label class="btn${c.signedId?"":" primary"} ct-up">${c.signedId?"Înlocuiește contractul semnat":"Încarcă contractul semnat de client"}<input type="file" accept="application/pdf,image/*" data-sgn="${c.id}" hidden></label></div>
       ${c.rent&&c.rent.calc?`<div class="ct-m">Rentabilitate: venit ${lei(c.rent.calc.venit)} · profit <b>${lei(c.rent.calc.profit)}</b> (${pct(c.rent.calc.marja)})</div>`:""}
       <div class="ct-b"><button class="btn" data-rent="${c.id}">Rentabilitate</button><button class="btn" data-notes="${c.id}">Notițe${(c.notes||[]).length?` (${c.notes.length})`:""}</button></div>
       <div class="ct-b"><button class="btn" data-pdf="${c.id}">PDF</button><button class="btn${c.calId?"":" primary"}" data-gs="${c.id}">${c.calId?"✓ Actualizează Drive + calendar":"Drive + calendar"}</button><button class="btn" data-ed="${c.id}">Editează</button><button class="btn" data-dup="${c.id}">Copie</button>
@@ -2176,7 +2178,8 @@ function evDesc(c){
   L.push(`AVANS: ${money(c.avans)} ${c.monedaAvans} (${c.avansPlatit?"încasat":"de încasat"} · contract din ${shortDate(c.dataContract)})`);
   L.push(`REST DE PLATĂ: ${shortDate(c.dataRest)||"—"}${c.restPlatit?" · încasat":""} · ${c.plata}`);
   if(on(c.c3)||on(c.c4))L.push([on(c.c3)?`TRANSPORT: ${c.transport}`:"",on(c.c4)?`taxa de vase: ${c.vase}`:""].filter(Boolean).join(" · "));
-  return L.join("\n")+notesTxt(c)+"\n\nContract atașat mai jos · completat din aplicația Cocktail Philosophy.";
+  L.push(c.signedId?`CONTRACT: semnat de ambele părți${c.signedAt?" ("+shortDate(c.signedAt)+")":""}`:"CONTRACT: trimis clientului, încă nesemnat de el");
+  return L.join("\n")+notesTxt(c)+`\n\n${c.signedId?"Contractul semnat e":"Contract"} atașat mai jos · completat din aplicația Cocktail Philosophy.`;
 }
 const MARK="completat din aplicația Cocktail Philosophy";
 function loadGIS(){return loadScript("https://accounts.google.com/gsi/client","google").then(()=>window.google.accounts.oauth2)}
@@ -2230,12 +2233,13 @@ async function dayEvents(d){
   return (r.items||[]).filter(e=>e.status!=="cancelled");
 }
 async function writeEvent(c,file,targetId){
-  const att={fileUrl:`https://drive.google.com/file/d/${file.id}/view?usp=drivesdk`,fileId:file.id,title:file.name,mimeType:"application/pdf"};
+  const sg=c.signedId?{fileUrl:`https://drive.google.com/file/d/${c.signedId}/view?usp=drivesdk`,fileId:c.signedId,title:c.signedName||"Contract semnat",mimeType:c.signedMime||"application/pdf"}:null;
+  const att=sg||{fileUrl:`https://drive.google.com/file/d/${file.id}/view?usp=drivesdk`,fileId:file.id,title:file.name,mimeType:"application/pdf"};
   const desc=evDesc(c);
   if(targetId){
     const ex=await gf(CAL("/"+encodeURIComponent(targetId)));
     const old=String(ex.description||"").trim(),keep=old&&!old.includes(MARK)?"\n\n— Note anterioare —\n"+old:"";
-    const atts=(ex.attachments||[]).filter(a=>a.fileId!==file.id&&!(c.driveId&&a.fileId===c.driveId));atts.push(att);
+    const atts=(ex.attachments||[]).filter(a=>a.fileId!==file.id&&a.fileId!==att.fileId&&!(c.driveId&&a.fileId===c.driveId));atts.push(att);
     const body={description:desc+keep,location:ex.location||tcase(c.locatie),attachments:atts};
     if(c.oraEv)Object.assign(body,evTimes(c));
     return gf(CAL("/"+encodeURIComponent(targetId)+"?supportsAttachments=true&sendUpdates=none"),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -2272,6 +2276,32 @@ async function gsync(c,btn,target){
   finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent=lbl}}
 }
 
+async function uploadSigned(c,fileIn){
+  const lab=fileIn.closest("label");if(lab){lab.classList.add("busy");lab.firstChild.textContent="Se încarcă în Drive…"}
+  try{
+    if(!c.dataEv)throw {msg:"Contractul nu are data evenimentului. Completeaz-o la Editează."};
+    if(fileIn.files[0].size>25e6)throw {msg:"Fișierul e prea mare (peste 25 MB)."};
+    const fl=fileIn.files[0],ext=(fl.name.match(/\.[a-z0-9]{2,5}$/i)||[fl.type==="application/pdf"?".pdf":".jpg"])[0].toLowerCase(),
+      name=fileName(c).replace(/_Contract\.pdf$/,"_Contract_SEMNAT"+ext),mime=fl.type||"application/pdf";
+    let file=null;
+    if(c.signedId){try{file=await gf(`https://www.googleapis.com/upload/drive/v3/files/${c.signedId}?uploadType=multipart&fields=id,name`,{method:"PATCH",body:mp({name,mimeType:mime},fl)})}catch(e){if(!/404/.test(e.msg||""))throw e}}
+    if(!file)file=await gf("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name",{method:"POST",body:mp({name,mimeType:mime,parents:[await folderFor(c.dataEv.slice(0,4))]},fl)});
+    const upd={signedId:file.id,signedName:file.name,signedMime:mime,signedAt:today()};
+    await F.fs.doc(`${F.base}/contracte/${c.id}`).set(upd,{merge:true});
+    const cc={...c,...upd};let calMsg="";
+    if(c.calId){try{const ex=await gf(CAL("/"+encodeURIComponent(c.calId)));
+        if(ex&&ex.status!=="cancelled"){
+          const old=String(ex.description||""),desc=old.includes(MARK)?evDesc(cc)+(old.includes("— Note anterioare —")?"\n\n— Note anterioare —"+old.split("— Note anterioare —").slice(1).join("— Note anterioare —"):""):old;
+          const atts=(ex.attachments||[]).filter(a=>a.fileId!==file.id&&a.fileId!==c.driveId);
+          atts.push({fileUrl:`https://drive.google.com/file/d/${file.id}/view?usp=drivesdk`,fileId:file.id,title:file.name,mimeType:mime});
+          await gf(CAL("/"+encodeURIComponent(c.calId)+"?supportsAttachments=true&sendUpdates=none"),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({description:desc,attachments:atts})});
+          calMsg=" și l-am pus în calendar în locul celui nesemnat"}}catch(e){console.warn(e);calMsg=", dar nu am putut actualiza calendarul"}}
+    else calMsg=". Apasă „Drive + calendar” ca să apară și în calendar";
+    toast(`Gata: contractul semnat e în Drive (${file.name})${calMsg}.`);
+  }catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut încărca contractul semnat. Încearcă din nou.")}
+  finally{fileIn.value="";render()}
+}
+V.addEventListener("change",e=>{const i=e.target.closest("[data-sgn]");if(!i||!i.files||!i.files[0])return;const c=list.find(x=>x.id===i.dataset.sgn);if(c)uploadSigned(c,i)});
 V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render()}});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
