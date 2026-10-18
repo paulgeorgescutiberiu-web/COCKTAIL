@@ -429,11 +429,12 @@ a.btn.primary{color:var(--on-leaf)}
   </div>
   <h1 class="display">Rețetar<span class="yr">2026</span></h1>
   <nav class="tabs" role="tablist" aria-label="Secțiuni">
-    <button role="tab" aria-selected="true" aria-controls="v-retete" data-view="retete">Rețete</button>
     <button role="tab" aria-selected="false" aria-controls="v-evenimente" data-view="evenimente">Evenimente</button>
     <button role="tab" aria-selected="false" aria-controls="v-stoc" data-view="stoc">Stoc depozit</button>
     <button role="tab" aria-selected="false" aria-controls="v-oferte" data-view="oferte">Oferte</button>
     <button role="tab" aria-selected="false" aria-controls="v-contracte" data-view="contracte" class="edit-only">Contracte</button>
+    <button role="tab" aria-selected="false" aria-controls="v-postare" data-view="postare" class="edit-only">Postare</button>
+    <button role="tab" aria-selected="false" aria-controls="v-retete" data-view="retete">Rețete</button>
   </nav>
 </header>
 <main>
@@ -461,6 +462,7 @@ a.btn.primary{color:var(--on-leaf)}
   </section>
   <section class="view" id="v-stoc" role="tabpanel" hidden=""></section>
   <section class="view" id="v-contracte" role="tabpanel" hidden=""></section>
+  <section class="view" id="v-postare" role="tabpanel" hidden=""></section>
   <section class="view" id="v-oferte" role="tabpanel" hidden=""></section>
 </main>
 <footer>Cocktail Philosophy · Str. Tractorului 4, Sibiu · <a href="tel:+40743785655">0743 785 655</a></footer>
@@ -573,7 +575,7 @@ document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("clic
   document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="v-"+b.dataset.view);
   store.set("tab",b.dataset.view);
 }));
-{const t=store.get("tab","retete");const b=document.querySelector(`nav.tabs button[data-view="${t}"]`);if(b)b.click();}
+{const t=store.get("tab","evenimente");const b=document.querySelector(`nav.tabs button[data-view="${t}"]`);if(b)b.click();}
 const themes=[null,"light","dark"],tlabel={null:"Temă: auto",light:"Temă: luminoasă",dark:"Temă: întunecată"};
 let theme=store.get("theme",null);
 function applyTheme(){theme?document.documentElement.setAttribute("data-theme",theme):document.documentElement.removeAttribute("data-theme");$("#themeBtn").textContent=tlabel[theme]}
@@ -1027,7 +1029,7 @@ function parseRet(s){s=String(s).trim().replace(",",".");if(s==="")return null;c
 
 function heading(){
   const h=document.querySelector("h1");if(!h)return;
-  const tb=store.get("tab","retete");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}
+  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram + Facebook</span>`;return}
   h.innerHTML=tb==="evenimente"&&D?`Evenimente<span class="yr">${esc(D.title.big)}</span>`:`Rețetar<span class="yr">2026</span>`;
 }
 function loadData(){
@@ -1962,13 +1964,13 @@ V.addEventListener("click",async e=>{
 let started=false;
 function start(){if(started)return;started=true;V.innerHTML=`<p class="ev-file">Se încarcă stocul…</p>`;subscribe()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="stoc")start()}));
-if(store.get("tab","retete")==="stoc")start();
+if(store.get("tab","evenimente")==="stoc")start();
 window.__stocRefresh=()=>{if(started&&mode==="list")render()};
 })();
 
 /* ---------- Contracte (doar administrator) ---------- */
 (function(){
-const V=$("#v-contracte"),F=window.CPFS;
+const V=$("#v-contracte"),PV=$("#v-postare"),F=window.CPFS;
 if(!V||!F)return;
 const MONTHS=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
 const JUD={AB:"ALBA",AR:"ARAD",AG:"ARGEȘ",BC:"BACĂU",BH:"BIHOR",BN:"BISTRIȚA-NĂSĂUD",BT:"BOTOȘANI",BV:"BRAȘOV",BR:"BRĂILA",B:"BUCUREȘTI",BZ:"BUZĂU",CS:"CARAȘ-SEVERIN",CL:"CĂLĂRAȘI",CJ:"CLUJ",CT:"CONSTANȚA",CV:"COVASNA",DB:"DÂMBOVIȚA",DJ:"DOLJ",GL:"GALAȚI",GR:"GIURGIU",GJ:"GORJ",HR:"HARGHITA",HD:"HUNEDOARA",IL:"IALOMIȚA",IS:"IAȘI",IF:"ILFOV",MM:"MARAMUREȘ",MH:"MEHEDINȚI",MS:"MUREȘ",NT:"NEAMȚ",OT:"OLT",PH:"PRAHOVA",SM:"SATU MARE",SJ:"SĂLAJ",SB:"SIBIU",SV:"SUCEAVA",TR:"TELEORMAN",TM:"TIMIȘ",TL:"TULCEA",VS:"VASLUI",VL:"VÂLCEA",VN:"VRANCEA"};
@@ -1988,7 +1990,7 @@ function subscribe(){
   sub=F.fs.collection(`${F.base}/contracte`).onSnapshot(s=>{list=s.docs.map(d=>({...d.data(),id:d.id}));if(mode==="list")render()},
     e=>{V.innerHTML=`<p class="notice">Contractele nu se pot încărca. ${e&&e.code==="permission-denied"?"Verifică regulile din Firebase (contracte).":"Verifică internetul."}</p>`});
   F.fs.doc(`${F.base}/privat/semnatura`).get().then(d=>{sig=d.exists&&d.data().img||null;if(mode!=="list")render()}).catch(()=>{});
-  F.fs.doc(`${F.base}/privat/firma`).get().then(d=>{firma=d.exists?{...FIRMA_DEF,...d.data()}:{...FIRMA_DEF}}).catch(()=>{firma={...FIRMA_DEF}});
+  F.fs.doc(`${F.base}/privat/firma`).get().then(d=>{firma=d.exists?{...FIRMA_DEF,...d.data()}:{...FIRMA_DEF};if(PV&&!PV.hidden)socRender()}).catch(()=>{firma={...FIRMA_DEF}});
 }
 
 /* ---------- Citirea buletinului, pe dispozitiv ---------- */
@@ -2108,7 +2110,7 @@ function viewList(){
   const L=list.filter(c=>!qq||[c.nume,c.locatie].some(v=>String(v||"").toLowerCase().includes(qq)))
     .sort((a,b)=>{const fa=(a.dataEv||"")>=now,fb=(b.dataEv||"")>=now;if(fa!==fb)return fa?-1:1;return fa?String(a.dataEv).localeCompare(b.dataEv):String(b.dataEv).localeCompare(a.dataEv)});
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length} ${list.length===1?"contract":"contracte"}</p><p class="ev-file">Le vezi doar tu. Barmanii nu au acces la contracte.</p></div>
-    <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button><button class="btn" data-c="social">📸 Postează pe Instagram</button></div></div>`;
+    <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button></div></div>`;
   h+=gPick();
   if(!list.length)return h+`<div class="ev-ok">Niciun contract încă. Apasă „Contract nou”.</div>`;
   const R=list.filter(c=>c.rent&&c.rent.calc&&(c.dataEv||"")<now);
@@ -2163,10 +2165,9 @@ function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();
   o.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height);res(o.toDataURL("image/png"))};im.src=fr.result};fr.readAsDataURL(file)})}
 function render(){
   const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("ct-q");
-  V.innerHTML=mode==="social"?viewSocial():mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():viewList();
+  V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():viewList();
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
-  if(mode==="social")drawSoc();
   if(mode==="list"){payAuto();portalAuto()}
 }
 function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
@@ -2385,8 +2386,7 @@ function socDims(){const im=SOC.img;if(!im)return null;const r=SOC_R[SOC.ratio],
   const sx=Math.round((W-cw)*(cw<W?SOC.pos:0.5)),sy=Math.round((H-ch)*(ch<H?SOC.pos:0.5));return {sx,sy,cw,ch}}
 function viewSocial(){
   const hook=(firma&&firma.socialHook||"").trim();
-  let h=`<div class="st-top"><div><p class="ev-sub">Postează pe Instagram + Facebook</p><p class="ev-file">Alegi poza, verifici textul, apeși Postează. Apare pe Instagram și pe pagina de Facebook în 1–2 minute.</p></div>
-    <div class="st-acts"><button class="btn" data-c="back">Înapoi</button></div></div>`;
+  let h=`<div class="st-top"><div><p class="ev-sub">Postează pe Instagram + Facebook</p><p class="ev-file">Alegi poza, verifici textul, apeși Postează. Apare pe Instagram și pe pagina de Facebook în 1–2 minute.</p></div></div>`;
   if(!hook)h+=`<div class="ev-alert">Lipsește adresa webhook-ului din Make. Pune-o la <b>Datele firmei → Instagram și Facebook</b>.</div>`;
   h+=`<div class="st-ai"><label class="btn primary ct-up">${SOC.img?"Altă poză":"Alege poza (galerie sau cameră)"}<input type="file" accept="image/*" id="socFile" hidden></label>`;
   if(SOC.img){const d=socDims(),canMove=d&&(d.cw<SOC.img.naturalWidth||d.ch<SOC.img.naturalHeight);
@@ -2404,20 +2404,20 @@ function viewSocial(){
 function drawSoc(){const cv=$("#socCv"),d=socDims();if(!cv||!d)return;const w=1080,hh=Math.round(w*d.ch/d.cw);cv.width=w;cv.height=hh;
   cv.getContext("2d").drawImage(SOC.img,d.sx,d.sy,d.cw,d.ch,0,0,w,hh)}
 function socLoad(fl){const u=URL.createObjectURL(fl),im=new Image();im.onload=()=>{SOC.img=im;SOC.name=fl.name;SOC.pos=0.5;SOC.arm=false;SOC.msg="";
-    SOC.ratio=im.naturalWidth/im.naturalHeight>1.3?"169":im.naturalWidth/im.naturalHeight>0.95?"11":"45";render();socAI(false)};
+    SOC.ratio=im.naturalWidth/im.naturalHeight>1.3?"169":im.naturalWidth/im.naturalHeight>0.95?"11":"45";socRender();socAI(false)};
   im.onerror=()=>toast("Nu am putut deschide poza. Încearcă alt fișier (JPG sau PNG).");im.src=u}
 async function socPost(btn){
   const hook=(firma&&firma.socialHook||"").trim(),txt=($("#socTxt").value||"").trim();SOC.caption=txt;
   if(!/^https:\/\/hook\.[a-z0-9]+\.make\.com\//.test(hook)){toast("Adresa webhook-ului din Make nu pare corectă.");return}
   if(!txt){toast("Scrie un text pentru postare.");return}
-  if(!SOC.arm){SOC.arm=true;render();return}
-  SOC.busy=true;SOC.arm=false;render();
+  if(!SOC.arm){SOC.arm=true;socRender();return}
+  SOC.busy=true;SOC.arm=false;socRender();
   try{const cv=$("#socCv");let q=0.9,blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",q));
     while(blob.size>7.5e6&&q>0.5){q-=0.1;blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",q))}
     const fd=new FormData(),id=today()+"_"+Date.now().toString(36);fd.append("id",id);fd.append("caption",txt);fd.append("photo",blob,id+".jpg");
     const r=await fetch(hook,{method:"POST",body:fd});if(!r.ok)throw new Error(r.status);
-    SOC.img=null;SOC.caption="";SOC.msg="";SOC.busy=false;mode="list";render();toast("Trimis! Apare pe Instagram și Facebook în 1–2 minute.");
-  }catch(e){console.warn(e);SOC.busy=false;SOC.msg="Nu am putut trimite poza. Verifică internetul și că scenariul din Make e pornit, apoi încearcă din nou.";render()}
+    SOC.img=null;SOC.caption="";SOC.msg="";SOC.busy=false;socRender();toast("Trimis! Apare pe Instagram și Facebook în 1–2 minute.");
+  }catch(e){console.warn(e);SOC.busy=false;SOC.msg="Nu am putut trimite poza. Verifică internetul și că scenariul din Make e pornit, apoi încearcă din nou.";socRender()}
 }
 
 function socEvent(){const t=today();return list.filter(c=>c.dataEv&&c.dataEv<=t).sort((a,b)=>String(b.dataEv).localeCompare(a.dataEv))[0]||null}
@@ -2441,10 +2441,10 @@ Răspunde DOAR cu JSON: {"text":"textul complet al postării, cu rânduri noi ca
 }
 async function socAI(again){
   const X=window.__cpAI;if(!SOC.img)return;
-  if(!X||!X.ready()){SOC.aiMsg="Textul automat nu e disponibil acum. Folosește textul gata scris.";render();return}
+  if(!X||!X.ready()){SOC.aiMsg="Textul automat nu e disponibil acum. Folosește textul gata scris.";socRender();return}
   const cur=(($("#socTxt")||{}).value||"").trim();
   if(!again&&cur&&cur!==SOC_TPL().trim()&&SOC.caption&&SOC.caption.trim()!==SOC_TPL().trim())return;
-  SOC.ai=true;SOC.aiMsg="";SOC.arm=false;render();
+  SOC.ai=true;SOC.aiMsg="";SOC.arm=false;socRender();
   try{
     const src=SOC.img,s=Math.min(1,1280/Math.max(src.naturalWidth,src.naturalHeight)),cv=document.createElement("canvas");cv.width=Math.round(src.naturalWidth*s);cv.height=Math.round(src.naturalHeight*s);cv.getContext("2d").drawImage(src,0,0,cv.width,cv.height);
     const part={inlineData:{data:cv.toDataURL("image/jpeg",0.85).split(",")[1],mimeType:"image/jpeg"}};
@@ -2456,7 +2456,23 @@ async function socAI(again){
     t=String(t).replace(/\\n/g,"\n").trim();if(!t)throw new Error("gol");
     SOC.caption=t;SOC.aiMsg="";
   }catch(e){console.warn(e);SOC.aiMsg="Nu am putut scrie textul după poză acum. Poți folosi textul gata scris sau încerca din nou."}
-  finally{SOC.ai=false;render()}
+  finally{SOC.ai=false;socRender()}
+}
+
+function socRender(){if(!PV)return;if(!F.isAdmin){PV.innerHTML=`<div class="ev-ok">Postările le face doar administratorul.</div>`;return}
+  const y=window.scrollY;PV.innerHTML=viewSocial();drawSoc();window.scrollTo(0,y)}
+if(PV){
+  PV.addEventListener("change",e=>{if(e.target.id==="socFile"){const fl=e.target.files&&e.target.files[0];if(fl)socLoad(fl)}});
+  PV.addEventListener("input",e=>{const t=e.target;
+    if(t.id==="socPos"){SOC.pos=t.value/100;drawSoc();return}
+    if(t.id==="socCtx"){SOC.ctx=t.value;return}
+    if(t.id==="socTxt"){SOC.caption=t.value;if(SOC.arm){SOC.arm=false;const b=PV.querySelector('[data-c="socpost"]');if(b)b.textContent="Postează pe Instagram + Facebook"}}});
+  PV.addEventListener("click",e=>{const t=e.target;
+    const sr=t.closest("[data-sr]");if(sr){SOC.ratio=sr.dataset.sr;SOC.pos=0.5;SOC.arm=false;SOC.caption=($("#socTxt")||{}).value||SOC.caption;socRender();return}
+    const b=t.closest("[data-c]");if(!b)return;const a=b.dataset.c;
+    if(a==="soctpl"){SOC.caption=SOC_TPL();SOC.arm=false;socRender();return}
+    if(a==="socai"){const cx=$("#socCtx");if(cx)SOC.ctx=cx.value.trim();socAI(true);return}
+    if(a==="socpost"){socPost(b);return}});
 }
 
 /* ---------- Rentabilitate pe eveniment ---------- */
@@ -2667,12 +2683,10 @@ async function uploadSigned(c,fileIn){
   }catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut încărca contractul semnat. Încearcă din nou.")}
   finally{fileIn.value="";render()}
 }
-V.addEventListener("change",e=>{if(e.target.id==="socFile"){const fl=e.target.files&&e.target.files[0];if(fl)socLoad(fl);return}
+V.addEventListener("change",e=>{
   const i=e.target.closest("[data-sgn]");if(!i||!i.files||!i.files[0])return;const c=list.find(x=>x.id===i.dataset.sgn);if(c)uploadSigned(c,i)});
 V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render();return}
-  if(e.target.id==="socPos"){SOC.pos=e.target.value/100;drawSoc();return}
-  if(e.target.id==="socCtx"){SOC.ctx=e.target.value;return}
-  if(e.target.id==="socTxt"){SOC.caption=e.target.value;if(SOC.arm){SOC.arm=false;const b=V.querySelector('[data-c="socpost"]');if(b)b.textContent="Postează pe Instagram + Facebook"}}});
+});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
@@ -2686,7 +2700,6 @@ V.addEventListener("click",async e=>{
   const pw=t.closest("[data-paywa]");if(pw){const c=list.find(x=>x.id===pw.dataset.paywa);if(c&&c.payOrder){const tel=telWa(c.tel),u=(tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(payMsg(c));window.open(u,"_blank")}return}
   const pc=t.closest("[data-paycp]");if(pc){const c=list.find(x=>x.id===pc.dataset.paycp);if(c&&c.payOrder)navigator.clipboard.writeText(c.payOrder.url).then(()=>toast("Linkul a fost copiat."),()=>toast(c.payOrder.url));return}
   const pk=t.closest("[data-paychk]");if(pk){const c=list.find(x=>x.id===pk.dataset.paychk);if(c)payCheck(c,false);return}
-  const sr=t.closest("[data-sr]");if(sr){SOC.ratio=sr.dataset.sr;SOC.pos=0.5;SOC.arm=false;SOC.caption=($("#socTxt")||{}).value||SOC.caption;render();return}
   const rb=t.closest("[data-rent]");if(rb){const c=list.find(x=>x.id===rb.dataset.rent);if(c){cur={...c};rentMsg="";mode="rent";render();window.scrollTo(0,V.offsetTop-10)}return}
   const nb=t.closest("[data-notes]");if(nb){const c=list.find(x=>x.id===nb.dataset.notes);if(c){cur={...c};noteDel=null;mode="notes";render();window.scrollTo(0,V.offsetTop-10)}return}
   const rc=t.closest("[data-rcons]");if(rc&&cur){const DD=window.__cx&&window.__cx.getD(),e=DD&&DD.events.find(x=>x.id===rc.dataset.rcons);if(e)pullConsum(e,rc);return}
@@ -2702,10 +2715,7 @@ V.addEventListener("click",async e=>{
   if(!b)return;const a=b.dataset.c;
   if(a==="new"){f=BLANK();errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10);return}
   if(a==="back"){mode="list";f=null;cur=null;errs=[];SOC.arm=false;render();return}
-  if(a==="social"){mode="social";SOC.msg="";SOC.arm=false;render();window.scrollTo(0,V.offsetTop-10);return}
-  if(a==="soctpl"){SOC.caption=SOC_TPL();SOC.arm=false;render();return}
-  if(a==="socai"){const cx=$("#socCtx");if(cx)SOC.ctx=cx.value.trim();socAI(true);return}
-  if(a==="socpost"){socPost(b);return}
+
   if(a==="saverent"){saveRent();return}
   if(a==="addnote"){const tx=($("#ntT").value||"").trim(),d=$("#ntD").value||today();if(!tx){toast("Scrie ce s-a discutat.");return}
     saveNotes([...(cur.notes||[]),{d,t:tx,at:new Date().toISOString()}],"Notița a fost salvată.");return}
@@ -2730,9 +2740,11 @@ V.addEventListener("click",async e=>{
 });
 
 let started=false;
-function start(){if(started)return;started=true;if(!F.isAdmin){V.innerHTML=`<div class="ev-ok">Contractele le vede doar administratorul.</div>`;return}V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;subscribe()}
-document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="contracte")start()}));
-if(store.get("tab","retete")==="contracte")start();
+function start(){if(started)return;started=true;if(!F.isAdmin){V.innerHTML=`<div class="ev-ok">Contractele le vede doar administratorul.</div>`;return}V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;const had=!!sub;subscribe();if(had)render()}
+function startPost(){if(F.isAdmin&&!sub)subscribe();socRender()}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="contracte")start();if(b.dataset.view==="postare")startPost()}));
+if(store.get("tab","evenimente")==="contracte")start();
+if(store.get("tab","evenimente")==="postare")startPost();
 window.__ct={parseMRZ,parseVisual,cnpOk,contractDoc,FIRMA_DEF};
 })();
 
@@ -2813,7 +2825,7 @@ V.addEventListener("click",async e=>{
 let started=false;
 function start(){if(started)return;started=true;load()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="oferte")start()}));
-if(store.get("tab","retete")==="oferte")start();
+if(store.get("tab","evenimente")==="oferte")start();
 })();
 
 /* After a save reloads the page, reopen what was being edited */
