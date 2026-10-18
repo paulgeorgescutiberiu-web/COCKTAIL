@@ -2273,10 +2273,10 @@ function portalRow(c){
   if(POR.busy[c.id])return `<div class="ct-b"><button class="btn" disabled>Se pregătește portalul…</button></div>`;
   if(!c.portalTok)return `<div class="ct-b"><button class="btn" data-porn="${c.id}">🔗 Portal pentru client</button></div>`;
   const r=c.portalResp||{},chips=[`<span class="ct-chip ${r.seenAt?"on":""}">${r.seenAt?"✓ A deschis portalul":"Portal nedeschis"}</span>`,
-    `<span class="ct-chip ${r.menu&&r.menu.length?"on":""}">${r.menu&&r.menu.length?`✓ Meniu: ${r.menu.length} cocktailuri`:"Meniu neales"}</span>`,
+    `<span class="ct-chip ${r.menu&&r.menu.length?"on":""}">${r.menu&&r.menu.length?(r.menu.length>=porMenuOptions().length?"✓ Meniu: toate cocktailurile":`✓ Meniu: ${r.menu.length} cocktailuri`):"Meniu neales"}</span>`,
     `<span class="ct-chip ${r.signedAt?"on":""}">${r.signedAt?"✓ Semnat în portal":"Nesemnat în portal"}</span>`].join("");
   return `<div class="ct-b">${chips}</div>
-    ${r.menu&&r.menu.length?`<div class="ct-m">Meniu ales: ${esc(r.menu.join(", "))}${r.obs?` · ${esc(r.obs)}`:""}</div>`:""}
+    ${r.menu&&r.menu.length||r.obs?`<div class="ct-m">${r.menu&&r.menu.length?`Meniu ales: ${esc(r.menu.join(", "))}`:""}${r.obs?`<br>Preferințe: ${esc(r.obs)}`:""}</div>`:""}
     <div class="ct-b"><button class="btn primary" data-porwa="${c.id}">Trimite portalul pe WhatsApp</button><button class="btn" data-porcp="${c.id}">Copiază linkul</button><button class="btn" data-porup="${c.id}">Actualizează portalul</button>${r.signedAt&&!c.portalSaved?`<button class="btn primary" data-porsg="${c.id}">Salvează contractul semnat în Drive</button>`:""}</div>`;
 }
 async function portalPublish(c){
@@ -2291,7 +2291,7 @@ async function portalPublish(c){
       client:{nume:tcase(c.nume||""),prenume:tcase(String(c.nume||"").trim().split(/\s+/).slice(-1)[0]||"")},
       firma:{nume:F0.nume,iban:F0.iban,banca:F0.banca,tel:"0743 785 655"},
       oferte:[{t:"Meniul 2026",u:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/MENIU-2026-GOLD.pdf"},isTotal?{t:"Oferta pachet barmani",u:"https://cocktailphilosophy.ro/wp-content/uploads/2023/04/PACHET-BARMANI-2023-compressed.pdf"}:{t:"Oferta All Inclusive",u:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/OFERTA-ALL-INCLUSIVE.pdf"}],
-      menuOpts:porMenuOptions(),menuMax:Number(c.nrCocktailuri)||6,
+      menuOpts:porMenuOptions(),
       pay:c.payOrder&&c.payOrder.url?{url:c.payOrder.url}:null,
       pdf};
     await F.fs.doc(`portal/${tok}`).set(doc,{merge:true});

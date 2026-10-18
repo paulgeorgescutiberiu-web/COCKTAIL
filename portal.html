@@ -73,13 +73,13 @@ let P=null,sel=[],pdfUrl=null;
 async function load(){
   let d;try{d=await ref.get()}catch(e){fail("Nu am putut deschide evenimentul. Verifică internetul și reîncarcă pagina.");return}
   if(!d.exists){fail("Linkul nu mai e valabil sau nu există.");return}
-  P=d.data();P.resp=P.resp||{};sel=(P.resp.menuIds||[]).slice();
+  P=d.data();P.resp=P.resp||{};sel=P.resp.menuIds?P.resp.menuIds.slice():(P.menuOpts||[]).map(o=>o.id);
   render();
   if(!P.resp.seenAt){P.resp.seenAt=new Date().toISOString();ref.set({resp:P.resp},{merge:true}).catch(()=>{})}
 }
 function render(){
   const e=P.ev,r=P.resp,signed=!!r.signedAt,menuDone=(r.menu||[]).length>0;
-  const max=P.menuMax||6;
+  const tot=(P.menuOpts||[]).length;
   let h=`<div class="brand">COCKTAIL <b>PHILOSOPHY</b>®</div>
   <h1>Bună${P.client.prenume?", "+esc(P.client.prenume):""}!<br><em>Pregătim barul.</em></h1>
   <div class="card"><div class="facts">
@@ -91,11 +91,12 @@ function render(){
   <section class="card"><h2><span class="n done">1</span>Oferta și meniul</h2>
     <div class="row">${(P.oferte||[]).map(o=>`<a class="btn sec" href="${esc(o.u)}" target="_blank" rel="noopener">${esc(o.t)}</a>`).join("")}</div></section>
 
-  <section class="card"><h2><span class="n ${menuDone?"done":""}">2</span>Alegeți cocktailurile</h2>
-    <p class="mut">Alegeți până la ${max} cocktailuri pentru barul vostru. <b id="cnt">${sel.length} din ${max}</b></p>
-    <div class="grid">${(P.menuOpts||[]).map(o=>{const on=sel.includes(o.id);return `<label class="ck ${on?"on":""} ${!on&&sel.length>=max?"off":""}"><input type="checkbox" data-m="${esc(o.id)}" ${on?"checked":""} ${signed&&false?"disabled":""}>${o.zero?`<span class="z">fără alcool</span>`:""}<b>${esc(o.name)}</b><small>${esc((o.ing||[]).join(" · "))}</small></label>`}).join("")}</div>
-    <label for="obs" class="mut">Ceva special? (cocktail cu numele vostru, alergii, copii, ora barului)</label>
-    <textarea id="obs" rows="3">${esc(r.obs||"")}</textarea>
+  <section class="card"><h2><span class="n ${menuDone?"done":""}">2</span>Meniul de cocktailuri</h2>
+    <p class="mut">Alegeți ce cocktailuri doriți la bar. <b>Recomandarea noastră: toate</b>, ca fiecare invitat să-și găsească preferatul. <b id="cnt">${sel.length} din ${tot} alese</b></p>
+    <div class="row"><button class="btn sec" type="button" id="all">Le vreau pe toate</button><button class="btn sec" type="button" id="none">Golește alegerea</button></div>
+    <div class="grid">${(P.menuOpts||[]).map(o=>{const on=sel.includes(o.id);return `<label class="ck ${on?"on":""}"><input type="checkbox" data-m="${esc(o.id)}" ${on?"checked":""}>${o.zero?`<span class="z">fără alcool</span>`:""}<b>${esc(o.name)}</b><small>${esc((o.ing||[]).join(" · "))}</small></label>`}).join("")}</div>
+    <label for="obs" class="mut">Ce alte preferințe aveți pentru meniul de cocktailuri? De exemplu: un cocktail cu numele vostru, mai multe variante fără alcool, mai dulce sau mai sec, alergii, culori pe tema nunții.</label>
+    <textarea id="obs" rows="4">${esc(r.obs||"")}</textarea>
     <div class="row"><button class="btn" id="saveMenu">Salvează alegerea</button></div><p class="okmsg hide" id="menuOk">Am salvat alegerea. O vedem imediat.</p></section>
 
   <section class="card"><h2><span class="n ${signed?"done":""}">3</span>Contractul</h2>
@@ -121,12 +122,13 @@ function render(){
   bind();
 }
 function bind(){
-  const max=P.menuMax||6;
-  A.querySelectorAll("[data-m]").forEach(i=>i.onchange=()=>{const id=i.dataset.m;
-    if(i.checked){if(sel.length>=max){i.checked=false;return}sel.push(id)}else sel=sel.filter(x=>x!==id);
-    A.querySelectorAll(".ck").forEach(l=>{const inp=l.querySelector("input"),on=sel.includes(inp.dataset.m);l.classList.toggle("on",on);l.classList.toggle("off",!on&&sel.length>=max)});
-    $("#cnt").textContent=`${sel.length} din ${max}`;$("#menuOk").classList.add("hide")});
+  const tot=(P.menuOpts||[]).length;
+  const sync=()=>{A.querySelectorAll(".ck").forEach(l=>{const inp=l.querySelector("input"),on=sel.includes(inp.dataset.m);inp.checked=on;l.classList.toggle("on",on)});$("#cnt").textContent=`${sel.length} din ${tot} alese`;$("#menuOk").classList.add("hide")};
+  A.querySelectorAll("[data-m]").forEach(i=>i.onchange=()=>{const id=i.dataset.m;if(i.checked){if(!sel.includes(id))sel.push(id)}else sel=sel.filter(x=>x!==id);sync()});
+  $("#all").onclick=()=>{sel=(P.menuOpts||[]).map(o=>o.id);sync()};
+  $("#none").onclick=()=>{sel=[];sync()};
   $("#saveMenu").onclick=async()=>{const b=$("#saveMenu");b.disabled=true;
+    if(!sel.length&&!$("#obs").value.trim()){$("#menuOk").textContent="Alegeți măcar un cocktail sau scrieți-ne preferințele.";$("#menuOk").classList.remove("hide");b.disabled=false;return}
     const names=sel.map(id=>(P.menuOpts.find(o=>o.id===id)||{}).name).filter(Boolean);
     P.resp={...P.resp,menuIds:sel.slice(),menu:names,obs:$("#obs").value.trim(),menuAt:new Date().toISOString()};
     try{await ref.set({resp:P.resp},{merge:true});$("#menuOk").textContent="Am salvat alegerea. O vedem imediat.";$("#menuOk").classList.remove("hide")}
