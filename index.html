@@ -351,6 +351,17 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .cx-del{padding:6px 0;width:36px}
 .cx-add{margin:8px 0 0}
 @media (max-width:760px){.cx-row{grid-template-columns:1fr 1fr 70px;}.cx-row select{grid-column:1/3}}
+.ev-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.en-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+.en-grid label,.en-q label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted);min-width:0}
+.en-grid input,.en-grid textarea,.en-q input{width:100%;box-sizing:border-box;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:1rem}
+.en-w{grid-column:1/-1}
+.en-tg{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px;font-size:.95rem}
+.en-tg label{display:flex;gap:8px;align-items:center}
+.en-acts{margin:6px 0 4px}
+.en-q{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.en-save{position:sticky;bottom:0;display:flex;gap:10px;justify-content:flex-end;padding:12px 0;background:linear-gradient(transparent,var(--paper) 30%)}
+@media (max-width:760px){.en-grid{grid-template-columns:1fr 1fr}.en-q{grid-template-columns:1fr 1fr}}
 .ct-ocr input{background:#FFF4C2!important;color:#16241C!important}
 .ct-bad input{border-color:var(--danger)!important}
 .ct-msg ul,.ev-alert ul{margin:6px 0 0;padding-left:18px}
@@ -442,7 +453,7 @@ a.btn.primary{color:var(--on-leaf)}
   <section class="view" id="v-evenimente" role="tabpanel" hidden="">
     <div class="ev-top">
       <div><p class="ev-sub" id="evSub"></p><p class="ev-file" id="evFile"></p></div>
-      <div class="edit-only"><button class="btn primary" type="button" id="evUpload">Încarcă alt Excel</button><input type="file" id="evInput" accept=".xlsx,.xls,.xlsm,.ods" hidden=""></div>
+      <div class="edit-only ev-btns"><button class="btn primary" type="button" id="evNou">Eveniment nou</button><button class="btn" type="button" id="evUpload">Încarcă Excel</button><input type="file" id="evInput" accept=".xlsx,.xls,.xlsm,.ods" hidden=""></div>
     </div>
     <div class="ev-alert" id="evAlert" hidden=""></div>
     <div class="ev-tabs" id="evTabs" aria-label="Evenimente"></div>
@@ -1086,6 +1097,7 @@ function viewEvent(e){
         ${r.rec?`<button class="ev-rec" data-rec="${esc(r.rec.id)}">Rețetă</button>`:""}<span class="qv ${r.txt?"txt":""}">${esc(r.q)}</span></div>`});
     h+=`</div>`;
   });
+  h+=enEditBtn(e);
   h+=`<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>Anterior</small><b>${esc(prev.name)}</b></button>`:"<span></span>"}${next?`<button data-r="${next.id}"><small>Următor</small><b>${esc(next.name)}</b></button>`:"<span></span>"}</div></div>`;
   return h;
 }
@@ -1303,9 +1315,153 @@ async function savePrices(sv){grabPrices();sv.disabled=true;sv.textContent="Se s
 }
 
 window.__cx={loadPrices,loadExcelJS,buildRows,dKey,getD:()=>D};
+/* ---------- Eveniment nou / modificare fișă, direct în aplicație ---------- */
+let EN=null;
+const EN_META=["NR PERSOANE","DATA","ORA INCEPERE","ECHIPA","TRANSPORT","MENTIUNI SPECIALE"];
+const enIsMeta=L=>L.startsWith("NR PERSOANE")||L==="PERSOANE"||L==="DATA"||L.startsWith("DATA ")||L==="ZIUA"||L==="ORA"||L.startsWith("ORA ")||L.startsWith("ECHIPA")||L.startsWith("TRANSPORT")||L.startsWith("MENTIUNI");
+const enISO=d=>d?dKey(d):"";
+function enTemplateRows(){
+  if(EVD&&EVD.aoa&&EVD.aoa.length>1){
+    const out=[];EVD.aoa.forEach((row,r)=>{if(!r)return;const lab=row&&row[0];if(blank(lab))return;const L=norm(lab);if(enIsMeta(L))return;out.push({r,lab:String(lab).trim(),L})});
+    return out;
+  }
+  return Object.keys(KNOWN).map(L=>({r:null,lab:L,L}));
+}
+function enRatios(){
+  const out={};if(!D)return out;
+  const P=D.events.filter(e=>typeof e.persons==="number"&&e.persons>0);if(!P.length)return out;
+  D.items.forEach(it=>{if(!QTY_CATS.includes(it.cat))return;let q=0,p=0;
+    P.forEach(e=>{const v=e.values[it.key];if(v&&typeof v.v==="number"){q+=v.v;p+=e.persons}});
+    if(p)out[it.excelLabel]=q/p});
+  return out;
+}
+function enStart(pre){
+  pre=pre||{};
+  const rows=enTemplateRows(),vals={};
+  let target="append";
+  if(pre.col!=null&&EVD){
+    const c=pre.col,A=EVD.aoa;
+    rows.forEach(x=>{const v=A[x.r]&&A[x.r][c];if(!blank(v))vals[x.L]=String(v)});
+  }
+  EN={col:pre.col??null,nume:pre.nume||"",data:pre.data||"",ora:pre.ora||"",pers:pre.pers||"",echipa:pre.echipa||"",transport:pre.transport||"",note:pre.note||"",rows,vals,target,msg:"",from:pre.from||""};
+  if(EN.col==null)EN.target=enGuessTarget(EN.data);
+  route="nou";render();const v=$("#evView");if(v)v.scrollIntoView({block:"start"});
+}
+function enGuessTarget(iso){
+  if(!D||!EVD)return "new";if(!iso)return "append";
+  const d=new Date(iso+"T00:00:00"),ref=D.events.map(e=>e.date).filter(Boolean)[0]||D.title.date;
+  if(!ref)return "append";
+  return Math.abs((d-ref)/864e5)<=6?"append":"new";
+}
+function enGrab(){
+  const V=$("#evView");if(!V||!EN)return;
+  V.querySelectorAll("[data-en]").forEach(i=>EN[i.dataset.en]=i.value.trim());
+  V.querySelectorAll("[data-eq]").forEach(i=>{const v=i.value.trim();if(v)EN.vals[i.dataset.eq]=v;else delete EN.vals[i.dataset.eq]});
+  const t=V.querySelector("input[name=enT]:checked");if(t)EN.target=t.value;
+}
+function viewNou(){
+  const e=EN,ttl=D?D.title.big:"",edit=e.col!=null;
+  const groupsOf=()=>{const g={};e.rows.forEach(x=>{const k=KNOWN[x.L],cat=k?k[1]:"altele";(g[cat]=g[cat]||[]).push({...x,label:k?k[0]:capL(x.lab),cat})});return g};
+  const G=groupsOf();
+  let h=`<div class="ev-hero"><p class="ev-sub">${edit?"Modifică fișa evenimentului":"Eveniment nou"}${e.from?` · din contractul ${esc(e.from)}`:""}</p>
+    <p class="ev-file">${edit?"Schimbările apar imediat la toată echipa.":"Completezi aici fișa, fără Excel. Barmanii o văd imediat, iar marfa se scade din stoc."}</p></div>
+    <div class="en-grid">
+      <label class="en-w">Locație / nume eveniment<input data-en="nume" value="${esc(e.nume)}" placeholder="ex: Montana"></label>
+      <label>Data<input type="date" data-en="data" value="${esc(e.data)}"></label>
+      <label>Ora începerii<input type="time" data-en="ora" value="${esc(e.ora)}"></label>
+      <label>Persoane<input data-en="pers" inputmode="numeric" value="${esc(e.pers)}"></label>
+      <label>Echipa<input data-en="echipa" value="${esc(e.echipa)}" placeholder="ex: Ioana Sebi"></label>
+      <label>Transport<input data-en="transport" value="${esc(e.transport)}" placeholder="ex: Toyota"></label>
+      <label class="en-w">Mențiuni speciale<textarea data-en="note" rows="3" placeholder="ex: cocktail cu și fără alcool Epicur, -3 sticle premix">${esc(e.note)}</textarea></label>
+    </div>`;
+  if(!edit&&D){
+    h+=`<div class="en-tg"><label><input type="radio" name="enT" value="append"${e.target==="append"?" checked":""}> Adaug la săptămâna încărcată acum (${esc(ttl)}, ${D.events.length} ${D.events.length===1?"eveniment":"evenimente"})</label>
+      <label><input type="radio" name="enT" value="new"${e.target==="new"?" checked":""}> Încep o săptămână nouă cu acest eveniment</label></div>`;
+  }
+  h+=`<div class="en-acts"><button class="btn" type="button" data-enact="auto">Completează cantitățile după numărul de persoane</button></div>
+    <p class="ev-file">Calculez din ce s-a trimis la evenimentele din săptămâna încărcată acum, raportat la numărul de persoane. Verifică și ajustează.</p>`;
+  CATS.forEach(c=>{const L=G[c.id];if(!L||!L.length)return;
+    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>`<label><span>${esc(x.label)}</span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}></label>`).join("")+`</div>`});
+  if(e.msg)h+=`<p class="ev-alert">${esc(e.msg)}</p>`;
+  h+=`<div class="en-save"><button class="btn" type="button" data-enact="cancel">Renunță</button><button class="btn primary" type="button" data-enact="save">${edit?"Salvează fișa":"Salvează evenimentul"}</button></div>`;
+  return h;
+}
+function enAuto(){
+  enGrab();const p=parseFloat(String(EN.pers).replace(",","."));
+  if(!(p>0)){EN.msg="Scrie întâi numărul de persoane.";render();return}
+  const R0=enRatios();let n=0;
+  EN.rows.forEach(x=>{const r=R0[x.L];if(r==null||EN.vals[x.L])return;let q=r*p;q=q<3?Math.ceil(q*2)/2:Math.ceil(q);if(q>0){EN.vals[x.L]=String(q).replace(".",",");n++}});
+  EN.msg=n?"":"Nu am găsit date de consum pentru calcul. Încarcă un Excel sau completează de mână.";
+  render();if(n)toast(`Am completat ${n} cantități. Verifică-le înainte să salvezi.`);
+}
+function enCell(L,v){
+  if(blank(v))return null;const s=String(v).trim();
+  if(/^\d+(?:[.,]\d+)?$/.test(s))return parseFloat(s.replace(",","."));return s;
+}
+function enBuild(){
+  const e=EN,name=e.nume.toUpperCase(),d=e.data?new Date(e.data+"T00:00:00"):null;
+  const pers=e.pers?enCell("",e.pers):null,meta={"NR PERSOANE":pers,"DATA":d?`${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`:null,"ORA INCEPERE":e.ora||null,"ECHIPA":e.echipa||null,"TRANSPORT":e.transport||null,"MENTIUNI SPECIALE":e.note?e.note.replace(/\s*\n+\s*/g," "):null};
+  if(e.target==="new"||!EVD||!EVD.aoa){
+    const rows=enTemplateRows(),aoa=[["SPECIFICAȚII / ARTICOLE",name]];
+    EN_META.forEach(L=>aoa.push([L,meta[L]]));
+    rows.forEach(x=>aoa.push([x.lab,enCell(x.L,e.vals[x.L])]));
+    const ref=d||new Date(),fileName=`${ref.getDate()}_${MONTHS[ref.getMonth()]}_${ref.getFullYear()}.app`;
+    return {fileName,aoa};
+  }
+  const A=EVD.aoa.map(r=>(r||[]).slice()),hdr=A[0];
+  let col=e.col;
+  if(col==null){
+    const tc=hdr.findIndex((v,i)=>i>0&&norm(v)==="TOTAL");
+    col=tc>0?tc:Math.max(hdr.length,1);
+    if(tc>0)A.forEach(r=>{while(r.length<tc)r.push(null);r.splice(tc,0,null)});
+  }
+  A.forEach(r=>{while(r.length<=col)r.push(null)});
+  A[0][col]=name;
+  const findRow=test=>A.findIndex((r,i)=>i>0&&!blank(r[0])&&test(norm(r[0])));
+  const metaTest={"NR PERSOANE":L=>L.startsWith("NR PERSOANE")||L==="PERSOANE","DATA":L=>L==="DATA"||L.startsWith("DATA ")||L==="ZIUA"||L==="DATA EVENIMENT","ORA INCEPERE":L=>L==="ORA"||L.startsWith("ORA "),"ECHIPA":L=>L.startsWith("ECHIPA"),"TRANSPORT":L=>L.startsWith("TRANSPORT"),"MENTIUNI SPECIALE":L=>L.startsWith("MENTIUNI")};
+  EN_META.forEach(L=>{let r=findRow(metaTest[L]);
+    if(r<0){if(blank(meta[L]))return;const nr=new Array(A[0].length).fill(null);nr[0]=L;
+      if(L==="DATA"&&D&&D.title.date){const td=D.title.date,ts=`${String(td.getDate()).padStart(2,"0")}.${String(td.getMonth()+1).padStart(2,"0")}.${td.getFullYear()}`;D.events.forEach(ev=>{if(ev.col!==col)nr[ev.col]=ts})}
+      A.push(nr);r=A.length-1}
+    while(A[r].length<=col)A[r].push(null);A[r][col]=meta[L];
+    if(L==="MENTIUNI SPECIALE"){for(let k=r+1;k<A.length&&blank(A[k][0]);k++){if(A[k].length>col)A[k][col]=null}}
+  });
+  e.rows.forEach(x=>{if(x.r==null)return;while(A[x.r].length<=col)A[x.r].push(null);A[x.r][col]=enCell(x.L,e.vals[x.L])});
+  return {fileName:EVD.fileName,aoa:A};
+}
+async function enSave(btn){
+  enGrab();const e=EN;
+  if(!e.nume){e.msg="Scrie locația sau numele evenimentului.";render();return}
+  if(!e.data){e.msg="Alege data evenimentului.";render();return}
+  let next;try{next=enBuild();parseAOA(next.aoa,next.fileName)}catch(err){e.msg="Nu am putut construi fișa: "+(err.message||"");render();return}
+  btn.disabled=true;btn.textContent="Se salvează…";
+  const a=await artReady,okMsg=`${e.col!=null?"Fișa":"Evenimentul"} „${titleName(e.nume)}” e salvat pentru toată echipa.`;
+  const done=()=>{const nm=norm(e.nume);EN=null;EVD=next;loadData();const ev=D&&D.events.find(x=>norm(x.name)===nm);route=ev?ev.id:"ziua";store.set("evroute",route);render()};
+  if(!a||readOnly){store.set("events",next);done();toast("Salvat doar în acest browser.");return}
+  sess.set("open","");sess.set("okmsg",okMsg);
+  try{await a.publish(buildHTML(R,next));done();toast(okMsg);if(window.__stocIesire)window.__stocIesire(next);if(window.__stocRefresh)window.__stocRefresh()}
+  catch(err){sess.set("open",null);sess.set("okmsg",null);const code=err&&err.code;
+    e.msg=code==="not_writer"||code==="not_granted"?"Doar administratorul poate salva evenimente.":"Salvarea nu a reușit. Verifică internetul și încearcă din nou.";
+    if(document.contains(btn)){btn.disabled=false;btn.textContent="Salvează evenimentul"}render()}
+}
+function enClick(t){
+  const b=t.closest("[data-enact]");if(!b||!EN)return false;
+  const a=b.dataset.enact;
+  if(a==="cancel"){EN=null;route="ziua";render();return true}
+  if(a==="auto"){enAuto();return true}
+  if(a==="save"){enSave(b);return true}
+  return true;
+}
+function enEditBtn(e){return `<p style="margin:14px 0 0" class="edit-only"><button class="btn" type="button" data-enedit="${e.col}">Modifică fișa</button></p>`}
+function enFromEvent(col){
+  const e=D.events.find(x=>x.col===+col);if(!e)return;
+  enStart({col:e.col,nume:e.name,data:enISO(e.date),ora:e.time&&/^\d\d:\d\d$/.test(e.time)?e.time:"",pers:e.persons!=null?String(e.persons):"",echipa:e.team.join(" "),transport:e.transport||"",note:(e.notesRaw||[]).join(" ")});
+}
+window.__evNew=pre=>{const b=document.querySelector('nav.tabs button[data-view="evenimente"]');if(b)b.click();enStart(pre)};
 
 function render(){
   const v=$("#evView");
+  if(EN&&route==="nou"){$("#evTabs").innerHTML="";v.innerHTML=viewNou();return}
   if(!D){$("#evTabs").innerHTML="";v.innerHTML=`<div class="ev-ok">Încarcă Excelul cu evenimentele ca să apară aici.</div>`;return}
   renderTabs();
   const e=D.events.find(x=>x.id===route);
@@ -1313,6 +1469,8 @@ function render(){
 }
 $("#evTabs").addEventListener("click",ev=>{const b=ev.target.closest("[data-r]");if(b)go(b.dataset.r)});
 $("#evView").addEventListener("click",ev=>{
+  if(enClick(ev.target))return;
+  const ed=ev.target.closest("[data-enedit]");if(ed){enFromEvent(ed.dataset.enedit);return}
   if(cxClick(ev.target))return;
   const rec=ev.target.closest("[data-rec]");if(rec){openRecipe(rec.dataset.rec,rec);return}
   const md=ev.target.closest("[data-mode]");if(md){evMode=md.dataset.mode;store.set("evmode",evMode);rerender();return}
@@ -1349,6 +1507,7 @@ $("#evView").addEventListener("change",ev=>{
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",heading));
 
 $("#evUpload").onclick=()=>$("#evInput").click();
+$("#evNou").onclick=()=>enStart({});
 $("#evInput").onchange=async ev=>{
   const f=ev.target.files[0];ev.target.value="";if(!f)return;
   if(typeof XLSX==="undefined"){showErr("Cititorul de Excel nu s-a încărcat. Verifică internetul și reîncarcă pagina.");return}
@@ -1965,8 +2124,9 @@ function viewList(){
       <div class="ct-b ct-sg">${c.signedId?`<a class="ct-chip on" href="https://drive.google.com/file/d/${esc(c.signedId)}/view" target="_blank" rel="noopener">✓ Semnat de client${c.signedAt?" · "+esc(shortDate(c.signedAt)):""} · vezi</a>`:`<span class="ct-chip">Nesemnat de client</span>`}
       <label class="btn${c.signedId?"":" primary"} ct-up">${c.signedId?"Înlocuiește contractul semnat":"Încarcă contractul semnat de client"}<input type="file" accept="application/pdf,image/*" data-sgn="${c.id}" hidden></label></div>
       ${payRow(c)}
+      ${portalRow(c)}
       ${c.rent&&c.rent.calc?`<div class="ct-m">Rentabilitate: venit ${lei(c.rent.calc.venit)} · profit <b>${lei(c.rent.calc.profit)}</b> (${pct(c.rent.calc.marja)})</div>`:""}
-      <div class="ct-b"><button class="btn" data-rent="${c.id}">Rentabilitate</button><button class="btn" data-notes="${c.id}">Notițe${(c.notes||[]).length?` (${c.notes.length})`:""}</button></div>
+      <div class="ct-b"><button class="btn" data-fisa="${c.id}">Fișă eveniment</button><button class="btn" data-rent="${c.id}">Rentabilitate</button><button class="btn" data-notes="${c.id}">Notițe${(c.notes||[]).length?` (${c.notes.length})`:""}</button></div>
       <div class="ct-b"><button class="btn" data-pdf="${c.id}">PDF</button><button class="btn${c.calId?"":" primary"}" data-gs="${c.id}">${c.calId?"✓ Actualizează Drive + calendar":"Drive + calendar"}</button><button class="btn" data-ed="${c.id}">Editează</button><button class="btn" data-dup="${c.id}">Copie</button>
       <button class="btn st-del" data-del="${c.id}">${confirmDel===c.id?"Sigur? Șterge":"Șterge"}</button></div></div>`});
   return h;
@@ -2006,7 +2166,7 @@ function render(){
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
   if(mode==="social")drawSoc();
-  if(mode==="list")payAuto();
+  if(mode==="list"){payAuto();portalAuto()}
 }
 function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
   V.querySelectorAll("[data-cb]").forEach(el=>{f[el.dataset.cb]=el.checked})}
@@ -2088,7 +2248,7 @@ function contractDoc(c,F0){
     P("10.2. Toate aspectele și reperele orare menționate în prezentul Contract de Prestări Servicii au valoare contractuală și vor fi respectate de părți întocmai;"),
     P("10.3. Prezentul Contract de Prestări Servicii s-a încheiat în 2 (două) exemplare, câte unul pentru fiecare parte, astăzi, ",B(bigDate(c.dataContract)),", fiind semnat de către părți, producându-și efectele de la data semnării lui."),
     {columns:[{stack:[{text:"PRESTATOR:",bold:true},{text:F0.scurt},...(sig&&c.semn!=="Nu"?[{image:sig,width:165,margin:[0,4,0,0]}]:[{text:"\n\n\n______________________"}])]},
-              {stack:[{text:"BENEFICIAR:",bold:true},{text:c.nume},{text:"\n\n\n______________________"}],alignment:"right"}],margin:[0,30,0,0]}
+              {stack:[{text:"BENEFICIAR:",bold:true},{text:c.nume},...(c.clientSig&&c.clientSig.img?[{image:c.clientSig.img,width:150,margin:[0,4,0,0]},{text:`Semnat electronic de ${c.clientSig.nume||c.nume}, ${c.clientSig.at||""}, prin portalul Cocktail Philosophy`,fontSize:7,color:"#555"}]:[{text:"\n\n\n______________________"}])],alignment:"right"}],margin:[0,30,0,0]}
     ]}
   ]};
 }
@@ -2100,6 +2260,70 @@ async function downloadPDF(c,btn){
   catch(e){console.warn(e);toast("Nu am putut genera PDF-ul. Verifică internetul și încearcă din nou.")}
   if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent=lbl}
 }
+
+/* ---------- Portalul clientului ---------- */
+const PORTAL_URL="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/portal.html";
+const POR={busy:{},seen:{}};
+const porTok=()=>{const a=new Uint8Array(24);crypto.getRandomValues(a);const A="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";return [...a].map(x=>A[x%A.length]).join("")};
+const porLink=c=>`${PORTAL_URL}#t=${c.portalTok}`;
+function porMenuOptions(){let R0=[];try{R0=JSON.parse(document.getElementById("recipes-data").textContent)}catch(e){}
+  return R0.map(r=>({id:r.id,name:r.name,zero:!!r.zero,ing:(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
+const b64=blob=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(",")[1]);fr.onerror=rej;fr.readAsDataURL(blob)});
+function portalRow(c){
+  if(POR.busy[c.id])return `<div class="ct-b"><button class="btn" disabled>Se pregătește portalul…</button></div>`;
+  if(!c.portalTok)return `<div class="ct-b"><button class="btn" data-porn="${c.id}">🔗 Portal pentru client</button></div>`;
+  const r=c.portalResp||{},chips=[`<span class="ct-chip ${r.seenAt?"on":""}">${r.seenAt?"✓ A deschis portalul":"Portal nedeschis"}</span>`,
+    `<span class="ct-chip ${r.menu&&r.menu.length?"on":""}">${r.menu&&r.menu.length?`✓ Meniu: ${r.menu.length} cocktailuri`:"Meniu neales"}</span>`,
+    `<span class="ct-chip ${r.signedAt?"on":""}">${r.signedAt?"✓ Semnat în portal":"Nesemnat în portal"}</span>`].join("");
+  return `<div class="ct-b">${chips}</div>
+    ${r.menu&&r.menu.length?`<div class="ct-m">Meniu ales: ${esc(r.menu.join(", "))}${r.obs?` · ${esc(r.obs)}`:""}</div>`:""}
+    <div class="ct-b"><button class="btn primary" data-porwa="${c.id}">Trimite portalul pe WhatsApp</button><button class="btn" data-porcp="${c.id}">Copiază linkul</button><button class="btn" data-porup="${c.id}">Actualizează portalul</button>${r.signedAt&&!c.portalSaved?`<button class="btn primary" data-porsg="${c.id}">Salvează contractul semnat în Drive</button>`:""}</div>`;
+}
+async function portalPublish(c){
+  POR.busy[c.id]=true;render();
+  try{
+    if(!c.dataEv)throw {msg:"Completează întâi data evenimentului în contract."};
+    const tok=c.portalTok||porTok(),F0=firma||FIRMA_DEF;
+    let pdf=null;try{pdf=await b64(await pdfBlob(c));if(pdf.length>850000)pdf=null}catch(e){pdf=null}
+    const isTotal=c.unitate==="TOTAL";
+    const doc={v:1,updatedAt:new Date().toISOString(),
+      ev:{dataEv:c.dataEv||"",oraEv:c.oraEv||"",locatie:tcase(c.locatie||""),invitati:String(c.invitati||""),pachet:tcase(c.obiect||""),pret:String(c.pret||""),moneda:c.moneda==="EURO"?"€":"RON",unitate:isTotal?"total":"/ persoană",tva:c.tva||"",ore:c.ore||"",avans:String(c.avans||""),monedaAvans:c.monedaAvans==="EURO"?"EUR":"RON",dataRest:c.dataRest||"",plata:c.plata||""},
+      client:{nume:tcase(c.nume||""),prenume:tcase(String(c.nume||"").trim().split(/\s+/).slice(-1)[0]||"")},
+      firma:{nume:F0.nume,iban:F0.iban,banca:F0.banca,tel:"0743 785 655"},
+      oferte:[{t:"Meniul 2026",u:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/MENIU-2026-GOLD.pdf"},isTotal?{t:"Oferta pachet barmani",u:"https://cocktailphilosophy.ro/wp-content/uploads/2023/04/PACHET-BARMANI-2023-compressed.pdf"}:{t:"Oferta All Inclusive",u:"https://cocktailphilosophy.ro/wp-content/uploads/2026/03/OFERTA-ALL-INCLUSIVE.pdf"}],
+      menuOpts:porMenuOptions(),menuMax:Number(c.nrCocktailuri)||6,
+      pay:c.payOrder&&c.payOrder.url?{url:c.payOrder.url}:null,
+      pdf};
+    await F.fs.doc(`portal/${tok}`).set(doc,{merge:true});
+    if(!c.portalTok){await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalTok:tok},{merge:true});c.portalTok=tok}
+    toast(pdf?"Portalul e gata. Trimite linkul clientului.":"Portalul e gata, dar fără PDF-ul contractului (prea mare).");
+  }catch(e){console.warn(e);toast(e&&e.msg||(e&&e.code==="permission-denied"?"Nu am drept să creez portalul. Adaugă regulile noi în Firebase (portal).":"Nu am putut crea portalul. Verifică internetul."))}
+  finally{delete POR.busy[c.id];render()}
+}
+async function portalRefresh(c,quiet){
+  if(!c.portalTok)return;
+  try{const d=await F.fs.doc(`portal/${c.portalTok}`).get();if(!d.exists)return;const r=(d.data()||{}).resp||{};
+    const nr={seenAt:r.seenAt||"",menu:r.menu||[],obs:r.obs||"",signedAt:r.signedAt||"",nume:r.nume||""};
+    if(JSON.stringify(nr)!==JSON.stringify(c.portalResp||{})){
+      const was=c.portalResp||{};await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalResp:nr},{merge:true});
+      if(nr.signedAt&&!was.signedAt)toast(`${tcase(surname(c.nume))} a semnat contractul în portal ✓`);
+      else if(nr.menu.length&&!(was.menu||[]).length)toast(`${tcase(surname(c.nume))} a ales meniul în portal.`);
+    }else if(!quiet)toast("Nimic nou în portal.");
+  }catch(e){if(!quiet)toast("Nu am putut citi portalul.")}
+}
+function portalAuto(){let n=0;list.forEach(c=>{if(n<8&&c.portalTok&&!c.portalSaved&&!POR.seen[c.id]){POR.seen[c.id]=1;n++;portalRefresh(c,true)}})}
+async function portalSaveSigned(c,btn){
+  if(btn){btn.disabled=true;btn.textContent="Se pregătește contractul semnat…"}
+  try{const d=await F.fs.doc(`portal/${c.portalTok}`).get(),r=(d.data()||{}).resp||{};
+    if(!r.sig||!r.signedAt)throw {msg:"Clientul nu a semnat încă în portal."};
+    const at=new Date(r.signedAt),ats=`${String(at.getDate()).padStart(2,"0")}.${String(at.getMonth()+1).padStart(2,"0")}.${at.getFullYear()} ${String(at.getHours()).padStart(2,"0")}:${String(at.getMinutes()).padStart(2,"0")}`;
+    const blob=await pdfBlob({...c,clientSig:{img:r.sig,nume:r.nume||c.nume,at:ats}});
+    const file=new File([blob],"contract_semnat.pdf",{type:"application/pdf"});
+    await uploadSigned(c,{files:[file],closest:()=>null,value:""});
+    await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalSaved:true},{merge:true});
+  }catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut salva contractul semnat.");if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent="Salvează contractul semnat în Drive"}}
+}
+function porMsg(c){return `Bună ziua! Aici găsiți tot pentru evenimentul din ${shortDate(c.dataEv)}: oferta, alegerea cocktailurilor, contractul de semnat online și plata avansului: ${porLink(c)}\nMulțumim! Cocktail Philosophy`}
 
 /* ---------- Avans cu cardul (Revolut prin Make) ---------- */
 const PAY={busy:{},checked:{}};
@@ -2277,6 +2501,7 @@ function evDesc(c){
   L.push(`AVANS: ${money(c.avans)} ${c.monedaAvans} (${c.avansPlatit?"încasat":"de încasat"} · contract din ${shortDate(c.dataContract)})`);
   L.push(`REST DE PLATĂ: ${shortDate(c.dataRest)||"—"}${c.restPlatit?" · încasat":""} · ${c.plata}`);
   if(on(c.c3)||on(c.c4))L.push([on(c.c3)?`TRANSPORT: ${c.transport}`:"",on(c.c4)?`taxa de vase: ${c.vase}`:""].filter(Boolean).join(" · "));
+  if(c.portalResp&&c.portalResp.menu&&c.portalResp.menu.length)L.push(`MENIU ALES DE CLIENT: ${c.portalResp.menu.join(", ")}${c.portalResp.obs?" · "+c.portalResp.obs:""}`);
   L.push(c.signedId?`CONTRACT: semnat de ambele părți${c.signedAt?" ("+shortDate(c.signedAt)+")":""}`:"CONTRACT: trimis clientului, încă nesemnat de el");
   return L.join("\n")+notesTxt(c)+`\n\n${c.signedId?"Contractul semnat e":"Contract"} atașat mai jos · completat din aplicația Cocktail Philosophy.`;
 }
@@ -2408,6 +2633,12 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
+  const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume))})}return}
+  const pon=t.closest("[data-porn]");if(pon){const c=list.find(x=>x.id===pon.dataset.porn);if(c)portalPublish(c);return}
+  const pou=t.closest("[data-porup]");if(pou){const c=list.find(x=>x.id===pou.dataset.porup);if(c){portalPublish(c).then(()=>portalRefresh(c,false))}return}
+  const pow=t.closest("[data-porwa]");if(pow){const c=list.find(x=>x.id===pow.dataset.porwa);if(c&&c.portalTok){const tel=telWa(c.tel);window.open((tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(porMsg(c)),"_blank")}return}
+  const poc=t.closest("[data-porcp]");if(poc){const c=list.find(x=>x.id===poc.dataset.porcp);if(c&&c.portalTok)navigator.clipboard.writeText(porLink(c)).then(()=>toast("Linkul portalului a fost copiat."),()=>toast(porLink(c)));return}
+  const pos=t.closest("[data-porsg]");if(pos){const c=list.find(x=>x.id===pos.dataset.porsg);if(c)portalSaveSigned(c,pos);return}
   const pn=t.closest("[data-paynew]");if(pn){const c=list.find(x=>x.id===pn.dataset.paynew);if(c)payNew(c);return}
   const pw=t.closest("[data-paywa]");if(pw){const c=list.find(x=>x.id===pw.dataset.paywa);if(c&&c.payOrder){const tel=telWa(c.tel),u=(tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(payMsg(c));window.open(u,"_blank")}return}
   const pc=t.closest("[data-paycp]");if(pc){const c=list.find(x=>x.id===pc.dataset.paycp);if(c&&c.payOrder)navigator.clipboard.writeText(c.payOrder.url).then(()=>toast("Linkul a fost copiat."),()=>toast(c.payOrder.url));return}

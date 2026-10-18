@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Evenimentul tău · Cocktail Philosophy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#0d0c0b;--panel:#181614;--line:#2e2a25;--fg:#f4f1ec;--mut:#a59e95;--or:#ff8a1f;--ye:#ffd23f;--ok:#25d366;--d:"Barlow Condensed","Arial Narrow",Arial,sans-serif;--b:"Barlow",Arial,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--b);font-size:17px;line-height:1.5}
+.wrap{max-width:680px;margin:0 auto;padding:28px max(18px,env(safe-area-inset-left)) 80px max(18px,env(safe-area-inset-right));display:flex;flex-direction:column;gap:26px}
+.brand{font-family:var(--d);font-weight:500;letter-spacing:.08em;color:var(--mut);font-size:15px}.brand b{color:var(--fg);font-weight:800}
+h1{font-family:var(--d);font-weight:800;font-size:clamp(40px,11vw,64px);line-height:.95;margin:0;text-transform:uppercase}
+h1 em{font-style:normal;color:var(--or)}
+h2{font-family:var(--d);font-weight:800;font-size:30px;text-transform:uppercase;margin:0;display:flex;gap:12px;align-items:center}
+h2 .n{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--or);color:#1a0d00;font-size:20px;flex:none}
+h2 .n.done{background:var(--ok);color:#043}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.facts div{min-width:0}.facts span{display:block;font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}.facts b{font-family:var(--d);font-size:22px;font-weight:700}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;padding:13px 22px;font:700 19px var(--d);letter-spacing:.03em;text-decoration:none;cursor:pointer;color:#1a0d00;background:var(--or)}
+.btn.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ye);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.mut{color:var(--mut);font-size:15px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ck{position:relative;display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;background:#13110f;min-width:0}
+.ck input{position:absolute;opacity:0}
+.ck b{font-family:var(--d);font-size:21px;text-transform:uppercase}
+.ck small{color:var(--mut);font-size:13px;line-height:1.3}
+.ck .z{font-size:11px;color:var(--ok);text-transform:uppercase;letter-spacing:.08em}
+.ck.on{border-color:var(--or);background:#2a1a0b}
+.ck.on::after{content:"✓";position:absolute;right:12px;top:10px;color:var(--or);font-weight:800}
+.ck.off{opacity:.45}
+textarea,input[type=text]{width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:#13110f;color:var(--fg);font:inherit}
+.pad{width:100%;height:190px;border-radius:12px;background:#fff;touch-action:none;display:block}
+.agree{display:flex;gap:10px;align-items:flex-start;font-size:16px}
+.agree input{width:22px;height:22px;margin-top:2px;accent-color:var(--or)}
+.okmsg{color:var(--ok);font-weight:600;margin:0}
+.err{color:#ff7a7a;margin:0}
+.iban{font-family:ui-monospace,Consolas,monospace;font-size:16px;word-break:break-all;background:#13110f;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.foot{color:var(--mut);font-size:14px;text-align:center}
+.hide{display:none!important}
+@media (max-width:420px){.grid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="brand">COCKTAIL <b>PHILOSOPHY</b>®</div>
+  <p class="mut" id="load">Se încarcă evenimentul…</p>
+</div>
+<script>
+(function(){
+const CFG={apiKey:"AIzaSyBdnMe0062NUOsIBlRZ1NqKlPniDwWXebI",authDomain:"cocktail-philosophy-dc34b.firebaseapp.com",projectId:"cocktail-philosophy-dc34b",storageBucket:"cocktail-philosophy-dc34b.firebasestorage.app",messagingSenderId:"924422421135",appId:"1:924422421135:web:127a3c78598b64afb84efa"};
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MON=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"],DAY=["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"];
+const fd=iso=>{const m=String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return "";const d=new Date(+m[1],m[2]-1,+m[3]);return `${DAY[d.getDay()]}, ${+m[3]} ${MON[d.getMonth()]} ${m[1]}`};
+const tok=(location.hash.match(/t=([A-Za-z0-9]{24,})/)||[])[1];
+const A=$("#app");
+const fail=msg=>{A.innerHTML=`<div class="brand">COCKTAIL <b>PHILOSOPHY</b>®</div><h1>Ups.</h1><p>${msg}</p><p class="mut">Scrie-ne pe WhatsApp la 0743 785 655 și te ajutăm imediat.</p>`};
+if(!tok){fail("Linkul nu e complet. Deschide-l din mesajul primit de la noi.");return}
+if(!window.firebase){fail("Pagina nu s-a putut conecta. Verifică internetul și reîncarcă.");return}
+firebase.initializeApp(CFG);const fs=firebase.firestore(),ref=fs.doc("portal/"+tok);
+let P=null,sel=[],pdfUrl=null;
+
+async function load(){
+  let d;try{d=await ref.get()}catch(e){fail("Nu am putut deschide evenimentul. Verifică internetul și reîncarcă pagina.");return}
+  if(!d.exists){fail("Linkul nu mai e valabil sau nu există.");return}
+  P=d.data();P.resp=P.resp||{};sel=(P.resp.menuIds||[]).slice();
+  render();
+  if(!P.resp.seenAt){P.resp.seenAt=new Date().toISOString();ref.set({resp:P.resp},{merge:true}).catch(()=>{})}
+}
+function render(){
+  const e=P.ev,r=P.resp,signed=!!r.signedAt,menuDone=(r.menu||[]).length>0;
+  const max=P.menuMax||6;
+  let h=`<div class="brand">COCKTAIL <b>PHILOSOPHY</b>®</div>
+  <h1>Bună${P.client.prenume?", "+esc(P.client.prenume):""}!<br><em>Pregătim barul.</em></h1>
+  <div class="card"><div class="facts">
+    <div><span>Data</span><b>${esc(fd(e.dataEv))}</b></div>${e.oraEv?`<div><span>Ora</span><b>${esc(e.oraEv)}</b></div>`:""}
+    <div><span>Locația</span><b>${esc(e.locatie)}</b></div>${e.invitati?`<div><span>Invitați</span><b>${esc(e.invitati)}</b></div>`:""}
+    <div><span>Pachet</span><b>${esc(e.pachet)}</b></div><div><span>Preț</span><b>${esc(e.pret)} ${esc(e.moneda)} ${esc(e.unitate)}</b></div>
+  </div><p class="mut">${esc(e.tva)}${e.ore?` · ${esc(e.ore)} ore de servire`:""}</p></div>
+
+  <section class="card"><h2><span class="n done">1</span>Oferta și meniul</h2>
+    <div class="row">${(P.oferte||[]).map(o=>`<a class="btn sec" href="${esc(o.u)}" target="_blank" rel="noopener">${esc(o.t)}</a>`).join("")}</div></section>
+
+  <section class="card"><h2><span class="n ${menuDone?"done":""}">2</span>Alegeți cocktailurile</h2>
+    <p class="mut">Alegeți până la ${max} cocktailuri pentru barul vostru. <b id="cnt">${sel.length} din ${max}</b></p>
+    <div class="grid">${(P.menuOpts||[]).map(o=>{const on=sel.includes(o.id);return `<label class="ck ${on?"on":""} ${!on&&sel.length>=max?"off":""}"><input type="checkbox" data-m="${esc(o.id)}" ${on?"checked":""} ${signed&&false?"disabled":""}>${o.zero?`<span class="z">fără alcool</span>`:""}<b>${esc(o.name)}</b><small>${esc((o.ing||[]).join(" · "))}</small></label>`}).join("")}</div>
+    <label for="obs" class="mut">Ceva special? (cocktail cu numele vostru, alergii, copii, ora barului)</label>
+    <textarea id="obs" rows="3">${esc(r.obs||"")}</textarea>
+    <div class="row"><button class="btn" id="saveMenu">Salvează alegerea</button></div><p class="okmsg hide" id="menuOk">Am salvat alegerea. O vedem imediat.</p></section>
+
+  <section class="card"><h2><span class="n ${signed?"done":""}">3</span>Contractul</h2>
+    ${P.pdf?`<div class="row"><a class="btn sec" id="pdfBtn" href="#" target="_blank" rel="noopener">Citește contractul (PDF)</a></div>`:`<p class="mut">Contractul vi-l trimitem separat.</p>`}
+    ${signed?`<p class="okmsg">✓ Semnat de ${esc(r.nume)} la ${esc(new Date(r.signedAt).toLocaleString("ro-RO",{dateStyle:"long",timeStyle:"short"}))}. Mulțumim!</p>`:`
+    <label class="agree"><input type="checkbox" id="agree"><span>Am citit contractul și sunt de acord cu el.</span></label>
+    <label for="nume" class="mut">Numele complet</label><input type="text" id="nume" value="${esc(P.client.nume||"")}" autocomplete="name">
+    <p class="mut">Semnați cu degetul în chenarul alb:</p>
+    <canvas class="pad" id="pad"></canvas>
+    <div class="row"><button class="btn sec" id="clr" type="button">Șterge semnătura</button><button class="btn" id="sign" type="button">Semnez contractul</button></div>
+    <p class="err hide" id="signErr"></p>`}</section>
+
+  <section class="card"><h2><span class="n">4</span>Avansul</h2>
+    <p>Avans: <b>${esc(e.avans)} ${esc(e.monedaAvans)}</b>${e.dataRest?` · diferența până la ${esc(fd(e.dataRest))}`:""}</p>
+    ${P.pay&&P.pay.url?`<div class="row"><a class="btn" href="${esc(P.pay.url)}" target="_blank" rel="noopener">Plătește avansul cu cardul</a></div><p class="mut">Sau prin transfer bancar:</p>`:`<p class="mut">Prin transfer bancar:</p>`}
+    <div class="iban" id="iban">${esc(P.firma.iban||"")}</div>
+    <p class="mut">Beneficiar: ${esc(P.firma.nume||"")}${P.firma.banca?` · ${esc(P.firma.banca)}`:""}<br>Detalii plată: avans eveniment ${esc(fd(e.dataEv))}</p>
+    <div class="row"><button class="btn sec" id="cpIban" type="button">Copiază IBAN-ul</button></div></section>
+
+  <p class="foot">Întrebări? Scrieți-ne pe WhatsApp: <b>${esc(P.firma.tel||"0743 785 655")}</b><br>Tu te distrezi, noi ne ocupăm de bar. 🍸</p>`;
+  A.innerHTML=h;
+  if(P.pdf){if(!pdfUrl){const bin=atob(P.pdf),u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);pdfUrl=URL.createObjectURL(new Blob([u8],{type:"application/pdf"}))}$("#pdfBtn").href=pdfUrl}
+  bind();
+}
+function bind(){
+  const max=P.menuMax||6;
+  A.querySelectorAll("[data-m]").forEach(i=>i.onchange=()=>{const id=i.dataset.m;
+    if(i.checked){if(sel.length>=max){i.checked=false;return}sel.push(id)}else sel=sel.filter(x=>x!==id);
+    A.querySelectorAll(".ck").forEach(l=>{const inp=l.querySelector("input"),on=sel.includes(inp.dataset.m);l.classList.toggle("on",on);l.classList.toggle("off",!on&&sel.length>=max)});
+    $("#cnt").textContent=`${sel.length} din ${max}`;$("#menuOk").classList.add("hide")});
+  $("#saveMenu").onclick=async()=>{const b=$("#saveMenu");b.disabled=true;
+    const names=sel.map(id=>(P.menuOpts.find(o=>o.id===id)||{}).name).filter(Boolean);
+    P.resp={...P.resp,menuIds:sel.slice(),menu:names,obs:$("#obs").value.trim(),menuAt:new Date().toISOString()};
+    try{await ref.set({resp:P.resp},{merge:true});$("#menuOk").textContent="Am salvat alegerea. O vedem imediat.";$("#menuOk").classList.remove("hide")}
+    catch(e){$("#menuOk").textContent="Nu am putut salva. Verificați internetul și încercați din nou.";$("#menuOk").classList.remove("hide")}
+    b.disabled=false};
+  $("#cpIban").onclick=()=>{const t=P.firma.iban||"";(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{$("#cpIban").textContent="IBAN copiat ✓"},()=>{const r=document.createRange();r.selectNodeContents($("#iban"));const s=getSelection();s.removeAllRanges();s.addRange(r)})};
+  const pad=$("#pad");if(!pad)return;
+  const dpr=Math.max(1,window.devicePixelRatio||1),W=pad.clientWidth,H=pad.clientHeight;pad.width=W*dpr;pad.height=H*dpr;
+  const x=pad.getContext("2d");x.scale(dpr,dpr);x.lineWidth=2.4;x.lineCap="round";x.lineJoin="round";x.strokeStyle="#111";
+  let drawing=false,inked=false,last=null;
+  const pt=ev=>{const r=pad.getBoundingClientRect();return {x:ev.clientX-r.left,y:ev.clientY-r.top}};
+  pad.onpointerdown=ev=>{drawing=true;last=pt(ev);pad.setPointerCapture(ev.pointerId)};
+  pad.onpointermove=ev=>{if(!drawing)return;const p=pt(ev);x.beginPath();x.moveTo(last.x,last.y);x.lineTo(p.x,p.y);x.stroke();last=p;inked=true};
+  pad.onpointerup=pad.onpointercancel=()=>{drawing=false};
+  $("#clr").onclick=()=>{x.clearRect(0,0,W,H);inked=false};
+  $("#sign").onclick=async()=>{const err=$("#signErr"),show=m=>{err.textContent=m;err.classList.remove("hide")};
+    if(!$("#agree").checked)return show("Bifați că ați citit contractul și sunteți de acord.");
+    const nume=$("#nume").value.trim();if(nume.length<3)return show("Scrieți numele complet.");
+    if(!inked)return show("Semnați în chenarul alb.");
+    const c=document.createElement("canvas");c.width=600;c.height=Math.round(600*H/W);const cx=c.getContext("2d");cx.drawImage(pad,0,0,c.width,c.height);
+    const sig=c.toDataURL("image/png");if(sig.length>250000)return show("Semnătura e prea mare. Ștergeți și semnați din nou, mai simplu.");
+    const b=$("#sign");b.disabled=true;b.textContent="Se trimite…";
+    const resp={...P.resp,sig,nume,signedAt:new Date().toISOString(),ua:navigator.userAgent.slice(0,180)};
+    try{await ref.set({resp},{merge:true});P.resp=resp;render();window.scrollTo({top:0})}
+    catch(e){b.disabled=false;b.textContent="Semnez contractul";show("Nu am putut trimite semnătura. Verificați internetul și încercați din nou.")}};
+}
+load();
+})();
+</script>
+</body>
+</html>
