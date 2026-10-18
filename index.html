@@ -1744,6 +1744,7 @@ async function writeIesire(evd){
   try{await F.fs.doc(`${F.base}/stoc/ies-${d.ds}`).set(d);return true}
   catch(e){toast("Nu am putut scădea marfa din stoc. Încearcă din nou din Stoc depozit.");return false}
 }
+window.__cpAI={loadAI,models:AI_MODELS,ready:aiReady};
 window.__stocIesire=async evd=>{if(await writeIesire(evd))toast(`Marfa pentru ${parseAOA(evd.aoa,evd.fileName).title.big} a fost scăzută din stoc.`)};
 
 function subscribe(){
@@ -2368,7 +2369,7 @@ async function payCheck(c,quiet){
 function payAuto(){if(!(firma&&firma.payHook))return;let n=0;list.forEach(c=>{if(n<6&&c.payOrder&&c.payOrder.id&&!c.avansPlatit&&!PAY.checked[c.id]){PAY.checked[c.id]=1;n++;payCheck(c,true)}})}
 
 /* ---------- Postare Instagram + Facebook ---------- */
-const SOC={img:null,name:"",ratio:"45",pos:0.5,caption:"",busy:false,arm:false,msg:""};
+const SOC={img:null,name:"",ratio:"45",pos:0.5,caption:"",busy:false,arm:false,msg:"",ai:false,aiMsg:"",ctx:""};
 const SOC_TPL=()=>{const t=today(),ev=list.filter(c=>c.dataEv&&c.dataEv<=t).sort((a,b)=>String(b.dataEv).localeCompare(a.dataEv))[0];
   const loc=ev&&ev.locatie?tcase(ev.locatie):"";
   return `${loc?`Seară frumoasă la ${loc}! `:""}Barul gata, garniturile la locul lor, zâmbetul la fel. 🍊
@@ -2392,16 +2393,18 @@ function viewSocial(){
     h+=`<div class="ct-b soc-r">${[["45","Portret 4:5"],["11","Pătrat"],["169","Lat"]].map(([k,l])=>`<button class="ct-chip ${SOC.ratio===k?"on":""}" data-sr="${k}">${l}</button>`).join("")}</div>
       <canvas id="socCv" class="soc-cv"></canvas>
       ${canMove?`<label class="ct-full">Încadrare (mută poza)<input type="range" id="socPos" min="0" max="100" value="${Math.round(SOC.pos*100)}"></label>`:""}`}
-  h+=`</div><label class="ct-full">Textul postării<textarea id="socTxt" rows="9">${esc(SOC.caption||SOC_TPL())}</textarea></label>
-    <div class="ct-b"><button class="btn" data-c="soctpl">Pune textul gata scris</button></div>
+  h+=`</div>${SOC.img?`<label class="ct-full">Ceva anume despre poză? (opțional: tipul evenimentului, locația, cocktailul)<input id="socCtx" value="${esc(SOC.ctx)}" placeholder="ex: nunta Ioanei și a lui Vlad la Montana, cocktailul Harmony"></label>`:""}
+    <label class="ct-full">Textul postării${SOC.ai?" · scriu textul după poză…":""}<textarea id="socTxt" rows="9"${SOC.ai?" disabled":""}>${esc(SOC.caption||SOC_TPL())}</textarea></label>
+    ${SOC.aiMsg?`<p class="ev-alert ct-msg">${esc(SOC.aiMsg)}</p>`:""}
+    <div class="ct-b">${SOC.img?`<button class="btn primary" data-c="socai"${SOC.ai?" disabled":""}>✨ ${SOC.caption&&SOC.caption!==SOC_TPL()?"Alt text după poză":"Scrie textul după poză"}</button>`:""}<button class="btn" data-c="soctpl">Pune textul gata scris</button></div>
     ${SOC.msg?`<p class="ev-alert ct-msg">${esc(SOC.msg)}</p>`:""}
-    <div class="st-save"><button class="btn primary" data-c="socpost"${!SOC.img||!hook||SOC.busy?" disabled":""}>${SOC.busy?"Se trimite…":SOC.arm?"Sigur? Apasă din nou ca să postezi":"Postează pe Instagram + Facebook"}</button></div>`;
+    <div class="st-save"><button class="btn primary" data-c="socpost"${!SOC.img||!hook||SOC.busy||SOC.ai?" disabled":""}>${SOC.busy?"Se trimite…":SOC.arm?"Sigur? Apasă din nou ca să postezi":"Postează pe Instagram + Facebook"}</button></div>`;
   return h;
 }
 function drawSoc(){const cv=$("#socCv"),d=socDims();if(!cv||!d)return;const w=1080,hh=Math.round(w*d.ch/d.cw);cv.width=w;cv.height=hh;
   cv.getContext("2d").drawImage(SOC.img,d.sx,d.sy,d.cw,d.ch,0,0,w,hh)}
 function socLoad(fl){const u=URL.createObjectURL(fl),im=new Image();im.onload=()=>{SOC.img=im;SOC.name=fl.name;SOC.pos=0.5;SOC.arm=false;SOC.msg="";
-    SOC.ratio=im.naturalWidth/im.naturalHeight>1.3?"169":im.naturalWidth/im.naturalHeight>0.95?"11":"45";render()};
+    SOC.ratio=im.naturalWidth/im.naturalHeight>1.3?"169":im.naturalWidth/im.naturalHeight>0.95?"11":"45";render();socAI(false)};
   im.onerror=()=>toast("Nu am putut deschide poza. Încearcă alt fișier (JPG sau PNG).");im.src=u}
 async function socPost(btn){
   const hook=(firma&&firma.socialHook||"").trim(),txt=($("#socTxt").value||"").trim();SOC.caption=txt;
@@ -2415,6 +2418,45 @@ async function socPost(btn){
     const r=await fetch(hook,{method:"POST",body:fd});if(!r.ok)throw new Error(r.status);
     SOC.img=null;SOC.caption="";SOC.msg="";SOC.busy=false;mode="list";render();toast("Trimis! Apare pe Instagram și Facebook în 1–2 minute.");
   }catch(e){console.warn(e);SOC.busy=false;SOC.msg="Nu am putut trimite poza. Verifică internetul și că scenariul din Make e pornit, apoi încearcă din nou.";render()}
+}
+
+function socEvent(){const t=today();return list.filter(c=>c.dataEv&&c.dataEv<=t).sort((a,b)=>String(b.dataEv).localeCompare(a.dataEv))[0]||null}
+function socPrompt(){
+  const ev=socEvent(),loc=ev&&ev.locatie?tcase(ev.locatie):"",d=ev?shortDate(ev.dataEv):"",inv=ev&&ev.invitati?String(ev.invitati):"";
+  const menu=ev&&ev.portalResp&&ev.portalResp.menu&&ev.portalResp.menu.length?ev.portalResp.menu.join(", "):"";
+  return `Ești social media managerul Cocktail Philosophy, un bar mobil de cocktailuri pentru evenimente din Sibiu (nunți, petreceri private, evenimente corporate).
+Primești o poză făcută la un eveniment. Scrie textul pentru o postare pe Instagram și Facebook, în limba română, potrivit EXACT cu ce se vede în poză (cocktailuri, barul, garniturile, oamenii, atmosfera, locul, lumina).
+
+Stilul: jucăuș dar profesionist, cald, uman, deloc plictisitor. 2–4 propoziții scurte, cu 1–3 emoji potrivite. Variază începutul, nu începe mereu la fel.
+Reguli:
+- Nu inventa nume de oameni și nu spune cine sunt persoanele din poză. Nu da prețuri.
+- Nu pomeni flori comestibile. Siropurile sunt „făcute în casă” (nu „de mână”).
+- Poți folosi, dacă se potrivește, sloganul: „Tu te distrezi, noi ne ocupăm de bar.”
+- Încheie cu un rând separat: „Ai un eveniment în plan? Scrie-ne pe WhatsApp: 0743 785 655”
+- Apoi un rând cu 8–12 hashtag-uri relevante pentru poză, mereu cu #cocktailphilosophy și câteva locale (#sibiu, #evenimentesibiu, #nuntasibiu dacă pare nuntă).
+${loc?`Context: evenimentul cel mai recent a fost la ${loc}${d?" pe "+d:""}${inv?", cu "+inv+" invitați":""}. Pomenește locația doar dacă poza pare de acolo.`:""}
+${menu?`Cocktailurile din meniul evenimentului: ${menu}. Numește unul doar dacă se potrivește cu ce se vede.`:""}
+${SOC.ctx?`Detalii de la Paul despre poză: ${SOC.ctx}`:""}
+Răspunde DOAR cu JSON: {"text":"textul complet al postării, cu rânduri noi ca \\n"}`;
+}
+async function socAI(again){
+  const X=window.__cpAI;if(!SOC.img)return;
+  if(!X||!X.ready()){SOC.aiMsg="Textul automat nu e disponibil acum. Folosește textul gata scris.";render();return}
+  const cur=(($("#socTxt")||{}).value||"").trim();
+  if(!again&&cur&&cur!==SOC_TPL().trim()&&SOC.caption&&SOC.caption.trim()!==SOC_TPL().trim())return;
+  SOC.ai=true;SOC.aiMsg="";SOC.arm=false;render();
+  try{
+    const src=SOC.img,s=Math.min(1,1280/Math.max(src.naturalWidth,src.naturalHeight)),cv=document.createElement("canvas");cv.width=Math.round(src.naturalWidth*s);cv.height=Math.round(src.naturalHeight*s);cv.getContext("2d").drawImage(src,0,0,cv.width,cv.height);
+    const part={inlineData:{data:cv.toDataURL("image/jpeg",0.85).split(",")[1],mimeType:"image/jpeg"}};
+    const {aiM,ai}=await X.loadAI();let res,last;
+    for(const m of X.models){try{const model=aiM.getGenerativeModel(ai,{model:m,generationConfig:{responseMimeType:"application/json",temperature:again?1:0.8}});res=await model.generateContent([socPrompt(),part]);break}
+      catch(e){last=e;if(!/not.?found|404|unsupported|is not available|invalid.*model/i.test(String(e&&e.message)))throw e}}
+    if(!res)throw last;
+    let t=res.response.text();try{const j=JSON.parse(t.replace(/^```(json)?|```$/g,"").trim());t=j.text||t}catch(e){}
+    t=String(t).replace(/\\n/g,"\n").trim();if(!t)throw new Error("gol");
+    SOC.caption=t;SOC.aiMsg="";
+  }catch(e){console.warn(e);SOC.aiMsg="Nu am putut scrie textul după poză acum. Poți folosi textul gata scris sau încerca din nou."}
+  finally{SOC.ai=false;render()}
 }
 
 /* ---------- Rentabilitate pe eveniment ---------- */
@@ -2629,6 +2671,7 @@ V.addEventListener("change",e=>{if(e.target.id==="socFile"){const fl=e.target.fi
   const i=e.target.closest("[data-sgn]");if(!i||!i.files||!i.files[0])return;const c=list.find(x=>x.id===i.dataset.sgn);if(c)uploadSigned(c,i)});
 V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render();return}
   if(e.target.id==="socPos"){SOC.pos=e.target.value/100;drawSoc();return}
+  if(e.target.id==="socCtx"){SOC.ctx=e.target.value;return}
   if(e.target.id==="socTxt"){SOC.caption=e.target.value;if(SOC.arm){SOC.arm=false;const b=V.querySelector('[data-c="socpost"]');if(b)b.textContent="Postează pe Instagram + Facebook"}}});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
@@ -2661,6 +2704,7 @@ V.addEventListener("click",async e=>{
   if(a==="back"){mode="list";f=null;cur=null;errs=[];SOC.arm=false;render();return}
   if(a==="social"){mode="social";SOC.msg="";SOC.arm=false;render();window.scrollTo(0,V.offsetTop-10);return}
   if(a==="soctpl"){SOC.caption=SOC_TPL();SOC.arm=false;render();return}
+  if(a==="socai"){const cx=$("#socCtx");if(cx)SOC.ctx=cx.value.trim();socAI(true);return}
   if(a==="socpost"){socPost(b);return}
   if(a==="saverent"){saveRent();return}
   if(a==="addnote"){const tx=($("#ntT").value||"").trim(),d=$("#ntD").value||today();if(!tx){toast("Scrie ce s-a discutat.");return}
