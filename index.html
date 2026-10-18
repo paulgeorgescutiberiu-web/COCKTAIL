@@ -1363,7 +1363,7 @@ function viewNou(){
   const e=EN,ttl=D?D.title.big:"",edit=e.col!=null;
   const groupsOf=()=>{const g={};e.rows.forEach(x=>{const k=KNOWN[x.L],cat=k?k[1]:"altele";(g[cat]=g[cat]||[]).push({...x,label:k?k[0]:capL(x.lab),cat})});return g};
   const G=groupsOf();
-  let h=`<div class="ev-hero"><p class="ev-sub">${edit?"Modifică fișa evenimentului":"Eveniment nou"}${e.from?` · din contractul ${esc(e.from)}`:""}</p>
+  let h=`<p style="margin:0 0 10px"><button class="btn" type="button" data-enact="cancel">← Înapoi la evenimente</button></p><div class="ev-hero"><p class="ev-sub">${edit?"Modifică fișa evenimentului":"Eveniment nou"}${e.from?` · din contractul ${esc(e.from)}`:""}</p>
     <p class="ev-file">${edit?"Schimbările apar imediat la toată echipa.":"Completezi aici fișa, fără Excel. Barmanii o văd imediat, iar marfa se scade din stoc."}</p></div>
     <div class="en-grid">
       <label class="en-w">Locație / nume eveniment<input data-en="nume" value="${esc(e.nume)}" placeholder="ex: Montana"></label>
