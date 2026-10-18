@@ -357,7 +357,7 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ct-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
 .ct-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .ct-rt{display:table!important;width:100%!important;border-collapse:collapse;margin:4px 0 12px}.ct-rt td{padding:7px 4px;border-bottom:1px solid var(--line)}.ct-rt td:last-child{text-align:right;font-variant-numeric:tabular-nums}.ct-rt .tot td{font-weight:800;font-size:1.1rem;border-bottom:0}
-.ct-note{margin:8px 0 0;line-height:1.45}.ct-sg{align-items:center}.ct-sg a.ct-chip{text-decoration:none}.ct-up{cursor:pointer}.ct-up.busy{opacity:.6;pointer-events:none}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
+.ct-note{margin:8px 0 0;line-height:1.45}.ct-sg{align-items:center}.ct-sg a.ct-chip{text-decoration:none}.ct-up{cursor:pointer}.soc-cv{display:block;width:100%;max-width:420px;height:auto;border-radius:12px;margin:12px 0;background:#000}.soc-r{margin-top:12px}.ct-up.busy{opacity:.6;pointer-events:none}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
 .ct-h span,.ct-m{color:var(--muted);font-size:.9rem}
 .ct-b{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .ct-chip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:.85rem;cursor:pointer;color:var(--ink)}
@@ -1948,7 +1948,7 @@ function viewList(){
   const L=list.filter(c=>!qq||[c.nume,c.locatie].some(v=>String(v||"").toLowerCase().includes(qq)))
     .sort((a,b)=>{const fa=(a.dataEv||"")>=now,fb=(b.dataEv||"")>=now;if(fa!==fb)return fa?-1:1;return fa?String(a.dataEv).localeCompare(b.dataEv):String(b.dataEv).localeCompare(a.dataEv)});
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length} ${list.length===1?"contract":"contracte"}</p><p class="ev-file">Le vezi doar tu. Barmanii nu au acces la contracte.</p></div>
-    <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button></div></div>`;
+    <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button><button class="btn" data-c="social">📸 Postează pe Instagram</button></div></div>`;
   h+=gPick();
   if(!list.length)return h+`<div class="ev-ok">Niciun contract încă. Apasă „Contract nou”.</div>`;
   const R=list.filter(c=>c.rent&&c.rent.calc&&(c.dataEv||"")<now);
@@ -1982,6 +1982,8 @@ function viewFirma(){
     <input type="file" id="ctSig" accept="image/*" hidden></div>
     <h2 class="ev-h2">Google Drive și Calendar</h2><p class="ev-file">Pentru butonul „Drive + calendar”. Contractele se salvează în Drive, în dosarul Evenimente / Evenimente ANUL, iar evenimentul apare în calendarul de mai jos.</p>
     <div class="st-meta">${row("gClient","Google Client ID (OAuth, aplicație web)")}<label>Calendarul evenimentelor<input data-fi="gCal" value="${esc(x.gCal||"cocktailphilosophy@gmail.com")}"></label></div>
+    <h2 class="ev-h2">Instagram și Facebook</h2><p class="ev-file">Pentru butonul „Postează pe Instagram”. E adresa webhook-ului din Make (scenariul „Postare Instagram + Facebook”). Se păstrează doar în zona ta privată.</p>
+    <div class="st-meta">${row("socialHook","Adresa webhook Make (https://hook.eu1.make.com/…)")}</div>
     <div class="st-save"><button class="btn primary" data-c="savefirma">Salvează</button></div>`;
 }
 function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
@@ -1997,9 +1999,10 @@ function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();
   o.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height);res(o.toDataURL("image/png"))};im.src=fr.result};fr.readAsDataURL(file)})}
 function render(){
   const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("ct-q");
-  V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():viewList();
+  V.innerHTML=mode==="social"?viewSocial():mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():viewList();
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
+  if(mode==="social")drawSoc();
 }
 function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
   V.querySelectorAll("[data-cb]").forEach(el=>{f[el.dataset.cb]=el.checked})}
@@ -2092,6 +2095,56 @@ async function downloadPDF(c,btn){
     pm.createPdf(contractDoc(c,F0)).download(name);toast("Contractul PDF e gata.")}
   catch(e){console.warn(e);toast("Nu am putut genera PDF-ul. Verifică internetul și încearcă din nou.")}
   if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent=lbl}
+}
+
+/* ---------- Postare Instagram + Facebook ---------- */
+const SOC={img:null,name:"",ratio:"45",pos:0.5,caption:"",busy:false,arm:false,msg:""};
+const SOC_TPL=()=>{const t=today(),ev=list.filter(c=>c.dataEv&&c.dataEv<=t).sort((a,b)=>String(b.dataEv).localeCompare(a.dataEv))[0];
+  const loc=ev&&ev.locatie?tcase(ev.locatie):"";
+  return `${loc?`Seară frumoasă la ${loc}! `:""}Barul gata, garniturile la locul lor, zâmbetul la fel. 🍊
+Cocktailuri gândite de noi, cu siropuri făcute în casă și garnituri alese una câte una.
+Tu te distrezi, noi ne ocupăm de bar. 🍸
+
+Ai un eveniment în plan? Scrie-ne pe WhatsApp: 0743 785 655
+
+#cocktailphilosophy #barmobil #cocktailbar #evenimentesibiu #nuntasibiu #barman #cocktails #mixology #sibiu`};
+const SOC_R={"45":4/5,"11":1,"169":1.91};
+function socDims(){const im=SOC.img;if(!im)return null;const r=SOC_R[SOC.ratio],W=im.naturalWidth,H=im.naturalHeight;
+  let cw=W,ch=Math.round(W/r);if(ch>H){ch=H;cw=Math.round(H*r)}
+  const sx=Math.round((W-cw)*(cw<W?SOC.pos:0.5)),sy=Math.round((H-ch)*(ch<H?SOC.pos:0.5));return {sx,sy,cw,ch}}
+function viewSocial(){
+  const hook=(firma&&firma.socialHook||"").trim();
+  let h=`<div class="st-top"><div><p class="ev-sub">Postează pe Instagram + Facebook</p><p class="ev-file">Alegi poza, verifici textul, apeși Postează. Apare pe Instagram și pe pagina de Facebook în 1–2 minute.</p></div>
+    <div class="st-acts"><button class="btn" data-c="back">Înapoi</button></div></div>`;
+  if(!hook)h+=`<div class="ev-alert">Lipsește adresa webhook-ului din Make. Pune-o la <b>Datele firmei → Instagram și Facebook</b>.</div>`;
+  h+=`<div class="st-ai"><label class="btn primary ct-up">${SOC.img?"Altă poză":"Alege poza (galerie sau cameră)"}<input type="file" accept="image/*" id="socFile" hidden></label>`;
+  if(SOC.img){const d=socDims(),canMove=d&&(d.cw<SOC.img.naturalWidth||d.ch<SOC.img.naturalHeight);
+    h+=`<div class="ct-b soc-r">${[["45","Portret 4:5"],["11","Pătrat"],["169","Lat"]].map(([k,l])=>`<button class="ct-chip ${SOC.ratio===k?"on":""}" data-sr="${k}">${l}</button>`).join("")}</div>
+      <canvas id="socCv" class="soc-cv"></canvas>
+      ${canMove?`<label class="ct-full">Încadrare (mută poza)<input type="range" id="socPos" min="0" max="100" value="${Math.round(SOC.pos*100)}"></label>`:""}`}
+  h+=`</div><label class="ct-full">Textul postării<textarea id="socTxt" rows="9">${esc(SOC.caption||SOC_TPL())}</textarea></label>
+    <div class="ct-b"><button class="btn" data-c="soctpl">Pune textul gata scris</button></div>
+    ${SOC.msg?`<p class="ev-alert ct-msg">${esc(SOC.msg)}</p>`:""}
+    <div class="st-save"><button class="btn primary" data-c="socpost"${!SOC.img||!hook||SOC.busy?" disabled":""}>${SOC.busy?"Se trimite…":SOC.arm?"Sigur? Apasă din nou ca să postezi":"Postează pe Instagram + Facebook"}</button></div>`;
+  return h;
+}
+function drawSoc(){const cv=$("#socCv"),d=socDims();if(!cv||!d)return;const w=1080,hh=Math.round(w*d.ch/d.cw);cv.width=w;cv.height=hh;
+  cv.getContext("2d").drawImage(SOC.img,d.sx,d.sy,d.cw,d.ch,0,0,w,hh)}
+function socLoad(fl){const u=URL.createObjectURL(fl),im=new Image();im.onload=()=>{SOC.img=im;SOC.name=fl.name;SOC.pos=0.5;SOC.arm=false;SOC.msg="";
+    SOC.ratio=im.naturalWidth/im.naturalHeight>1.3?"169":im.naturalWidth/im.naturalHeight>0.95?"11":"45";render()};
+  im.onerror=()=>toast("Nu am putut deschide poza. Încearcă alt fișier (JPG sau PNG).");im.src=u}
+async function socPost(btn){
+  const hook=(firma&&firma.socialHook||"").trim(),txt=($("#socTxt").value||"").trim();SOC.caption=txt;
+  if(!/^https:\/\/hook\.[a-z0-9]+\.make\.com\//.test(hook)){toast("Adresa webhook-ului din Make nu pare corectă.");return}
+  if(!txt){toast("Scrie un text pentru postare.");return}
+  if(!SOC.arm){SOC.arm=true;render();return}
+  SOC.busy=true;SOC.arm=false;render();
+  try{const cv=$("#socCv");let q=0.9,blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",q));
+    while(blob.size>7.5e6&&q>0.5){q-=0.1;blob=await new Promise(r=>cv.toBlob(r,"image/jpeg",q))}
+    const fd=new FormData(),id=today()+"_"+Date.now().toString(36);fd.append("id",id);fd.append("caption",txt);fd.append("photo",blob,id+".jpg");
+    const r=await fetch(hook,{method:"POST",body:fd});if(!r.ok)throw new Error(r.status);
+    SOC.img=null;SOC.caption="";SOC.msg="";SOC.busy=false;mode="list";render();toast("Trimis! Apare pe Instagram și Facebook în 1–2 minute.");
+  }catch(e){console.warn(e);SOC.busy=false;SOC.msg="Nu am putut trimite poza. Verifică internetul și că scenariul din Make e pornit, apoi încearcă din nou.";render()}
 }
 
 /* ---------- Rentabilitate pe eveniment ---------- */
@@ -2301,11 +2354,15 @@ async function uploadSigned(c,fileIn){
   }catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut încărca contractul semnat. Încearcă din nou.")}
   finally{fileIn.value="";render()}
 }
-V.addEventListener("change",e=>{const i=e.target.closest("[data-sgn]");if(!i||!i.files||!i.files[0])return;const c=list.find(x=>x.id===i.dataset.sgn);if(c)uploadSigned(c,i)});
-V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render()}});
+V.addEventListener("change",e=>{if(e.target.id==="socFile"){const fl=e.target.files&&e.target.files[0];if(fl)socLoad(fl);return}
+  const i=e.target.closest("[data-sgn]");if(!i||!i.files||!i.files[0])return;const c=list.find(x=>x.id===i.dataset.sgn);if(c)uploadSigned(c,i)});
+V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render();return}
+  if(e.target.id==="socPos"){SOC.pos=e.target.value/100;drawSoc();return}
+  if(e.target.id==="socTxt"){SOC.caption=e.target.value;if(SOC.arm){SOC.arm=false;const b=V.querySelector('[data-c="socpost"]');if(b)b.textContent="Postează pe Instagram + Facebook"}}});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
+  const sr=t.closest("[data-sr]");if(sr){SOC.ratio=sr.dataset.sr;SOC.pos=0.5;SOC.arm=false;SOC.caption=($("#socTxt")||{}).value||SOC.caption;render();return}
   const rb=t.closest("[data-rent]");if(rb){const c=list.find(x=>x.id===rb.dataset.rent);if(c){cur={...c};rentMsg="";mode="rent";render();window.scrollTo(0,V.offsetTop-10)}return}
   const nb=t.closest("[data-notes]");if(nb){const c=list.find(x=>x.id===nb.dataset.notes);if(c){cur={...c};noteDel=null;mode="notes";render();window.scrollTo(0,V.offsetTop-10)}return}
   const rc=t.closest("[data-rcons]");if(rc&&cur){const DD=window.__cx&&window.__cx.getD(),e=DD&&DD.events.find(x=>x.id===rc.dataset.rcons);if(e)pullConsum(e,rc);return}
@@ -2320,7 +2377,10 @@ V.addEventListener("click",async e=>{
     confirmDel=null;F.fs.doc(`${F.base}/contracte/${id}`).delete().then(()=>toast("Contractul a fost șters.")).catch(()=>toast("Nu am putut șterge."));return}
   if(!b)return;const a=b.dataset.c;
   if(a==="new"){f=BLANK();errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10);return}
-  if(a==="back"){mode="list";f=null;cur=null;errs=[];render();return}
+  if(a==="back"){mode="list";f=null;cur=null;errs=[];SOC.arm=false;render();return}
+  if(a==="social"){mode="social";SOC.msg="";SOC.arm=false;render();window.scrollTo(0,V.offsetTop-10);return}
+  if(a==="soctpl"){SOC.caption=SOC_TPL();SOC.arm=false;render();return}
+  if(a==="socpost"){socPost(b);return}
   if(a==="saverent"){saveRent();return}
   if(a==="addnote"){const tx=($("#ntT").value||"").trim(),d=$("#ntD").value||today();if(!tx){toast("Scrie ce s-a discutat.");return}
     saveNotes([...(cur.notes||[]),{d,t:tx,at:new Date().toISOString()}],"Notița a fost salvată.");return}

@@ -1,5 +1,5 @@
 # Publică pe Instagram + Facebook postările puse în social/coada/<id>/ (poza.jpg + text.txt).
-# Trimite poza și textul la scenariul Make.com (secretul MAKE_WEBHOOK_URL), apoi mută dosarul în social/postate/.
+# Trimite poza (fișier) și textul la scenariul Make.com (secretul MAKE_WEBHOOK_URL), apoi mută dosarul în social/postate/.
 name: Postare social
 on:
   push:
@@ -25,14 +25,10 @@ jobs:
           for d in social/coada/*/; do
             id=$(basename "$d"); img=$(ls "$d" | grep -iE '\.(jpe?g|png)$' | head -1)
             [ -z "$img" ] && continue
-            url="https://raw.githubusercontent.com/$REPO/main/social/postate/$id/$img"
             mkdir -p social/postate && git mv "$d" "social/postate/$id"
             git config user.name "cocktail-bot"; git config user.email "bot@users.noreply.github.com"
             git commit -qm "Postat: $id [skip ci]"; git push -q
-            for i in $(seq 1 20); do code=$(curl -s -o /dev/null -w '%{http_code}' "$url"); [ "$code" = 200 ] && break; sleep 3; done
-            jq -n --arg id "$id" --arg image_url "$url" --rawfile caption "social/postate/$id/text.txt" \
-              '{id:$id,image_url:$image_url,caption:$caption}' > /tmp/p.json
-            curl -sf -X POST -H 'Content-Type: application/json' --data @/tmp/p.json "$HOOK"
+            curl -sf -X POST -F "id=$id" -F "caption=<social/postate/$id/text.txt" -F "photo=@social/postate/$id/$img;type=image/jpeg" "$HOOK"
             echo "Trimis: $id"; done_any=1
           done
           [ $done_any = 1 ] || echo "Nimic în coadă"
