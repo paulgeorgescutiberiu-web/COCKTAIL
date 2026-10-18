@@ -1964,6 +1964,7 @@ function viewList(){
       <button class="ct-chip ${c.restPlatit?"on":""}" data-tog="restPlatit" data-id="${c.id}">${c.restPlatit?"✓ Diferență încasată":"Diferență neîncasată"}</button></div>
       <div class="ct-b ct-sg">${c.signedId?`<a class="ct-chip on" href="https://drive.google.com/file/d/${esc(c.signedId)}/view" target="_blank" rel="noopener">✓ Semnat de client${c.signedAt?" · "+esc(shortDate(c.signedAt)):""} · vezi</a>`:`<span class="ct-chip">Nesemnat de client</span>`}
       <label class="btn${c.signedId?"":" primary"} ct-up">${c.signedId?"Înlocuiește contractul semnat":"Încarcă contractul semnat de client"}<input type="file" accept="application/pdf,image/*" data-sgn="${c.id}" hidden></label></div>
+      ${payRow(c)}
       ${c.rent&&c.rent.calc?`<div class="ct-m">Rentabilitate: venit ${lei(c.rent.calc.venit)} · profit <b>${lei(c.rent.calc.profit)}</b> (${pct(c.rent.calc.marja)})</div>`:""}
       <div class="ct-b"><button class="btn" data-rent="${c.id}">Rentabilitate</button><button class="btn" data-notes="${c.id}">Notițe${(c.notes||[]).length?` (${c.notes.length})`:""}</button></div>
       <div class="ct-b"><button class="btn" data-pdf="${c.id}">PDF</button><button class="btn${c.calId?"":" primary"}" data-gs="${c.id}">${c.calId?"✓ Actualizează Drive + calendar":"Drive + calendar"}</button><button class="btn" data-ed="${c.id}">Editează</button><button class="btn" data-dup="${c.id}">Copie</button>
@@ -1984,6 +1985,8 @@ function viewFirma(){
     <div class="st-meta">${row("gClient","Google Client ID (OAuth, aplicație web)")}<label>Calendarul evenimentelor<input data-fi="gCal" value="${esc(x.gCal||"cocktailphilosophy@gmail.com")}"></label></div>
     <h2 class="ev-h2">Instagram și Facebook</h2><p class="ev-file">Pentru butonul „Postează pe Instagram”. E adresa webhook-ului din Make (scenariul „Postare Instagram + Facebook”). Se păstrează doar în zona ta privată.</p>
     <div class="st-meta">${row("socialHook","Adresa webhook Make (https://hook.eu1.make.com/…)")}</div>
+    <h2 class="ev-h2">Plata avansului cu cardul (Revolut)</h2><p class="ev-file">Pentru butonul „Link de plată avans”. E adresa webhook-ului din Make (scenariul „Avans Revolut”), care creează linkul în Revolut Business. Cheia Revolut stă doar în Make, nu în aplicație.</p>
+    <div class="st-meta">${row("payHook","Adresa webhook Make pentru plăți")}</div>
     <div class="st-save"><button class="btn primary" data-c="savefirma">Salvează</button></div>`;
 }
 function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
@@ -2003,6 +2006,7 @@ function render(){
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
   if(mode==="social")drawSoc();
+  if(mode==="list")payAuto();
 }
 function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
   V.querySelectorAll("[data-cb]").forEach(el=>{f[el.dataset.cb]=el.checked})}
@@ -2096,6 +2100,48 @@ async function downloadPDF(c,btn){
   catch(e){console.warn(e);toast("Nu am putut genera PDF-ul. Verifică internetul și încearcă din nou.")}
   if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent=lbl}
 }
+
+/* ---------- Avans cu cardul (Revolut prin Make) ---------- */
+const PAY={busy:{},checked:{}};
+const payAmount=c=>{const v=String(c.avans||"").trim().replace(/\s/g,"").replace(/\.(?=\d{3}(\D|$))/g,"").replace(",",".");const n=Number(v);return isFinite(n)&&n>0?Math.round(n*100):0};
+const payCur=c=>c.monedaAvans==="EURO"?"EUR":"RON";
+const telWa=t=>{let d=String(t||"").replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("0"))d="4"+d;return d};
+function payRow(c){
+  if(c.avansPlatit){return c.avansCard?`<div class="ct-m">💳 Avans plătit cu cardul${c.avansPlatitLa?" · "+esc(shortDate(c.avansPlatitLa)):""}</div>`:""}
+  if(!payAmount(c))return "";
+  if(PAY.busy[c.id])return `<div class="ct-b"><button class="btn" disabled>Se pregătește linkul…</button></div>`;
+  const o=c.payOrder;
+  if(o&&o.url)return `<div class="ct-b"><button class="btn primary" data-paywa="${c.id}">Trimite linkul de plată pe WhatsApp</button><button class="btn" data-paycp="${c.id}">Copiază linkul</button><button class="btn" data-paychk="${c.id}">Verifică plata</button></div>
+    <div class="ct-m">Link de plată creat ${esc(shortDate(String(o.at||"").slice(0,10)))} · ${esc(c.avans)} ${esc(c.monedaAvans)}. Când clientul plătește, avansul se bifează singur.</div>`;
+  return `<div class="ct-b"><button class="btn" data-paynew="${c.id}">💳 Link de plată avans (${esc(c.avans)} ${esc(c.monedaAvans)})</button></div>`;
+}
+async function payCall(params){
+  const hook=(firma&&firma.payHook||"").trim();
+  if(!/^https:\/\/hook\.[a-z0-9]+\.make\.com\//.test(hook))throw {msg:"Lipsește adresa webhook-ului pentru plăți. Pune-o la Datele firmei → Plata avansului cu cardul."};
+  const r=await fetch(hook,{method:"POST",body:new URLSearchParams(params)});
+  const t=await r.text();let j=null;try{j=JSON.parse(t)}catch(e){}
+  if(!r.ok||!j)throw {msg:"Revolut nu a răspuns cum trebuie. Verifică scenariul „Avans Revolut” din Make."};
+  return j;
+}
+async function payNew(c){
+  PAY.busy[c.id]=true;render();
+  try{const evd=shortDate(c.dataEv),j=await payCall({action:"create",ref:c.id,amount:String(payAmount(c)),currency:payCur(c),
+      description:`Avans Cocktail Philosophy · eveniment ${evd}${c.locatie?" · "+tcase(c.locatie):""}`});
+    const url=j.checkout_url||j.url,id=j.id||j.order_id;if(!url||!id)throw {msg:"Revolut nu a dat linkul de plată."};
+    const payOrder={id,url,at:new Date().toISOString()};
+    await F.fs.doc(`${F.base}/contracte/${c.id}`).set({payOrder},{merge:true});c.payOrder=payOrder;toast("Linkul de plată e gata. Trimite-l clientului.")}
+  catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut crea linkul de plată.")}
+  finally{delete PAY.busy[c.id];render()}
+}
+function payMsg(c){return `Bună ziua! Pentru rezervarea datei de ${shortDate(c.dataEv)}, avansul de ${c.avans} ${c.monedaAvans==="EURO"?"EUR":"RON"} se poate plăti cu cardul aici: ${c.payOrder.url}\nMulțumim! Cocktail Philosophy`}
+async function payCheck(c,quiet){
+  if(!c.payOrder||!c.payOrder.id||c.avansPlatit)return;
+  try{const j=await payCall({action:"status",order:c.payOrder.id}),st=String(j.state||"").toLowerCase();
+    if(st==="completed"){await F.fs.doc(`${F.base}/contracte/${c.id}`).set({avansPlatit:true,avansCard:true,avansPlatitLa:today()},{merge:true});toast(`Avansul de la ${tcase(surname(c.nume))} a fost plătit cu cardul ✓`)}
+    else if(!quiet)toast(st==="pending"?"Clientul nu a plătit încă.":st==="authorised"||st==="processing"?"Plata e în curs de procesare.":"Plata nu e finalizată ("+(st||"necunoscut")+").")}
+  catch(e){if(!quiet)toast(e&&e.msg||"Nu am putut verifica plata.")}
+}
+function payAuto(){if(!(firma&&firma.payHook))return;let n=0;list.forEach(c=>{if(n<6&&c.payOrder&&c.payOrder.id&&!c.avansPlatit&&!PAY.checked[c.id]){PAY.checked[c.id]=1;n++;payCheck(c,true)}})}
 
 /* ---------- Postare Instagram + Facebook ---------- */
 const SOC={img:null,name:"",ratio:"45",pos:0.5,caption:"",busy:false,arm:false,msg:""};
@@ -2362,6 +2408,10 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
+  const pn=t.closest("[data-paynew]");if(pn){const c=list.find(x=>x.id===pn.dataset.paynew);if(c)payNew(c);return}
+  const pw=t.closest("[data-paywa]");if(pw){const c=list.find(x=>x.id===pw.dataset.paywa);if(c&&c.payOrder){const tel=telWa(c.tel),u=(tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(payMsg(c));window.open(u,"_blank")}return}
+  const pc=t.closest("[data-paycp]");if(pc){const c=list.find(x=>x.id===pc.dataset.paycp);if(c&&c.payOrder)navigator.clipboard.writeText(c.payOrder.url).then(()=>toast("Linkul a fost copiat."),()=>toast(c.payOrder.url));return}
+  const pk=t.closest("[data-paychk]");if(pk){const c=list.find(x=>x.id===pk.dataset.paychk);if(c)payCheck(c,false);return}
   const sr=t.closest("[data-sr]");if(sr){SOC.ratio=sr.dataset.sr;SOC.pos=0.5;SOC.arm=false;SOC.caption=($("#socTxt")||{}).value||SOC.caption;render();return}
   const rb=t.closest("[data-rent]");if(rb){const c=list.find(x=>x.id===rb.dataset.rent);if(c){cur={...c};rentMsg="";mode="rent";render();window.scrollTo(0,V.offsetTop-10)}return}
   const nb=t.closest("[data-notes]");if(nb){const c=list.find(x=>x.id===nb.dataset.notes);if(c){cur={...c};noteDel=null;mode="notes";render();window.scrollTo(0,V.offsetTop-10)}return}
