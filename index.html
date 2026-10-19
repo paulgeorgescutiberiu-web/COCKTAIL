@@ -1083,7 +1083,7 @@ function viewZiua(){
     h+=`<button class="ev-trow" data-r="${e.id}" style="--c:var(${e.c})"><div class="ev-time ${e.time?"":"none"}">${esc(e.time||"oră necunoscută")}</div><div class="ev-bar"></div>
       <div><div class="ev-name">${esc(e.name)}</div><div class="ev-meta">${meta}</div>${miss.length?`<span class="ev-flag">${miss.join(", ")}</span>`:""}${dn?`<div class="ev-meta"><b>${dn} din ${D.items.length} bifate</b></div>`:""}${(()=>{const st=retStats(e);return st.filled?`<div class="ev-meta">Retur notat la ${st.filled} din ${st.all.length}</div>`:""})()}</div></button>`;
   });
-  h+=`</div><h2 class="ev-h2">De verificat</h2>`;
+  h+=`</div><p class="edit-only" style="margin:12px 0 0"><button class="btn" type="button" data-qrall="1">🔳 QR-urile pentru bar, toate evenimentele (PDF)</button></p><h2 class="ev-h2">De verificat</h2>`;
   h+=CHECKS.length?`<div class="ev-checks"><ul>${CHECKS.map(c=>`<li>${c}</li>`).join("")}</ul></div>`:`<div class="ev-ok">Nu am găsit nimic de verificat.</div>`;
   h+=`<p class="ev-help">Pentru alt weekend apasă „Încarcă alt Excel”. Păstrează aceeași structură: evenimentele pe primul rând, începând cu coloana B, și articolele pe rânduri în coloana A. Dacă numești fișierul ca „3_octombrie_2026”, data apare automat sus.</p>`;
   return h;
@@ -3058,6 +3058,27 @@ function leadsHTML(){
   h+=`<div class="qr-la" style="margin-top:8px"><button class="btn" data-qrgen="1">QR general (fără eveniment)</button>${LEADS.length>open.length?`<button class="btn" data-leadall="1">${SHOWALL?"Doar cele noi":`Arată și rezolvatele (${LEADS.length-open.length})`}</button>`:""}</div></div>`;
   return h;
 }
+/* ---------- toate QR-urile săptămânii într-un PDF (2 cartonașe pe o foaie A4) ---------- */
+let pmP=null;
+function loadPM(){if(window.pdfMake&&window.pdfMake.createPdf)return Promise.resolve(window.pdfMake);
+  if(!pmP)pmP=new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.23/build/pdfmake.min.js";s.onload=()=>res(window.pdfMake);s.onerror=()=>{pmP=null;rej()};document.head.appendChild(s)});
+  return pmP}
+const toDataURL=b=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=rej;fr.readAsDataURL(b)});
+async function allPDF(btn){
+  const D=curD();if(!D||!D.events.length)return;
+  const lab=btn.textContent;btn.disabled=true;btn.textContent="Se pregătesc QR-urile…";
+  try{const [Q,pm]=await Promise.all([loadQR(),loadPM()]);const imgs=[];
+    const evs=[...D.events].sort((a,b)=>String(iso(evDate(a,D))+(a.time||"")).localeCompare(iso(evDate(b,D))+(b.time||"")));
+    for(const e of evs){const d=evDate(e,D),c=code(e,D);
+      const png=await cardPNG(qrSVG(qrMatrix(Q,link(c)),600),titleCase(e.name),(d?`${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`:"")+(e.time?` · ora ${e.time}`:""));
+      imgs.push(await toDataURL(png))}
+    const pages=[];for(let i=0;i<imgs.length;i+=2)pages.push({columns:[{image:imgs[i],width:390},imgs[i+1]?{image:imgs[i+1],width:390}:{text:""}],columnGap:22,pageBreak:i?"before":undefined});
+    const fn=`QR-bar-${slug(D.title&&D.title.big||"saptamana")}.pdf`;
+    pm.createPdf({pageSize:"A4",pageOrientation:"landscape",pageMargins:[20,20,20,20],content:pages}).download(fn);
+    btn.textContent=`Gata: ${imgs.length} ${imgs.length===1?"cartonaș":"cartonașe"}`;setTimeout(()=>{if(document.contains(btn)){btn.textContent=lab;btn.disabled=false}},3000);
+  }catch(e){btn.textContent="Nu a mers. Verifică internetul.";setTimeout(()=>{btn.textContent=lab;btn.disabled=false},3000)}
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-qrall]");if(b&&!b.disabled)allPDF(b)});
 window.__qr={code,link,leadsHTML,show,sync};
 })();
 
