@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La bar cu Cocktail Philosophy</title>
+<meta name="description" content="Meniul serii și barul mobil de cocktailuri Cocktail Philosophy pentru evenimentul tău.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#0d0c0b;--panel:#181614;--line:#2e2a25;--fg:#f4f1ec;--mut:#a59e95;--or:#ff8a1f;--ye:#ffd23f;--ok:#25d366;--d:"Barlow Condensed","Arial Narrow",Arial,sans-serif;--b:"Barlow",Arial,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--b);font-size:17px;line-height:1.5}
+.wrap{max-width:680px;margin:0 auto;padding:26px max(16px,env(safe-area-inset-left)) 70px max(16px,env(safe-area-inset-right));display:flex;flex-direction:column;gap:26px}
+.brand{font-family:var(--d);font-weight:500;letter-spacing:.08em;color:var(--mut);font-size:15px}.brand b{color:var(--fg);font-weight:800}
+h1{font-family:var(--d);font-weight:800;font-size:clamp(40px,11vw,64px);line-height:.95;margin:0;text-transform:uppercase}
+h1 em{font-style:normal;color:var(--or)}
+h2{font-family:var(--d);font-weight:800;font-size:30px;line-height:1;text-transform:uppercase;margin:0}
+.lead{font-size:18px;margin:10px 0 0;color:var(--mut)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.card.hot{border-color:var(--or);background:linear-gradient(160deg,#2a1a0b,#181614 60%)}
+.menu{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ck{display:flex;flex-direction:column;gap:2px;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;background:#13110f;min-width:0}
+.ck b{font-family:var(--d);font-size:22px;line-height:1.1;text-transform:uppercase}
+.ck small{color:var(--mut);font-size:14px;line-height:1.35}
+.ck .z{font-size:11px;color:var(--ok);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:999px;padding:13px 22px;font:700 19px var(--d);letter-spacing:.03em;text-decoration:none;cursor:pointer;color:#1a0d00;background:var(--or)}
+.btn.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.wa{background:var(--ok);color:#03200f}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ye);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1 1 140px}
+.mut{color:var(--mut);font-size:15px;margin:0}
+form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;min-width:0}
+form .w{grid-column:1/-1}
+input,textarea{width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:#13110f;color:var(--fg);font:inherit;font-size:17px;text-transform:none;letter-spacing:0}
+textarea{resize:vertical}
+.okmsg{color:var(--ok);font-weight:600;margin:0}
+.err{color:#ff7a7a;margin:0}
+.foot{color:var(--mut);font-size:14px;text-align:center}
+.foot a{color:var(--fg)}
+.hide{display:none!important}
+@media (max-width:420px){.menu{grid-template-columns:1fr}form{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="brand">COCKTAIL <b>PHILOSOPHY</b>®</div>
+  <div id="hero"><h1>Bun venit <em>la bar</em></h1><p class="lead">Se încarcă meniul…</p></div>
+  <section id="menuS" class="hide"><h2 id="menuH">Meniul serii</h2><p class="mut" style="margin:6px 0 12px">Alege cu ochii, comandă cu zâmbetul. Barmanii fac restul.</p><div class="menu" id="menu"></div></section>
+
+  <section class="card hot" id="offer">
+    <h2>Îți place barul?<br>Îl aducem la <span style="color:var(--or)">evenimentul tău</span>.</h2>
+    <p class="mut">Nuntă, botez, petrecere de firmă sau aniversare: venim cu barul, paharele, barmanii și cocktailurile. Lasă-ne datele și te sunăm noi cu oferta.</p>
+    <form id="f" novalidate>
+      <label>Numele tău<input name="nume" autocomplete="name" maxlength="60" required></label>
+      <label>Telefon<input name="tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required></label>
+      <label>Data evenimentului<input name="data" type="date"></label>
+      <label>Câți invitați?<input name="inv" inputmode="numeric" maxlength="6" placeholder="ex: 120"></label>
+      <label class="w">Unde? (oraș sau locație)<input name="loc" maxlength="80" placeholder="ex: Sibiu, Hotel ..."></label>
+      <label class="w">Ceva ce vrei să știm (opțional)<textarea name="msg" rows="2" maxlength="500" placeholder="ex: vrem și cocktailuri fără alcool"></textarea></label>
+      <label class="w" style="flex-direction:row;align-items:flex-start;gap:10px;text-transform:none;letter-spacing:0;font-size:14px"><input type="checkbox" name="ok" style="width:20px;height:20px;margin-top:2px;accent-color:var(--or)" required> Sunt de acord să fiu contactat de Cocktail Philosophy pentru o ofertă.</label>
+      <p class="err w hide" id="ferr"></p>
+      <button class="btn w" type="submit" id="fbtn">Vreau ofertă</button>
+    </form>
+    <div id="done" class="hide" style="display:flex;flex-direction:column;gap:12px">
+      <p class="okmsg">Mulțumim! Te sunăm în cel mult o zi, cu oferta.</p>
+      <p class="mut">Te grăbești? Scrie-ne direct pe WhatsApp:</p>
+      <a class="btn wa" id="waDone" target="_blank" rel="noopener">WhatsApp 0743 785 655</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Rămâi cu noi</h2>
+    <p class="mut">Pozele de azi apar pe Instagram și Facebook. Dă-ne un follow și te regăsești acolo.</p>
+    <div class="row">
+      <a class="btn sec" id="ig" href="https://www.instagram.com/cocktailphilosophy/" target="_blank" rel="noopener">Instagram</a>
+      <a class="btn sec" id="fb" href="https://www.facebook.com/cocktailphilosophy/" target="_blank" rel="noopener">Facebook</a>
+    </div>
+    <a class="btn hide" id="rev" target="_blank" rel="noopener">⭐ Lasă-ne o recenzie</a>
+  </section>
+
+  <p class="foot"><a href="https://cocktailphilosophy.ro/">cocktailphilosophy.ro</a> · <a href="https://cocktailphilosophy.ro/calculator/">Calculează prețul</a> · 0743 785 655</p>
+</div>
+<script>
+(function(){
+const CFG={apiKey:"AIzaSyBdnMe0062NUOsIBlRZ1NqKlPniDwWXebI",authDomain:"cocktail-philosophy-dc34b.firebaseapp.com",projectId:"cocktail-philosophy-dc34b",storageBucket:"cocktail-philosophy-dc34b.firebasestorage.app",messagingSenderId:"924422421135",appId:"1:924422421135:web:127a3c78598b64afb84efa"};
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MON=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+const q=new URLSearchParams(location.search),code=(q.get("e")||"").replace(/[^a-z0-9-]/g,"").slice(0,40)||"general";
+const WA="40743785655";
+let fs=null,info=null,ev=null;
+const waLink=t=>`https://wa.me/${WA}?text=${encodeURIComponent(t)}`;
+$("#waDone").href=waLink("Bună! Am văzut barul vostru la un eveniment și aș vrea o ofertă.");
+function show(){
+  ev=info&&info.ev&&info.ev[code]||null;
+  const name=ev&&ev.n?ev.n:"";
+  $("#hero").innerHTML=name?`<h1>Bun venit la <em>${esc(name)}</em></h1><p class="lead">Barul e deschis. Mai jos ai meniul serii.</p>`
+    :`<h1>Cocktailuri <em>de poveste</em></h1><p class="lead">Bar mobil de cocktailuri pentru nunți, botezuri și evenimente. Din Sibiu, oriunde în țară.</p>`;
+  let M=(info&&info.menu)||[];
+  if(ev&&Array.isArray(ev.menu)&&ev.menu.length){const S=new Set(ev.menu);M=M.filter(x=>S.has(x.id))}
+  if(M.length){$("#menuS").classList.remove("hide");$("#menuH").textContent=name?"Meniul serii":"Din meniul nostru";
+    $("#menu").innerHTML=M.map(x=>`<div class="ck">${x.zero?'<span class="z">fără alcool</span>':""}<b>${esc(x.name)}</b><small>${esc((x.ing||[]).join(" · "))}</small></div>`).join("")}
+  const L=(info&&info.links)||{};
+  if(L.ig)$("#ig").href=L.ig;if(L.fb)$("#fb").href=L.fb;
+  if(L.review){const r=$("#rev");r.href=L.review;r.classList.remove("hide")}
+}
+async function countScan(){
+  try{if(sessionStorage.getItem("cp-scan-"+code))return;sessionStorage.setItem("cp-scan-"+code,"1")}catch(e){}
+  const ref=fs.doc("barScan/"+code),now=new Date().toISOString();
+  try{await fs.runTransaction(async t=>{const d=await t.get(ref);if(d.exists)t.update(ref,{n:(d.data().n||0)+1,last:now});else t.set(ref,{n:1,last:now})})}catch(e){}
+}
+async function init(){
+  if(!window.firebase){show();return}
+  try{firebase.initializeApp(CFG);fs=firebase.firestore()}catch(e){show();return}
+  try{const d=await fs.doc("bar/info").get();info=d.exists?d.data():null}catch(e){info=null}
+  show();countScan();
+}
+$("#f").addEventListener("submit",async e=>{
+  e.preventDefault();const F=e.target,v=k=>(F.elements[k].value||"").trim(),err=$("#ferr");
+  const tel=v("tel").replace(/[^\d+]/g,"");
+  const bad=!v("nume")?"Scrie-ne numele tău.":tel.replace(/\D/g,"").length<9?"Verifică numărul de telefon.":!F.elements.ok.checked?"Bifează acordul ca să te putem contacta.":"";
+  if(bad){err.textContent=bad;err.classList.remove("hide");return}
+  err.classList.add("hide");
+  const lead={nume:v("nume").slice(0,60),tel:tel.slice(0,20),data:v("data").slice(0,10),inv:v("inv").replace(/\D/g,"").slice(0,6),loc:v("loc").slice(0,80),msg:v("msg").slice(0,500),ev:code,evn:(ev&&ev.n||"").slice(0,60),at:new Date().toISOString()};
+  const b=$("#fbtn");b.disabled=true;b.textContent="Se trimite…";
+  const dt=lead.data?(()=>{const m=lead.data.split("-");return `${+m[2]} ${MON[+m[1]-1]} ${m[0]}`})():"";
+  const waTxt=`Bună! Sunt ${lead.nume}. Aș vrea o ofertă pentru un eveniment${dt?" pe "+dt:""}${lead.loc?", la "+lead.loc:""}${lead.inv?", "+lead.inv+" invitați":""}.${lead.msg?" "+lead.msg:""}`;
+  try{if(!fs)throw 0;await fs.collection("barLead").add(lead);
+    F.classList.add("hide");$("#done").classList.remove("hide");$("#waDone").href=waLink(waTxt);
+  }catch(x){b.disabled=false;b.textContent="Vreau ofertă";err.innerHTML=`Nu am putut trimite. <a href="${waLink(waTxt)}" style="color:var(--fg)" target="_blank" rel="noopener">Trimite-ne pe WhatsApp</a>.`;err.classList.remove("hide")}
+});
+init();
+})();
+</script>
+</body>
+</html>

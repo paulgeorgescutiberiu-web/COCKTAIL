@@ -398,6 +398,16 @@ nav.tabs{overflow-x:auto;scrollbar-width:none}
 .of-tag{font-size:.72rem;font-weight:700;text-transform:uppercase;background:var(--line);border-radius:999px;padding:2px 8px;margin-left:4px}
 a.btn{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
 a.btn.primary{color:var(--on-leaf)}
+#qrModal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+.qr-box{background:var(--paper);color:var(--ink);border-radius:18px;padding:18px;max-width:440px;width:100%;max-height:92vh;overflow:auto;display:flex;flex-direction:column;gap:10px;position:relative}
+.qr-x{align-self:flex-end}
+.qr-img{background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center}
+.qr-img svg{width:100%;height:auto;max-width:340px}
+.qr-acts,.qr-la{display:flex;gap:8px;flex-wrap:wrap}
+.qr-lead{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.qr-lead small{display:block;color:var(--muted);font-size:.82rem;margin-top:2px}
+.qr-lead.off{opacity:.55}
+.qr-lead a{color:inherit}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -1462,7 +1472,7 @@ function enClick(t){
   if(a==="save"){enSave(b);return true}
   return true;
 }
-function enEditBtn(e){return `<p style="margin:14px 0 0" class="edit-only"><button class="btn" type="button" data-enedit="${e.col}">Modifică fișa</button></p>`}
+function enEditBtn(e){return `<p style="margin:14px 0 0;display:flex;gap:8px;flex-wrap:wrap" class="edit-only"><button class="btn" type="button" data-enedit="${e.col}">Modifică fișa</button><button class="btn" type="button" data-qrev="${e.col}">QR pentru bar</button></p>`}
 function enFromEvent(col){
   const e=D.events.find(x=>x.col===+col);if(!e)return;
   enStart({col:e.col,nume:e.name,data:enISO(e.date),ora:e.time&&/^\d\d:\d\d$/.test(e.time)?e.time:"",pers:e.persons!=null?String(e.persons):"",echipa:e.team.join(" "),transport:e.transport||"",note:(e.notesRaw||[]).join(" ")});
@@ -2162,6 +2172,7 @@ function viewList(){
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length} ${list.length===1?"contract":"contracte"}</p><p class="ev-file">Le vezi doar tu. Barmanii nu au acces la contracte.</p></div>
     <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button></div></div>`;
   h+=gPick();
+  if(window.__qr)h+=window.__qr.leadsHTML();
   if(!list.length)return h+`<div class="ev-ok">Niciun contract încă. Apasă „Contract nou”.</div>`;
   const R=list.filter(c=>c.rent&&c.rent.calc&&(c.dataEv||"")<now);
   if(R.length){const v=R.reduce((a,c)=>a+c.rent.calc.venit,0),pr=R.reduce((a,c)=>a+c.rent.calc.profit,0);
@@ -2200,6 +2211,8 @@ function viewFirma(){
     <div class="st-meta">${row("socialHook","Adresa webhook Make (https://hook.eu1.make.com/…)")}</div>
     <h2 class="ev-h2">Plata avansului cu cardul (Revolut)</h2><p class="ev-file">Pentru butonul „Link de plată avans”. E adresa webhook-ului din Make (scenariul „Avans Revolut”), care creează linkul în Revolut Business. Cheia Revolut stă doar în Make, nu în aplicație.</p>
     <div class="st-meta">${row("payHook","Adresa webhook Make pentru plăți")}</div>
+    <h2 class="ev-h2">Pagina de la bar (QR)</h2><p class="ev-file">Apar pe pagina pe care o deschid invitații când scanează QR-ul de pe bar. Linkul de recenzie îl iei din Google Maps: profilul tău → „Cere recenzii” → Copiază linkul.</p>
+    <div class="st-meta">${row("reviewUrl","Link recenzie Google (https://g.page/r/…)")}${row("igUrl","Instagram (implicit instagram.com/cocktailphilosophy)")}${row("fbUrl","Facebook (implicit facebook.com/cocktailphilosophy)")}</div>
     <div class="st-save"><button class="btn primary" data-c="savefirma">Salvează</button></div>`;
 }
 function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
@@ -2795,6 +2808,9 @@ function startPost(){if(F.isAdmin&&!sub)subscribe();socRender()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="contracte")start();if(b.dataset.view==="postare")startPost()}));
 if(store.get("tab","evenimente")==="contracte")start();
 if(store.get("tab","evenimente")==="postare")startPost();
+window.__ctNew=pre=>{const b=document.querySelector('nav.tabs button[data-view="contracte"]');if(b)b.click();f={...BLANK(),...pre};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)};
+window.__ctRefresh=()=>{if(started&&mode==="list"&&!V.hidden)render()};
+window.__ctList=()=>list;window.__ctFirma=()=>firma;
 window.__ct={parseMRZ,parseVisual,cnpOk,contractDoc,FIRMA_DEF};
 window.__gd={async uploadPublic(file,folderName){
   const fq=n=>`name='${n.replace(/'/g,"\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`;
@@ -2899,6 +2915,150 @@ let started=false;
 function start(){if(started)return;started=true;load()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="oferte")start()}));
 if(store.get("tab","evenimente")==="oferte")start();
+})();
+
+/* QR la bar: pagina invitaților, QR pe eveniment, cereri de ofertă */
+(function(){
+const F=window.CPFS;if(!F)return;
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const BAR_URL="https://cocktailphilosophy.ro/bar/";
+const MON=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+const iso=d=>d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`:"";
+const slug=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,24)||"eveniment";
+const titleCase=s=>String(s||"").toLocaleLowerCase("ro-RO").replace(/(^|[\s-])(\S)/g,(m,a,b)=>a+b.toLocaleUpperCase("ro-RO"));
+function curD(){try{const e=window.__cp&&window.__cp.evd();return e&&e.aoa?window.__cp.parseAOA(e.aoa,e.fileName):null}catch(x){return null}}
+function evDate(e,D){return e.date||(D&&D.title&&D.title.date)||null}
+function code(e,D){const d=evDate(e,D);return slug(e.name)+(d?"-"+String(d.getDate()).padStart(2,"0")+String(d.getMonth()+1).padStart(2,"0"):"-"+e.col)}
+const link=c=>BAR_URL+"?e="+encodeURIComponent(c);
+
+/* ---------- sincronizarea paginii publice (doar administratorul) ---------- */
+let CT=[],FIRMA={},lastSig="",SCANS={},LEADS=[];
+function menuAll(){let R0=[];try{R0=JSON.parse(document.getElementById("recipes-data").textContent)}catch(e){}
+  return R0.map(r=>({id:r.id,name:r.name,zero:!!r.zero,ing:(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
+const nrm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/[^A-Z0-9 ]+/g," ").split(/\s+/).filter(w=>w.length>2);
+function matchContract(e,D){
+  const d=iso(evDate(e,D));if(!d)return null;
+  const same=CT.filter(c=>c.dataEv===d);if(!same.length)return null;
+  const en=nrm(e.name);
+  const hit=same.find(c=>{const w=nrm(c.locatie+" "+c.nume);return w.some(x=>en.includes(x))});
+  if(hit)return hit;
+  const sameDay=D.events.filter(x=>iso(evDate(x,D))===d).length;
+  return same.length===1&&sameDay===1?same[0]:null;
+}
+function buildInfo(){
+  const D=curD(),ev={};
+  if(D)D.events.forEach(e=>{const c=matchContract(e,D),m=c&&c.portalResp&&Array.isArray(c.portalResp.menuIds)&&c.portalResp.menuIds.length?c.portalResp.menuIds:null;
+    ev[code(e,D)]={n:titleCase(e.name),d:iso(evDate(e,D)),menu:m}});
+  const L={};if(FIRMA.reviewUrl)L.review=FIRMA.reviewUrl;if(FIRMA.igUrl)L.ig=FIRMA.igUrl;if(FIRMA.fbUrl)L.fb=FIRMA.fbUrl;
+  return {menu:menuAll(),ev,links:L};
+}
+async function sync(){
+  if(!F.isAdmin)return;
+  const x=buildInfo(),sig=JSON.stringify(x);if(sig===lastSig)return;
+  try{await F.fs.doc("bar/info").set({...x,at:new Date().toISOString()});lastSig=sig}catch(e){}
+}
+if(F.isAdmin){
+  F.fs.collection(`${F.base}/contracte`).onSnapshot(s=>{CT=s.docs.map(d=>({...d.data(),id:d.id}));sync()},()=>{});
+  F.fs.doc(`${F.base}/privat/firma`).get().then(d=>{FIRMA=d.exists?d.data():{};sync()}).catch(()=>{});
+  F.fs.collection("barScan").onSnapshot(s=>{SCANS={};s.docs.forEach(d=>SCANS[d.id]=d.data().n||0);refresh()},()=>{});
+  F.fs.collection("barLead").onSnapshot(s=>{LEADS=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));refresh()},()=>{});
+  setInterval(()=>{if(document.visibilityState==="visible")sync()},15000);
+  setTimeout(sync,2500);
+}
+function refresh(){if(window.__ctRefresh)window.__ctRefresh();const m=$("#qrModal");if(m&&m.dataset.code)stats(m.dataset.code)}
+
+/* ---------- desenarea QR-ului ---------- */
+let qrP=null;
+function loadQR(){if(window.qrcode)return Promise.resolve(window.qrcode);
+  if(!qrP)qrP=new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";s.onload=()=>res(window.qrcode);s.onerror=()=>{qrP=null;rej()};document.head.appendChild(s)});
+  return qrP}
+function qrMatrix(Q,text){const q=Q(0,"H");q.addData(text);q.make();const n=q.getModuleCount(),m=[];for(let r=0;r<n;r++){m.push([]);for(let c=0;c<n;c++)m[r].push(q.isDark(r,c))}return m}
+/* QR cu insigna „CP” în mijloc (corecție de erori H, insigna acoperă < 9%) */
+function qrSVG(m,size){
+  const n=m.length,qz=4,N=n+qz*2,u=size/N;let p="";
+  const b=Math.round(n*0.26)|1,b0=Math.floor((n-b)/2);
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++){if(!m[r][c])continue;if(r>=b0-1&&r<b0+b+1&&c>=b0-1&&c<b0+b+1)continue;p+=`M${(c+qz)*u},${(r+qz)*u}h${u}v${u}h-${u}z`}
+  const cx=size/2,bw=b*u;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="${size}" height="${size}" fill="#fff"/><path d="${p}" fill="#0d0c0b"/>
+  <rect x="${cx-bw/2}" y="${cx-bw/2}" width="${bw}" height="${bw}" rx="${bw*0.22}" fill="#0d0c0b"/>
+  <text x="${cx}" y="${cx+bw*0.17}" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,Arial,sans-serif" font-weight="800" font-size="${bw*0.5}" fill="#ff8a1f" letter-spacing="1">CP</text></svg>`;
+}
+async function cardPNG(svg,name,dateTxt){
+  const W=1240,H=1748,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  try{await document.fonts.load("800 80px 'Barlow Condensed'")}catch(e){}
+  x.fillStyle="#0d0c0b";x.fillRect(0,0,W,H);
+  x.fillStyle="#a59e95";x.font="500 44px 'Barlow Condensed',Arial";x.textAlign="center";x.fillText("COCKTAIL PHILOSOPHY®",W/2,130);
+  x.fillStyle="#f4f1ec";x.font="800 112px 'Barlow Condensed',Arial";x.fillText("SCANEAZĂ",W/2,270);
+  x.fillStyle="#ff8a1f";x.fillText("MENIUL SERII",W/2,385);
+  const img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)});
+  const s=880;x.fillStyle="#fff";x.beginPath();x.roundRect((W-s)/2-20,450,s+40,s+40,36);x.fill();x.drawImage(img,(W-s)/2,470,s,s);
+  x.fillStyle="#f4f1ec";x.font="700 64px 'Barlow Condensed',Arial";x.fillText(name?name.toUpperCase():"BAR MOBIL DE COCKTAILURI",W/2,1490);
+  x.fillStyle="#a59e95";x.font="500 46px 'Barlow Condensed',Arial";x.fillText(dateTxt||"Îți place barul? Îl aducem la evenimentul tău.",W/2,1565);
+  x.fillStyle="#ff8a1f";x.font="700 50px 'Barlow Condensed',Arial";x.fillText("cocktailphilosophy.ro/bar",W/2,1660);
+  return new Promise(r=>c.toBlob(r,"image/png"));
+}
+
+/* ---------- fereastra QR ---------- */
+function stats(c){const el=$("#qrStats");if(!el)return;const n=SCANS[c]||0,l=LEADS.filter(x=>x.ev===c).length;
+  el.textContent=`Scanat de ${n} ${n===1?"ori":"ori"} · ${l} ${l===1?"cerere de ofertă":"cereri de ofertă"}`}
+async function show(c,name,dateTxt){
+  close();const m=document.createElement("div");m.id="qrModal";m.dataset.code=c;
+  m.innerHTML=`<div class="qr-box" role="dialog" aria-label="QR pentru bar"><button class="btn qr-x" type="button" data-qr="close">Închide</button>
+    <p class="ev-sub">QR pentru bar${name?` · ${esc(name)}`:""}</p><div class="qr-img">Se generează…</div>
+    <p class="ev-file" id="qrStats"></p>
+    <p class="ev-file">Invitații văd meniul serii, butoanele de Instagram și Facebook și formularul „Vreau ofertă”. Cererile îți apar la Contracte.</p>
+    <div class="qr-acts"><button class="btn primary" type="button" data-qr="png">Descarcă cartonașul (PNG)</button><button class="btn" type="button" data-qr="svg">Doar QR-ul (SVG)</button><a class="btn" href="${link(c)}" target="_blank" rel="noopener">Deschide pagina</a></div>
+    <p class="ev-file" style="word-break:break-all">${esc(link(c))}</p></div>`;
+  document.body.appendChild(m);stats(c);
+  try{const Q=await loadQR(),svg=qrSVG(qrMatrix(Q,link(c)),600);m._svg=svg;m._name=name;m._date=dateTxt;m.querySelector(".qr-img").innerHTML=svg}
+  catch(e){m.querySelector(".qr-img").textContent="Nu am putut genera QR-ul. Verifică internetul."}
+}
+function close(){const m=$("#qrModal");if(m)m.remove()}
+function save(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+document.addEventListener("click",async ev=>{
+  const t=ev.target;
+  const qe=t.closest("[data-qrev]");
+  if(qe){const D=curD(),e=D&&D.events.find(x=>String(x.col)===qe.dataset.qrev);if(!e)return;const d=evDate(e,D);
+    show(code(e,D),titleCase(e.name),d?`${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`:"");return}
+  const b=t.closest("[data-qr]");
+  if(b){const m=$("#qrModal"),a=b.dataset.qr;
+    if(a==="close"){close();return}
+    if(!m||!m._svg)return;
+    const fn=`QR-bar-${m.dataset.code}`;
+    if(a==="svg"){save(new Blob([m._svg],{type:"image/svg+xml"}),fn+".svg");return}
+    if(a==="png"){b.disabled=true;try{save(await cardPNG(m._svg,m._name,m._date),fn+".png")}finally{b.disabled=false}return}
+  }
+  if(t.id==="qrModal"){close();return}
+  const l=t.closest("[data-lead]");
+  if(l){const x=LEADS.find(y=>y.id===l.dataset.id);if(!x)return;const a=l.dataset.lead;
+    if(a==="ct"){F.fs.doc(`barLead/${x.id}`).set({st:"ct"},{merge:true}).catch(()=>{});
+      window.__ctNew&&window.__ctNew({nume:String(x.nume||"").toLocaleUpperCase("ro-RO"),tel:x.tel||"",dataEv:x.data||"",locatie:String(x.loc||"").toLocaleUpperCase("ro-RO"),invitati:x.inv||""});return}
+    if(a==="done"){F.fs.doc(`barLead/${x.id}`).set({st:"done"},{merge:true}).catch(()=>{});return}
+    if(a==="back"){F.fs.doc(`barLead/${x.id}`).set({st:""},{merge:true}).catch(()=>{});return}
+  }
+  const g=t.closest("[data-qrgen]");if(g){show("general","","");return}
+  const sh=t.closest("[data-leadall]");if(sh){SHOWALL=!SHOWALL;refresh();return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+
+/* ---------- cererile din Contracte ---------- */
+let SHOWALL=false;
+const telWa=t=>{let d=String(t||"").replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("0"))d="4"+d;return d};
+const fdate=s=>{const m=String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:""};
+function leadsHTML(){
+  const open=LEADS.filter(x=>x.st!=="done"),L=SHOWALL?LEADS:open,tot=Object.values(SCANS).reduce((a,b)=>a+b,0);
+  let h=`<div class="ct-card qr-leads"><div class="ct-h"><b>Cereri de la bar (QR)</b><span>${open.length} ${open.length===1?"nouă":"noi"} · ${tot} scanări în total</span></div>`;
+  if(!L.length)h+=`<p class="ev-file">Încă nicio cerere. Pune QR-ul pe bar: îl iei din fișa fiecărui eveniment, butonul „QR pentru bar”.</p>`;
+  L.slice(0,30).forEach(x=>{
+    const wa=`https://wa.me/${telWa(x.tel)}?text=${encodeURIComponent(`Bună, ${String(x.nume||"").split(" ")[0]}! Sunt Paul de la Cocktail Philosophy. Mulțumim pentru cerere${x.evn?` de la ${x.evn}`:""}.`)}`;
+    h+=`<div class="qr-lead${x.st==="done"?" off":""}"><div><b>${esc(x.nume)}</b> · <a href="tel:${esc(x.tel)}">${esc(x.tel)}</a>
+      <small>${[x.data?"eveniment pe "+fdate(x.data):"",x.loc,x.inv?x.inv+" invitați":"",x.evn?"a scanat la "+x.evn:""].filter(Boolean).map(esc).join(" · ")}</small>
+      ${x.msg?`<small>„${esc(x.msg)}”</small>`:""}<small>trimisă pe ${esc(fdate(x.at))}${x.st==="ct"?" · ✓ contract început":""}</small></div>
+      <div class="qr-la"><a class="btn" href="${wa}" target="_blank" rel="noopener">WhatsApp</a><button class="btn" data-lead="ct" data-id="${esc(x.id)}">Fă contract</button>${x.st==="done"?`<button class="btn" data-lead="back" data-id="${esc(x.id)}">Readu</button>`:`<button class="btn" data-lead="done" data-id="${esc(x.id)}">Rezolvată</button>`}</div></div>`});
+  h+=`<div class="qr-la" style="margin-top:8px"><button class="btn" data-qrgen="1">QR general (fără eveniment)</button>${LEADS.length>open.length?`<button class="btn" data-leadall="1">${SHOWALL?"Doar cele noi":`Arată și rezolvatele (${LEADS.length-open.length})`}</button>`:""}</div></div>`;
+  return h;
+}
+window.__qr={code,link,leadsHTML,show,sync};
 })();
 
 /* After a save reloads the page, reopen what was being edited */
