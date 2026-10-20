@@ -185,7 +185,7 @@ function viewFirma(){
     <h2 class="ev-h2">Plata avansului cu cardul (Revolut)</h2><p class="ev-file">Pentru butonul „Link de plată avans”. E adresa webhook-ului din Make (scenariul „Avans Revolut”), care creează linkul în Revolut Business. Cheia Revolut stă doar în Make, nu în aplicație.</p>
     <div class="st-meta">${row("payHook","Adresa webhook Make pentru plăți")}</div>
     <h2 class="ev-h2">Pagina de la bar (QR)</h2><p class="ev-file">Apar pe pagina pe care o deschid invitații când scanează QR-ul de pe bar. Linkul de recenzie îl iei din Google Maps: profilul tău → „Cere recenzii” → Copiază linkul.</p>
-    <div class="st-meta">${row("reviewUrl","Link recenzie Google (https://g.page/r/…)")}${row("igUrl","Instagram (implicit instagram.com/cocktailphilosophy)")}${row("fbUrl","Facebook (implicit facebook.com/cocktailphilosophy)")}</div>
+    <div class="st-meta">${row("reviewUrl","Link recenzie Google (https://g.page/r/…)")}${row("leadHook","Webhook Make pentru notificare la cerere nouă (opțional)")}${row("igUrl","Instagram (implicit instagram.com/cocktailphilosophy)")}${row("fbUrl","Facebook (implicit facebook.com/cocktailphilosophy)")}</div>
     <div class="st-save"><button class="btn primary" data-c="savefirma">Salvează</button></div>`;
 }
 function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{

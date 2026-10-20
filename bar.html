@@ -185,6 +185,7 @@ $("#f").addEventListener("submit",async e=>{
   const dt=lead.data?(()=>{const m=lead.data.split("-");return `${+m[2]} ${MON[+m[1]-1]} ${m[0]}`})():"";
   const waTxt=`Bună! Sunt ${lead.nume}. Aș vrea o ofertă pentru un eveniment${dt?" pe "+dt:""}${lead.loc?", la "+lead.loc:""}${lead.inv?", "+lead.inv+" invitați":""}.${lead.msg?" "+lead.msg:""}`;
   try{if(!fs)throw 0;await fs.collection("barLead").add(lead);
+    try{const hk=info&&info.links&&info.links.hook;if(hk&&/^https:\/\/hook\.[a-z0-9]+\.make\.com\//.test(hk))fetch(hk,{method:"POST",mode:"no-cors",body:new URLSearchParams({nume:lead.nume,tel:lead.tel,data:lead.data,inv:lead.inv,loc:lead.loc,msg:lead.msg,eveniment:lead.evn||"general",wa:"https://wa.me/"+(lead.tel.replace(/\D/g,"").replace(/^0/,"40"))})})}catch(x){}
     F.classList.add("hide");$("#done").classList.remove("hide");ga("generate_lead",{guests:lead.inv||""});$("#waDone").href=waLink(waTxt);
   }catch(x){b.disabled=false;b.textContent="Vreau ofertă";err.innerHTML=`Nu am putut trimite. <a href="${waLink(waTxt)}" style="color:var(--fg)" target="_blank" rel="noopener">Trimite-ne pe WhatsApp</a>.`;err.classList.remove("hide")}
 });

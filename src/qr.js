@@ -30,7 +30,7 @@ function buildInfo(){
   const D=curD(),ev={};
   if(D)D.events.forEach(e=>{const c=matchContract(e,D),m=c&&c.portalResp&&Array.isArray(c.portalResp.menuIds)&&c.portalResp.menuIds.length?c.portalResp.menuIds:null;
     ev[code(e,D)]={n:titleCase(e.name),d:iso(evDate(e,D)),menu:m}});
-  const L={};if(FIRMA.reviewUrl)L.review=FIRMA.reviewUrl;if(FIRMA.igUrl)L.ig=FIRMA.igUrl;if(FIRMA.fbUrl)L.fb=FIRMA.fbUrl;
+  const L={};if(FIRMA.leadHook)L.hook=FIRMA.leadHook;if(FIRMA.reviewUrl)L.review=FIRMA.reviewUrl;if(FIRMA.igUrl)L.ig=FIRMA.igUrl;if(FIRMA.fbUrl)L.fb=FIRMA.fbUrl;
   return {menu:menuAll(),ev,links:L};
 }
 async function sync(){
