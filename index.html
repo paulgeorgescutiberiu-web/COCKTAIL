@@ -341,18 +341,9 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ord-q input{width:84px}
 .ord-q small{color:var(--muted);font-size:.8rem;min-width:84px}
 .st-res{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-top:2px}
-.st-ed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 16px 14px;border-top:1px dashed var(--line)}
-.st-ed label,.ord-ed label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:600;color:var(--muted);min-width:0}
-.st-ed input,.st-ed select,.ord-ed input,.ord-ed select{width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit}
-.st-ed .st-acts{grid-column:1/-1;align-items:center}
-.ord-ed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
-.ord-ed-h{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;color:var(--muted)}
-.ord-ed .en-x{border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;border-radius:6px;padding:0 6px}
-.ord-ed .en-x:hover{color:#c0392b}
-.ord-tot{align-self:end;justify-self:end;font-weight:700;padding-bottom:8px}
-.ord-new{border:1.5px dashed var(--line);border-radius:12px}
-.ord-new .st-acts{grid-column:1/-1}
-@media (max-width:560px){.st-ed{grid-template-columns:1fr 1fr}}
+.ord-add{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1fr) auto;gap:8px;margin:14px 0}
+.ord-add input,.ord-add select{width:100%;box-sizing:border-box;padding:9px 10px;border:1.5px dashed var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit}
+@media (max-width:560px){.ord-add{grid-template-columns:1fr 1fr}.ord-add input[data-on=tip]{grid-column:1/-1}}
 .ev-day{margin-top:22px}
 .ev-day:first-child{margin-top:4px}
 .cx-btns{display:flex;flex-wrap:wrap;gap:8px}
@@ -381,11 +372,6 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .en-q{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .en-lb{display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
 .en-u{font-weight:500;opacity:.75}
-.en-bt{display:flex;gap:2px;flex:none}
-.en-ed{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card)}
-.en-ed label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted)}
-.en-ed input,.en-ed select{padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit}
-.en-ed .ev-file,.en-ed .qr-la{grid-column:1/-1}
 .en-st{font-weight:500;font-size:.78rem;color:var(--muted)}
 .en-st .warn{color:#c0392b;font-weight:700}
 .en-menu{margin:8px 0}.en-menu .btn{margin-top:8px}
@@ -1450,7 +1436,7 @@ function viewNou(){
   h+=`<div class="en-acts"><button class="btn" type="button" data-enact="auto">Completează cantitățile după numărul de persoane</button></div>
     <p class="ev-file">Calculez din ce s-a trimis la evenimentele din săptămâna încărcată acum, raportat la numărul de persoane. Verifică și ajustează.</p>`;
   CATS.forEach(c=>{const L=G[c.id]||[];
-    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>e.editL===x.L?enEditHTML(x,c):`<label><span class="en-lb"><span>${esc(x.label)}${QTY_CATS.includes(c.id)?` <small class="en-u">${esc(enUnit(x.L,c.id))}</small>`:""}</span><span class="en-bt"><button type="button" class="en-x" data-enact="edit" data-l="${esc(x.L)}" title="Modifică ${esc(x.label)}" aria-label="Modifică ${esc(x.label)}">✎</button><button type="button" class="en-x" data-enact="del" data-l="${esc(x.L)}" title="Scoate ${esc(x.label)}" aria-label="Scoate ${esc(x.label)}">×</button></span></span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}>${QTY_CATS.includes(c.id)?`<small class="en-st" data-st="${esc(x.L)}">${enStockHint(x.L,e.vals[x.L])}</small>`:""}</label>`).join("")+`</div>
+    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>`<label><span class="en-lb"><span>${esc(x.label)}${QTY_CATS.includes(c.id)?` <small class="en-u">${esc(enUnit(x.L,c.id))}</small>`:""}</span><button type="button" class="en-x" data-enact="del" data-l="${esc(x.L)}" title="Scoate ${esc(x.label)}" aria-label="Scoate ${esc(x.label)}">×</button></span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}>${QTY_CATS.includes(c.id)?`<small class="en-st" data-st="${esc(x.L)}">${enStockHint(x.L,e.vals[x.L])}</small>`:""}</label>`).join("")+`</div>
       <div class="en-add"><input data-enadd-n="${c.id}" placeholder="Articol nou în ${esc(c.name.toLowerCase())}" aria-label="Articol nou"><input data-enadd-q="${c.id}" placeholder="${QTY_CATS.includes(c.id)?"cantitate":"da / nr."}" aria-label="Cantitate"><button type="button" class="btn" data-enact="add" data-c="${c.id}">+ Adaugă</button></div>`});
   if(e.del.length)h+=`<p class="ev-file">Scoase din fișă: ${e.del.map(L=>{const x=e.rows.find(r=>r.L===L);return `<button type="button" class="en-day" data-enact="undel" data-l="${esc(L)}">↩ ${esc(KNOWN[L]?KNOWN[L][0]:capL(x?x.lab:L))}</button>`}).join(" ")}</p>`;
   if(e.msg)h+=`<p class="ev-alert">${esc(e.msg)}</p>`;
@@ -1525,13 +1511,6 @@ function enClick(t){
   const a=b.dataset.enact;
   if(a==="cancel"){EN=null;route="ziua";render();return true}
   if(a==="auto"){enAuto();return true}
-  if(a==="edit"){enGrab();EN.editL=b.dataset.l;render();const i=$("#evView").querySelector("[data-ed=n]");if(i)i.focus();return true}
-  if(a==="edcancel"){enGrab();EN.editL=null;render();return true}
-  if(a==="edsave"){const V=$("#evView"),L=EN.editL,g=k=>{const i=V.querySelector(`[data-ed=${k}]`);return i?i.value.trim():""};
-    const v=V.querySelector("[data-ed=v]");if(v){if(v.value.trim())EN.vals[L]=v.value.trim();else delete EN.vals[L]}
-    enGrab();const n=g("n"),c=g("c"),u=g("u");if(!n){EN.msg="Scrie numele articolului.";render();return true}
-    const x=EN.rows.find(r=>r.L===L);if(x)x.cat=c;EN.editL=null;EN.msg="";
-    window.__art.save(L,{label:n.charAt(0).toLocaleUpperCase("ro-RO")+n.slice(1),cat:c,unit:QTY_CATS.includes(c)?u:null}).then(()=>{if(route==="nou")render()});render();return true}
   if(a==="nomenu"){enGrab();EN.menuIds=null;render();return true}
   if(a==="del"){enGrab();const L=b.dataset.l;if(!EN.del.includes(L))EN.del.push(L);delete EN.vals[L];render();return true}
   if(a==="undel"){enGrab();EN.del=EN.del.filter(x=>x!==b.dataset.l);render();return true}
@@ -1594,24 +1573,14 @@ function enDays(){const out=[],t=new Date();t.setHours(0,0,0,0);const N=["Dum","
 }
 
 /* Articole adăugate de mână: numele și categoria lor se țin minte pentru toată echipa */
-window.__art=window.__art||{units:{},hidden:{}};
-/* Salvează pentru toată echipa: nume și categorie (map), unitate (units), ascuns din stoc (hidden) */
-function artSave(L,o){try{const F=window.CPFS;if(!F||!F.isAdmin)return Promise.resolve();const up={};
-  if(o.label!=null&&o.cat!=null){KNOWN[L]=[o.label,o.cat];up.map={[L]:[o.label,o.cat]}}
-  if(o.unit!=null){window.__art.units[L]=o.unit;up.units={[L]:o.unit}}
-  if(o.hidden!=null){if(o.hidden)window.__art.hidden[L]=true;else delete window.__art.hidden[L];up.hidden={[L]:!!o.hidden}}
-  return F.fs.doc(`${F.base}/config/articole`).set(up,{merge:true}).catch(()=>{})}catch(e){return Promise.resolve()}}
-function enSaveArt(L,label,cat){artSave(L,{label,cat})}
-window.__art.save=(L,o)=>artSave(L,o).then(()=>{if(EVD){loadData();render()}document.dispatchEvent(new Event("cp-art"))});
-(function enLoadArt(){try{const F=window.CPFS;if(!F)return;F.fs.doc(`${F.base}/config/articole`).get().then(d=>{if(!d.exists)return;const x=d.data()||{};let ch=false;
-  Object.entries(x.map||{}).forEach(([L,v])=>{if(Array.isArray(v)&&(!KNOWN[L]||KNOWN[L][0]!==v[0]||KNOWN[L][1]!==v[1])){KNOWN[L]=v;ch=true}});
-  Object.assign(window.__art.units,x.units||{});Object.entries(x.hidden||{}).forEach(([L,v])=>{if(v)window.__art.hidden[L]=true});
-  if(EVD&&(ch||x.units)){loadData();render()}document.dispatchEvent(new Event("cp-art"))}).catch(()=>{})}catch(e){}})();
+function enSaveArt(L,label,cat){try{const F=window.CPFS;if(F&&F.isAdmin)F.fs.doc(`${F.base}/config/articole`).set({map:{[L]:[label,cat]}},{merge:true}).catch(()=>{})}catch(e){}}
+(function enLoadArt(){try{const F=window.CPFS;if(!F)return;F.fs.doc(`${F.base}/config/articole`).get().then(d=>{const m=d.exists&&d.data().map;if(!m)return;let ch=false;
+  Object.entries(m).forEach(([L,v])=>{if(Array.isArray(v)&&!KNOWN[L]){KNOWN[L]=v;ch=true}});
+  if(ch&&EVD){loadData();render();if(window.__stocRefresh)window.__stocRefresh()}}).catch(()=>{})}catch(e){}})();
 
-window.__enUnit=(L,cat)=>enUnit(L,cat);
 /* Unitatea în care se numără fiecare articol (ca în Excel și în stoc) */
 const EN_UNITS={"GHEATA":"kg","LADA LIME":"lăzi","PORTO BUC":"buc","GREF":"buc","CIMBRISOR":"caserole","ROZMARIN":"caserole","MENTA":"caserole","DESHIDRATATE":"pungi","FLORI COMES":"caserole","PROSECCO":"sticle 0,75 L","FRESH LAMAIE":"sticle 1 L","APA MINERALA":"sticle","COLA 1 L":"sticle 1 L","ALOE 1,5L":"sticle 1,5 L","KINLEY 1,5":"sticle 1,5 L","SAN PELEGRIN":"sticle","CRANBERRY":"cutii 1 L","ORANGE":"cutii 1 L","MAR VERDE":"cutii 1 L"};
-function enUnit(L,cat){const u=window.__art&&window.__art.units[L];if(u)return u;if(EN_UNITS[L])return EN_UNITS[L];if(/\bKG\b/.test(L))return "kg";if(cat==="alcool")return "sticle 1 L";if(cat==="premix")return "sticle";if(cat==="soft")return "sticle";if(cat==="garnish")return "buc";return "buc"}
+function enUnit(L,cat){if(EN_UNITS[L])return EN_UNITS[L];if(/\bKG\b/.test(L))return "kg";if(cat==="alcool")return "sticle 1 L";if(cat==="premix")return "sticle";if(cat==="soft")return "sticle";if(cat==="garnish")return "buc";return "buc"}
 /* Cât e în depozit pentru acest articol, după celelalte evenimente din săptămână */
 function enStockHint(L,raw){
   if(!window.__stocAvail)return "";const evd=EVD,ds=window.__stocDs?window.__stocDs(evd):"";
@@ -1637,14 +1606,6 @@ function enMenuRatios(R0,ids){
     if(!tot||!selTot)return;grp.forEach(L=>{out[L]=sel.has(L)?(R0[L]||0)*tot/selTot:0})});
   return out;
 }
-
-function enEditHTML(x,c){const u=QTY_CATS.includes(c.id)?enUnit(x.L,c.id):"";
-  return `<div class="en-ed"><label>Nume<input data-ed="n" value="${esc(x.label)}"></label>
-    <label>Categorie<select data-ed="c">${CATS.map(k=>`<option value="${k.id}"${k.id===c.id?" selected":""}>${esc(k.name)}</option>`).join("")}</select></label>
-    <label>Unitate<input data-ed="u" value="${esc(u)}" placeholder="ex: sticle 1 L, kg, lăzi"></label>
-    <label>Cantitate<input data-ed="v" value="${esc(EN.vals[x.L]||"")}"></label>
-    <p class="ev-file">Numele, categoria și unitatea se schimbă pentru toată echipa, la toate evenimentele și în stoc. Rândul din Excel rămâne același, deci bifele și returul nu se pierd.</p>
-    <div class="qr-la"><button type="button" class="btn primary" data-enact="edsave">Salvează</button><button type="button" class="btn" data-enact="edcancel">Renunță</button></div></div>`}
 
 function render(){
   const v=$("#evView");
@@ -1898,7 +1859,6 @@ function catalog(){
   try{const D=parseAOA(CP.evd().aoa,CP.evd().fileName);D.items.forEach(it=>{if(QTY_CATS.includes(it.cat)){const k=K(it.excelLabel);out[k]=out[k]||{label:it.label,cat:it.cat}}})}catch(e){}
   Object.values(docs).forEach(d=>Object.keys(d.items||{}).forEach(k=>{if(!out[k])out[k]={label:(d.labels||{})[k]||k,cat:(d.cats||{})[k]||"altele"}}));
   Object.assign(out,extraCat);
-  const H=(window.__art&&window.__art.hidden)||{};Object.keys(H).forEach(k=>{if(out[k]&&!form)delete out[k]});
   return out;
 }
 function retFor(d){
@@ -1964,10 +1924,6 @@ function subscribe(){
 
 /* ---------- Comandă la furnizor: ce lipsește din stoc (alcool și sucuri) ---------- */
 const ORD_CATS=[{id:"alcool",sect:"alcool",name:"ALCOOL",color:"C00000"},{id:"soft",sect:"suc",name:"SUCURI / APE",color:"38761D"},{id:"altele",sect:"",name:"ALTELE",color:"7F6000"}];
-const ordCat=c=>c==="alcool"||c==="soft"?c:"altele";
-async function loadSavedOrder(){try{const d=await F.fs.doc(`${F.base}/privat/comanda`).get();return d.exists?d.data():null}catch(e){return null}}
-async function saveOrder(){if(!ord)return;const {lines,furnizor,livrare,loc}=ord;ord.savedAt=new Date().toISOString();ord.saved=true;
-  try{await F.fs.doc(`${F.base}/privat/comanda`).set({lines,furnizor:furnizor||"",livrare:livrare||"",loc:loc||"",hasBase:!!ord.hasBase,savedAt:ord.savedAt})}catch(e){toast("Nu am putut salva comanda.")}}
 let ord=null;
 const ORD_LOC_DEF="Str. Tractorului 4, Sibiu";
 const ordTomorrow=()=>{const d=new Date();d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
@@ -1975,7 +1931,7 @@ const ordDayTxt=v=>{const m=String(v||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(
   return `${["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"][d.getDay()]}, ${m[3]}.${m[2]}.${m[1]}`};
 async function buildOrder(){
   const P=await window.__cx.loadPrices(),t=totals(),cat=catalog(),lines=[];
-  ORD_CATS.forEach(C=>{
+  ORD_CATS.filter(C=>C.id!=="altele").forEach(C=>{
     Object.entries(cat).filter(([k,x])=>x.cat===C.id).forEach(([k,x])=>{
       const s=t[k]?t[k].disp:0;if(!(s<0))return;
       const row=(P.rows||[]).find(r=>r.k===k&&r.s===C.sect)||(P.rows||[]).find(r=>r.k===k);
@@ -1993,33 +1949,28 @@ function viewOrder(){
     <div class="st-acts"><button class="btn" data-a="cancel">Înapoi</button></div></div>`;
   if(!ord)return h+`<p class="ev-file">Se calculează…</p>`;
   if(!ord.hasBase)h+=`<div class="ev-alert">Nu ai făcut încă Inventarul, așa că aplicația pornește de la stoc 0 și pune pe listă tot ce s-a încărcat la evenimente.</div>`;
-  if(ord.saved)h+=`<div class="ev-ok">Comandă salvată${ord.savedAt?" pe "+esc(new Date(ord.savedAt).toLocaleString("ro-RO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})):""}. <button class="btn" data-a="ordre">Recalculează din stoc</button> <button class="btn" data-a="ordclear">Șterge și începe din nou</button></div>`;
-  if(!ord.lines.length)h+=`<div class="ev-ok">Nu lipsește nimic din stoc. Poți adăuga mai jos ce vrei să comanzi.</div>`;
+  if(!ord.lines.length)h+=`<div class="ev-ok">Nu lipsește nimic la alcool și sucuri. Stocul acoperă evenimentele încărcate. Poți adăuga mai jos ce vrei să comanzi.</div>`;
   h+=`<div class="st-meta"><label>Ziua livrării<input id="ordDay" type="date" value="${esc(ord.livrare)}"></label><label>Locația livrării<input id="ordLoc" value="${esc(ord.loc)}"></label></div>`;
-  ORD_CATS.forEach(C=>{const L=ord.lines.map((l,i)=>[l,i]).filter(([l])=>ordCat(l.cat)===C.id);if(!L.length)return;
+  ORD_CATS.forEach(C=>{const L=ord.lines.map((l,i)=>[l,i]).filter(([l])=>l.cat===C.id);if(!L.length)return;
     h+=`<h2 class="ev-h2">${esc(C.name)}</h2><div class="ev-list">`;
     L.forEach(([l,i])=>{
-      h+=`<div class="ord-ed"><div class="ord-ed-h"><small>${l.manual?"adăugat de tine":`lipsesc ${num(l.need)} ${l.cat==="alcool"&&l.k!=="PROSECCO"?"sticle de 1 L":"buc. (ca în Excel)"}`}</small><button class="en-x" data-a="orddel" data-i="${i}" aria-label="Scoate din comandă" title="Scoate din comandă">×</button></div>
-        <label>Produs<input data-of="tip" data-i="${i}" value="${esc(l.tip)}"></label><label>Brand<input data-of="brand" data-i="${i}" value="${esc(l.brand||"")}"></label>
-        <label>Cantitate<input inputmode="decimal" data-oq="${i}" value="${esc(num(l.q))}"></label><label>Unitate<input data-of="unit" data-i="${i}" value="${esc(l.unit||"")}"></label>
-        <label>Preț / unitate (lei)<input inputmode="decimal" data-of="pret" data-i="${i}" value="${l.pret==null?"":esc(num(l.pret))}"></label><span class="ord-tot">${l.pret!=null&&l.q?num(Math.round(l.pret*l.q*100)/100)+" lei":""}</span></div>`});
+      h+=`<div class="st-in ord-row"><span><b>${esc(l.tip)}${l.brand?" "+esc(l.brand):""}</b><small>${l.manual?"adăugat de tine":`lipsesc ${num(l.need)} ${l.cat==="alcool"&&l.k!=="PROSECCO"?"sticle de 1 L":"buc. (ca în Excel)"}`}</small></span>
+        <span class="ord-q"><input class="ev-rin" inputmode="decimal" data-oq="${i}" value="${esc(num(l.q))}" aria-label="Cantitate de comandat"><small>${esc(l.unit)}</small></span></div>`});
     h+=`</div>`});
-  const cat=catalog(),opts=Object.values(cat).map(x=>x.label).sort((a,b)=>a.localeCompare(b,"ro"));
-  h+=`<h2 class="ev-h2">Adaugă în comandă</h2><div class="ord-ed ord-new"><label>Produs<input data-on="tip" list="ordList" placeholder="ex: Lime"><datalist id="ordList">${opts.map(o=>`<option value="${esc(o)}">`).join("")}</datalist></label>
-    <label>Brand<input data-on="brand"></label><label>Cantitate<input data-on="q" inputmode="decimal" value="1"></label><label>Unitate<input data-on="unit" placeholder="ex: lăzi, sticle 1 L"></label>
-    <label>Preț / unitate (lei)<input data-on="pret" inputmode="decimal"></label><label>Secțiune<select data-on="cat"><option value="alcool">Alcool</option><option value="soft">Sucuri / ape</option><option value="altele" selected>Altele (fructe, gheață, consumabile)</option></select></label>
-    <div class="st-acts"><button class="btn" data-a="ordadd">+ Adaugă</button></div></div>`;
-  const tot=ord.lines.reduce((a,l)=>a+(l.pret!=null&&l.q?l.pret*l.q:0),0);
-  if(tot)h+=`<p class="ev-sub" style="text-align:right">Total estimat: ${num(Math.round(tot*100)/100)} lei</p>`;
-  h+=`<div class="st-save"><button class="btn" data-a="ordsave">Salvează comanda</button> <button class="btn" data-a="ordcopy">Copiază pentru WhatsApp</button> <button class="btn primary" data-a="ordxl">Descarcă Excel</button></div>`;
+  const opts=Object.values(catalog()).map(x=>x.label).sort((a,b)=>a.localeCompare(b,"ro"));
+  h+=`<div class="ord-add"><input data-on="tip" list="ordList" placeholder="Adaugă în comandă, ex: Lime" aria-label="Produs"><datalist id="ordList">${opts.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>
+    <input data-on="q" inputmode="decimal" placeholder="cant." aria-label="Cantitate"><input data-on="unit" placeholder="unitate" aria-label="Unitate">
+    <select data-on="cat" aria-label="Secțiune"><option value="alcool">Alcool</option><option value="soft">Sucuri / ape</option><option value="altele" selected>Altele</option></select>
+    <button class="btn" data-a="ordadd">+ Adaugă</button></div>`;
+  if(!ord.lines.length)return h;
+  h+=`<div class="st-save"><button class="btn" data-a="ordcopy">Copiază pentru WhatsApp</button> <button class="btn primary" data-a="ordxl">Descarcă Excel</button></div>`;
   return h;
 }
-function grabOrder(){if(!ord)return;const d=V.querySelector("#ordDay"),lc=V.querySelector("#ordLoc");if(d)ord.livrare=d.value;if(lc){ord.loc=lc.value.trim();store.set("ordloc",ord.loc)}V.querySelectorAll("[data-oq]").forEach(i=>{const v=pnum(i.value);ord.lines[+i.dataset.oq].q=v==null||isNaN(v)?0:v});
-  V.querySelectorAll("[data-of]").forEach(i=>{const l=ord.lines[+i.dataset.i];if(!l)return;const f=i.dataset.of;if(f==="pret"){const v=pnum(i.value);l.pret=v==null||isNaN(v)?null:v}else l[f]=i.value.trim()})}
+function grabOrder(){if(!ord)return;const d=V.querySelector("#ordDay"),lc=V.querySelector("#ordLoc");if(d)ord.livrare=d.value;if(lc){ord.loc=lc.value.trim();store.set("ordloc",ord.loc)}V.querySelectorAll("[data-oq]").forEach(i=>{const v=pnum(i.value);ord.lines[+i.dataset.oq].q=v==null||isNaN(v)?0:v})}
 const ordDate=()=>{const d=new Date();return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`};
 function orderText(){
   const L=ord.lines.filter(l=>l.q>0);
-  return `Comandă Cocktail Philosophy, ${ordDate()}\n`+(ord.livrare?`Livrare: ${ordDayTxt(ord.livrare)}\n`:"")+(ord.loc?`Locație: ${ord.loc}\n`:"")+ORD_CATS.map(C=>{const x=L.filter(l=>ordCat(l.cat)===C.id);return x.length?`\n${C.name}\n`+x.map(l=>`- ${l.tip}${l.brand?" "+l.brand:""}: ${num(l.q)} × ${l.unit}`).join("\n"):""}).join("")+"\n\nMulțumesc!";
+  return `Comandă Cocktail Philosophy, ${ordDate()}\n`+(ord.livrare?`Livrare: ${ordDayTxt(ord.livrare)}\n`:"")+(ord.loc?`Locație: ${ord.loc}\n`:"")+ORD_CATS.map(C=>{const x=L.filter(l=>l.cat===C.id);return x.length?`\n${C.name}\n`+x.map(l=>`- ${l.tip}${l.brand?" "+l.brand:""}: ${num(l.q)} × ${l.unit}`).join("\n"):""}).join("")+"\n\nMulțumesc!";
 }
 async function orderExcel(btn){
   const lbl=btn.textContent;btn.disabled=true;btn.textContent="Se pregătește…";
@@ -2033,7 +1984,7 @@ async function orderExcel(btn){
     ws.getCell("A4").value="Locație:";ws.getCell("A4").font={bold:true};ws.mergeCells("B4:D4");ws.getCell("B4").value=ord.loc||"";
     const hr=ws.getRow(6);["Produs","Brand","Cantitate","Unitate"].forEach((t,i)=>{const c=hr.getCell(i+1);c.value=t;c.font={bold:true};c.border=B;c.alignment={horizontal:"center"}});
     let rn=7;
-    ORD_CATS.forEach(C=>{const L=ord.lines.filter(l=>ordCat(l.cat)===C.id&&l.q>0);if(!L.length)return;
+    ORD_CATS.forEach(C=>{const L=ord.lines.filter(l=>l.cat===C.id&&l.q>0);if(!L.length)return;
       ws.mergeCells(`A${rn}:D${rn}`);const sc=ws.getCell(`A${rn}`);sc.value=C.name;sc.font={bold:true,color:{argb:"FFFFFFFF"}};sc.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+C.color}};rn++;
       L.forEach(l=>{const r=ws.getRow(rn);r.getCell(1).value=l.tip;r.getCell(2).value=l.brand||"";r.getCell(3).value=l.q;r.getCell(4).value=l.unit;
         r.getCell(1).font={bold:true};for(let i=1;i<=4;i++)r.getCell(i).border=B;rn++});
@@ -2072,10 +2023,6 @@ function viewList(){
         h+=`<button class="st-row" data-k="${esc(k)}" aria-expanded="${open===k}"><span>${esc(x.label)}${s.plan?`<small class="st-res">rezervat ${num(s.plan)} → rămân ${num(s.disp)}</small>`:""}</span><b class="st-n ${cls}">${num(s.stoc)}</b></button>`;
         if(open===k){
           h+=`<div class="st-det"><span>Intrat din facturi <b>${num(s.in)}</b></span><span>Încărcat la evenimente <b>−${num(s.out)}</b></span><span>Retur <b>+${num(s.ret)}</b></span>${s.adj?`<span>Corecții inventar <b>${s.adj>0?"+":""}${num(s.adj)}</b></span>`:""}${s.plan?`<span>Rezervat pentru evenimente viitoare <b>${num(s.plan)}</b></span>`:""}</div>`;
-          if(admin())h+=`<div class="st-ed"><label>Nume<input data-se="n" value="${esc(x.label)}"></label>
-            <label>Categorie<select data-se="c">${CATS.filter(c=>QTY_CATS.includes(c.id)).map(c=>`<option value="${c.id}"${c.id===x.cat?" selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
-            <label>Unitate<input data-se="u" value="${esc(window.__enUnit?window.__enUnit(k,x.cat):"")}"></label>
-            <div class="st-acts"><button class="btn primary" data-a="artsave" data-k="${esc(k)}">Salvează</button>${Math.abs(s.stoc)<1e-9&&!s.plan?`<button class="btn" data-a="arthide" data-k="${esc(k)}">${confirmDel==="h:"+k?"Sigur? Ascunde":"Ascunde articolul"}</button>`:`<small class="ev-file">Îl poți ascunde când stocul lui e 0 (fă un inventar cu 0).</small>`}</div></div>`;
         }
       });
       h+=`</div>`;
@@ -2143,23 +2090,14 @@ V.addEventListener("click",async e=>{
   if(act==="foto"){const i=$("#stFoto");if(i){i.onchange=()=>{const fs=i.files;if(fs&&fs.length){grab();readInvoice(fs)}};i.click()}return}
   if(act==="aiapply"){grab();await applyAI();return}
   if(act==="aidrop"){grab();form.ai=null;render();return}
-  if(act==="artsave"){const k=b.dataset.k,g=n=>{const i=V.querySelector(`[data-se=${n}]`);return i?i.value.trim():""};const n=g("n");if(!n){toast("Scrie numele articolului.");return}
-    await window.__art.save(k,{label:n.charAt(0).toLocaleUpperCase("ro-RO")+n.slice(1),cat:g("c"),unit:g("u")});toast("Articolul e actualizat pentru toată echipa.");render();return}
-  if(act==="arthide"){const k=b.dataset.k;if(confirmDel!=="h:"+k){confirmDel="h:"+k;render();setTimeout(()=>{if(confirmDel==="h:"+k){confirmDel=null;render()}},4000);return}
-    confirmDel=null;open=null;await window.__art.save(k,{hidden:true});toast("Articolul e ascuns din stoc. Reapare singur dacă îl folosești din nou.");render();return}
   if(act==="comanda"){mode="comanda";ord=null;render();window.scrollTo(0,V.offsetTop-10);
-    loadSavedOrder().then(sv=>{if(sv&&sv.lines&&sv.lines.length){ord={...sv,saved:true};render();return}
-      return buildOrder().then(x=>{ord=x;if(mode==="comanda")render()})}).catch(e=>{console.warn(e);toast("Nu am putut calcula comanda. Verifică internetul.")});return}
-  if(act==="ordre"){grabOrder();ord=null;render();buildOrder().then(x=>{ord=x;if(mode==="comanda")render()});return}
-  if(act==="orddel"){grabOrder();ord.lines.splice(+b.dataset.i,1);render();return}
+    buildOrder().then(x=>{ord=x;if(mode==="comanda")render()}).catch(e=>{console.warn(e);toast("Nu am putut calcula comanda. Verifică internetul.")});return}
   if(act==="ordadd"){grabOrder();const g=n=>{const i=V.querySelector(`[data-on=${n}]`);return i?i.value.trim():""};const t=g("tip");if(!t){toast("Scrie produsul.");return}
-    const c=g("cat")||"altele",q=pnum(g("q"));ord.lines.push({cat:c,k:K(t),label:t,tip:t,brand:g("brand"),unit:g("unit")||"buc",pret:pnum(g("pret")),need:0,q:q==null||isNaN(q)?1:q,manual:true});render();return}
-  if(act==="ordsave"){grabOrder();await saveOrder();toast("Comanda e salvată. O găsești aici data viitoare.");render();return}
-  if(act==="ordclear"){await F.fs.doc(`${F.base}/privat/comanda`).delete().catch(()=>{});ord=null;render();buildOrder().then(x=>{ord=x;if(mode==="comanda")render()});return}
-  if(act==="ordcopy"){grabOrder();saveOrder();const txt=orderText();
+    const q=pnum(g("q"));ord.lines.push({cat:g("cat")||"altele",k:K(t),label:t,tip:t,brand:"",unit:g("unit")||"buc",pret:null,need:0,q:q==null||isNaN(q)?1:q,manual:true});render();return}
+  if(act==="ordcopy"){grabOrder();const txt=orderText();
     try{await navigator.clipboard.writeText(txt);toast("Comanda e copiată. Lipește-o în WhatsApp la furnizor.")}
     catch(x){window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}return}
-  if(act==="ordxl"){grabOrder();saveOrder();await orderExcel(b);return}
+  if(act==="ordxl"){grabOrder();await orderExcel(b);return}
   if(act==="cancel"){ord=null;mode="list";form=null;extraCat={};render();return}
   if(act==="scade"){busy=true;b.disabled=true;await window.__stocIesire(CP.evd());busy=false;return}
   if(act==="addnew"){
@@ -2196,7 +2134,6 @@ function start(){if(started)return;started=true;V.innerHTML=`<p class="ev-file">
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="stoc")start()}));
 if(store.get("tab","evenimente")==="stoc")start();
 window.__stocRefresh=()=>{if(started&&mode==="list")render()};
-document.addEventListener("cp-art",()=>{if(started&&mode==="list")render()});
 if(F&&F.isAdmin)setTimeout(subscribe,1500);
 })();
 

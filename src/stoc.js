@@ -153,7 +153,6 @@ function catalog(){
   try{const D=parseAOA(CP.evd().aoa,CP.evd().fileName);D.items.forEach(it=>{if(QTY_CATS.includes(it.cat)){const k=K(it.excelLabel);out[k]=out[k]||{label:it.label,cat:it.cat}}})}catch(e){}
   Object.values(docs).forEach(d=>Object.keys(d.items||{}).forEach(k=>{if(!out[k])out[k]={label:(d.labels||{})[k]||k,cat:(d.cats||{})[k]||"altele"}}));
   Object.assign(out,extraCat);
-  const H=(window.__art&&window.__art.hidden)||{};Object.keys(H).forEach(k=>{if(out[k]&&!form)delete out[k]});
   return out;
 }
 function retFor(d){
@@ -219,10 +218,6 @@ function subscribe(){
 
 /* ---------- Comandă la furnizor: ce lipsește din stoc (alcool și sucuri) ---------- */
 const ORD_CATS=[{id:"alcool",sect:"alcool",name:"ALCOOL",color:"C00000"},{id:"soft",sect:"suc",name:"SUCURI / APE",color:"38761D"},{id:"altele",sect:"",name:"ALTELE",color:"7F6000"}];
-const ordCat=c=>c==="alcool"||c==="soft"?c:"altele";
-async function loadSavedOrder(){try{const d=await F.fs.doc(`${F.base}/privat/comanda`).get();return d.exists?d.data():null}catch(e){return null}}
-async function saveOrder(){if(!ord)return;const {lines,furnizor,livrare,loc}=ord;ord.savedAt=new Date().toISOString();ord.saved=true;
-  try{await F.fs.doc(`${F.base}/privat/comanda`).set({lines,furnizor:furnizor||"",livrare:livrare||"",loc:loc||"",hasBase:!!ord.hasBase,savedAt:ord.savedAt})}catch(e){toast("Nu am putut salva comanda.")}}
 let ord=null;
 const ORD_LOC_DEF="Str. Tractorului 4, Sibiu";
 const ordTomorrow=()=>{const d=new Date();d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
@@ -230,7 +225,7 @@ const ordDayTxt=v=>{const m=String(v||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(
   return `${["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"][d.getDay()]}, ${m[3]}.${m[2]}.${m[1]}`};
 async function buildOrder(){
   const P=await window.__cx.loadPrices(),t=totals(),cat=catalog(),lines=[];
-  ORD_CATS.forEach(C=>{
+  ORD_CATS.filter(C=>C.id!=="altele").forEach(C=>{
     Object.entries(cat).filter(([k,x])=>x.cat===C.id).forEach(([k,x])=>{
       const s=t[k]?t[k].disp:0;if(!(s<0))return;
       const row=(P.rows||[]).find(r=>r.k===k&&r.s===C.sect)||(P.rows||[]).find(r=>r.k===k);
@@ -248,33 +243,28 @@ function viewOrder(){
     <div class="st-acts"><button class="btn" data-a="cancel">Înapoi</button></div></div>`;
   if(!ord)return h+`<p class="ev-file">Se calculează…</p>`;
   if(!ord.hasBase)h+=`<div class="ev-alert">Nu ai făcut încă Inventarul, așa că aplicația pornește de la stoc 0 și pune pe listă tot ce s-a încărcat la evenimente.</div>`;
-  if(ord.saved)h+=`<div class="ev-ok">Comandă salvată${ord.savedAt?" pe "+esc(new Date(ord.savedAt).toLocaleString("ro-RO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})):""}. <button class="btn" data-a="ordre">Recalculează din stoc</button> <button class="btn" data-a="ordclear">Șterge și începe din nou</button></div>`;
-  if(!ord.lines.length)h+=`<div class="ev-ok">Nu lipsește nimic din stoc. Poți adăuga mai jos ce vrei să comanzi.</div>`;
+  if(!ord.lines.length)h+=`<div class="ev-ok">Nu lipsește nimic la alcool și sucuri. Stocul acoperă evenimentele încărcate. Poți adăuga mai jos ce vrei să comanzi.</div>`;
   h+=`<div class="st-meta"><label>Ziua livrării<input id="ordDay" type="date" value="${esc(ord.livrare)}"></label><label>Locația livrării<input id="ordLoc" value="${esc(ord.loc)}"></label></div>`;
-  ORD_CATS.forEach(C=>{const L=ord.lines.map((l,i)=>[l,i]).filter(([l])=>ordCat(l.cat)===C.id);if(!L.length)return;
+  ORD_CATS.forEach(C=>{const L=ord.lines.map((l,i)=>[l,i]).filter(([l])=>l.cat===C.id);if(!L.length)return;
     h+=`<h2 class="ev-h2">${esc(C.name)}</h2><div class="ev-list">`;
     L.forEach(([l,i])=>{
-      h+=`<div class="ord-ed"><div class="ord-ed-h"><small>${l.manual?"adăugat de tine":`lipsesc ${num(l.need)} ${l.cat==="alcool"&&l.k!=="PROSECCO"?"sticle de 1 L":"buc. (ca în Excel)"}`}</small><button class="en-x" data-a="orddel" data-i="${i}" aria-label="Scoate din comandă" title="Scoate din comandă">×</button></div>
-        <label>Produs<input data-of="tip" data-i="${i}" value="${esc(l.tip)}"></label><label>Brand<input data-of="brand" data-i="${i}" value="${esc(l.brand||"")}"></label>
-        <label>Cantitate<input inputmode="decimal" data-oq="${i}" value="${esc(num(l.q))}"></label><label>Unitate<input data-of="unit" data-i="${i}" value="${esc(l.unit||"")}"></label>
-        <label>Preț / unitate (lei)<input inputmode="decimal" data-of="pret" data-i="${i}" value="${l.pret==null?"":esc(num(l.pret))}"></label><span class="ord-tot">${l.pret!=null&&l.q?num(Math.round(l.pret*l.q*100)/100)+" lei":""}</span></div>`});
+      h+=`<div class="st-in ord-row"><span><b>${esc(l.tip)}${l.brand?" "+esc(l.brand):""}</b><small>${l.manual?"adăugat de tine":`lipsesc ${num(l.need)} ${l.cat==="alcool"&&l.k!=="PROSECCO"?"sticle de 1 L":"buc. (ca în Excel)"}`}</small></span>
+        <span class="ord-q"><input class="ev-rin" inputmode="decimal" data-oq="${i}" value="${esc(num(l.q))}" aria-label="Cantitate de comandat"><small>${esc(l.unit)}</small></span></div>`});
     h+=`</div>`});
-  const cat=catalog(),opts=Object.values(cat).map(x=>x.label).sort((a,b)=>a.localeCompare(b,"ro"));
-  h+=`<h2 class="ev-h2">Adaugă în comandă</h2><div class="ord-ed ord-new"><label>Produs<input data-on="tip" list="ordList" placeholder="ex: Lime"><datalist id="ordList">${opts.map(o=>`<option value="${esc(o)}">`).join("")}</datalist></label>
-    <label>Brand<input data-on="brand"></label><label>Cantitate<input data-on="q" inputmode="decimal" value="1"></label><label>Unitate<input data-on="unit" placeholder="ex: lăzi, sticle 1 L"></label>
-    <label>Preț / unitate (lei)<input data-on="pret" inputmode="decimal"></label><label>Secțiune<select data-on="cat"><option value="alcool">Alcool</option><option value="soft">Sucuri / ape</option><option value="altele" selected>Altele (fructe, gheață, consumabile)</option></select></label>
-    <div class="st-acts"><button class="btn" data-a="ordadd">+ Adaugă</button></div></div>`;
-  const tot=ord.lines.reduce((a,l)=>a+(l.pret!=null&&l.q?l.pret*l.q:0),0);
-  if(tot)h+=`<p class="ev-sub" style="text-align:right">Total estimat: ${num(Math.round(tot*100)/100)} lei</p>`;
-  h+=`<div class="st-save"><button class="btn" data-a="ordsave">Salvează comanda</button> <button class="btn" data-a="ordcopy">Copiază pentru WhatsApp</button> <button class="btn primary" data-a="ordxl">Descarcă Excel</button></div>`;
+  const opts=Object.values(catalog()).map(x=>x.label).sort((a,b)=>a.localeCompare(b,"ro"));
+  h+=`<div class="ord-add"><input data-on="tip" list="ordList" placeholder="Adaugă în comandă, ex: Lime" aria-label="Produs"><datalist id="ordList">${opts.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>
+    <input data-on="q" inputmode="decimal" placeholder="cant." aria-label="Cantitate"><input data-on="unit" placeholder="unitate" aria-label="Unitate">
+    <select data-on="cat" aria-label="Secțiune"><option value="alcool">Alcool</option><option value="soft">Sucuri / ape</option><option value="altele" selected>Altele</option></select>
+    <button class="btn" data-a="ordadd">+ Adaugă</button></div>`;
+  if(!ord.lines.length)return h;
+  h+=`<div class="st-save"><button class="btn" data-a="ordcopy">Copiază pentru WhatsApp</button> <button class="btn primary" data-a="ordxl">Descarcă Excel</button></div>`;
   return h;
 }
-function grabOrder(){if(!ord)return;const d=V.querySelector("#ordDay"),lc=V.querySelector("#ordLoc");if(d)ord.livrare=d.value;if(lc){ord.loc=lc.value.trim();store.set("ordloc",ord.loc)}V.querySelectorAll("[data-oq]").forEach(i=>{const v=pnum(i.value);ord.lines[+i.dataset.oq].q=v==null||isNaN(v)?0:v});
-  V.querySelectorAll("[data-of]").forEach(i=>{const l=ord.lines[+i.dataset.i];if(!l)return;const f=i.dataset.of;if(f==="pret"){const v=pnum(i.value);l.pret=v==null||isNaN(v)?null:v}else l[f]=i.value.trim()})}
+function grabOrder(){if(!ord)return;const d=V.querySelector("#ordDay"),lc=V.querySelector("#ordLoc");if(d)ord.livrare=d.value;if(lc){ord.loc=lc.value.trim();store.set("ordloc",ord.loc)}V.querySelectorAll("[data-oq]").forEach(i=>{const v=pnum(i.value);ord.lines[+i.dataset.oq].q=v==null||isNaN(v)?0:v})}
 const ordDate=()=>{const d=new Date();return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`};
 function orderText(){
   const L=ord.lines.filter(l=>l.q>0);
-  return `Comandă Cocktail Philosophy, ${ordDate()}\n`+(ord.livrare?`Livrare: ${ordDayTxt(ord.livrare)}\n`:"")+(ord.loc?`Locație: ${ord.loc}\n`:"")+ORD_CATS.map(C=>{const x=L.filter(l=>ordCat(l.cat)===C.id);return x.length?`\n${C.name}\n`+x.map(l=>`- ${l.tip}${l.brand?" "+l.brand:""}: ${num(l.q)} × ${l.unit}`).join("\n"):""}).join("")+"\n\nMulțumesc!";
+  return `Comandă Cocktail Philosophy, ${ordDate()}\n`+(ord.livrare?`Livrare: ${ordDayTxt(ord.livrare)}\n`:"")+(ord.loc?`Locație: ${ord.loc}\n`:"")+ORD_CATS.map(C=>{const x=L.filter(l=>l.cat===C.id);return x.length?`\n${C.name}\n`+x.map(l=>`- ${l.tip}${l.brand?" "+l.brand:""}: ${num(l.q)} × ${l.unit}`).join("\n"):""}).join("")+"\n\nMulțumesc!";
 }
 async function orderExcel(btn){
   const lbl=btn.textContent;btn.disabled=true;btn.textContent="Se pregătește…";
@@ -288,7 +278,7 @@ async function orderExcel(btn){
     ws.getCell("A4").value="Locație:";ws.getCell("A4").font={bold:true};ws.mergeCells("B4:D4");ws.getCell("B4").value=ord.loc||"";
     const hr=ws.getRow(6);["Produs","Brand","Cantitate","Unitate"].forEach((t,i)=>{const c=hr.getCell(i+1);c.value=t;c.font={bold:true};c.border=B;c.alignment={horizontal:"center"}});
     let rn=7;
-    ORD_CATS.forEach(C=>{const L=ord.lines.filter(l=>ordCat(l.cat)===C.id&&l.q>0);if(!L.length)return;
+    ORD_CATS.forEach(C=>{const L=ord.lines.filter(l=>l.cat===C.id&&l.q>0);if(!L.length)return;
       ws.mergeCells(`A${rn}:D${rn}`);const sc=ws.getCell(`A${rn}`);sc.value=C.name;sc.font={bold:true,color:{argb:"FFFFFFFF"}};sc.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+C.color}};rn++;
       L.forEach(l=>{const r=ws.getRow(rn);r.getCell(1).value=l.tip;r.getCell(2).value=l.brand||"";r.getCell(3).value=l.q;r.getCell(4).value=l.unit;
         r.getCell(1).font={bold:true};for(let i=1;i<=4;i++)r.getCell(i).border=B;rn++});
@@ -327,10 +317,6 @@ function viewList(){
         h+=`<button class="st-row" data-k="${esc(k)}" aria-expanded="${open===k}"><span>${esc(x.label)}${s.plan?`<small class="st-res">rezervat ${num(s.plan)} → rămân ${num(s.disp)}</small>`:""}</span><b class="st-n ${cls}">${num(s.stoc)}</b></button>`;
         if(open===k){
           h+=`<div class="st-det"><span>Intrat din facturi <b>${num(s.in)}</b></span><span>Încărcat la evenimente <b>−${num(s.out)}</b></span><span>Retur <b>+${num(s.ret)}</b></span>${s.adj?`<span>Corecții inventar <b>${s.adj>0?"+":""}${num(s.adj)}</b></span>`:""}${s.plan?`<span>Rezervat pentru evenimente viitoare <b>${num(s.plan)}</b></span>`:""}</div>`;
-          if(admin())h+=`<div class="st-ed"><label>Nume<input data-se="n" value="${esc(x.label)}"></label>
-            <label>Categorie<select data-se="c">${CATS.filter(c=>QTY_CATS.includes(c.id)).map(c=>`<option value="${c.id}"${c.id===x.cat?" selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
-            <label>Unitate<input data-se="u" value="${esc(window.__enUnit?window.__enUnit(k,x.cat):"")}"></label>
-            <div class="st-acts"><button class="btn primary" data-a="artsave" data-k="${esc(k)}">Salvează</button>${Math.abs(s.stoc)<1e-9&&!s.plan?`<button class="btn" data-a="arthide" data-k="${esc(k)}">${confirmDel==="h:"+k?"Sigur? Ascunde":"Ascunde articolul"}</button>`:`<small class="ev-file">Îl poți ascunde când stocul lui e 0 (fă un inventar cu 0).</small>`}</div></div>`;
         }
       });
       h+=`</div>`;
@@ -398,23 +384,14 @@ V.addEventListener("click",async e=>{
   if(act==="foto"){const i=$("#stFoto");if(i){i.onchange=()=>{const fs=i.files;if(fs&&fs.length){grab();readInvoice(fs)}};i.click()}return}
   if(act==="aiapply"){grab();await applyAI();return}
   if(act==="aidrop"){grab();form.ai=null;render();return}
-  if(act==="artsave"){const k=b.dataset.k,g=n=>{const i=V.querySelector(`[data-se=${n}]`);return i?i.value.trim():""};const n=g("n");if(!n){toast("Scrie numele articolului.");return}
-    await window.__art.save(k,{label:n.charAt(0).toLocaleUpperCase("ro-RO")+n.slice(1),cat:g("c"),unit:g("u")});toast("Articolul e actualizat pentru toată echipa.");render();return}
-  if(act==="arthide"){const k=b.dataset.k;if(confirmDel!=="h:"+k){confirmDel="h:"+k;render();setTimeout(()=>{if(confirmDel==="h:"+k){confirmDel=null;render()}},4000);return}
-    confirmDel=null;open=null;await window.__art.save(k,{hidden:true});toast("Articolul e ascuns din stoc. Reapare singur dacă îl folosești din nou.");render();return}
   if(act==="comanda"){mode="comanda";ord=null;render();window.scrollTo(0,V.offsetTop-10);
-    loadSavedOrder().then(sv=>{if(sv&&sv.lines&&sv.lines.length){ord={...sv,saved:true};render();return}
-      return buildOrder().then(x=>{ord=x;if(mode==="comanda")render()})}).catch(e=>{console.warn(e);toast("Nu am putut calcula comanda. Verifică internetul.")});return}
-  if(act==="ordre"){grabOrder();ord=null;render();buildOrder().then(x=>{ord=x;if(mode==="comanda")render()});return}
-  if(act==="orddel"){grabOrder();ord.lines.splice(+b.dataset.i,1);render();return}
+    buildOrder().then(x=>{ord=x;if(mode==="comanda")render()}).catch(e=>{console.warn(e);toast("Nu am putut calcula comanda. Verifică internetul.")});return}
   if(act==="ordadd"){grabOrder();const g=n=>{const i=V.querySelector(`[data-on=${n}]`);return i?i.value.trim():""};const t=g("tip");if(!t){toast("Scrie produsul.");return}
-    const c=g("cat")||"altele",q=pnum(g("q"));ord.lines.push({cat:c,k:K(t),label:t,tip:t,brand:g("brand"),unit:g("unit")||"buc",pret:pnum(g("pret")),need:0,q:q==null||isNaN(q)?1:q,manual:true});render();return}
-  if(act==="ordsave"){grabOrder();await saveOrder();toast("Comanda e salvată. O găsești aici data viitoare.");render();return}
-  if(act==="ordclear"){await F.fs.doc(`${F.base}/privat/comanda`).delete().catch(()=>{});ord=null;render();buildOrder().then(x=>{ord=x;if(mode==="comanda")render()});return}
-  if(act==="ordcopy"){grabOrder();saveOrder();const txt=orderText();
+    const q=pnum(g("q"));ord.lines.push({cat:g("cat")||"altele",k:K(t),label:t,tip:t,brand:"",unit:g("unit")||"buc",pret:null,need:0,q:q==null||isNaN(q)?1:q,manual:true});render();return}
+  if(act==="ordcopy"){grabOrder();const txt=orderText();
     try{await navigator.clipboard.writeText(txt);toast("Comanda e copiată. Lipește-o în WhatsApp la furnizor.")}
     catch(x){window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}return}
-  if(act==="ordxl"){grabOrder();saveOrder();await orderExcel(b);return}
+  if(act==="ordxl"){grabOrder();await orderExcel(b);return}
   if(act==="cancel"){ord=null;mode="list";form=null;extraCat={};render();return}
   if(act==="scade"){busy=true;b.disabled=true;await window.__stocIesire(CP.evd());busy=false;return}
   if(act==="addnew"){
@@ -451,6 +428,5 @@ function start(){if(started)return;started=true;V.innerHTML=`<p class="ev-file">
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="stoc")start()}));
 if(store.get("tab","retete")==="stoc")start();
 window.__stocRefresh=()=>{if(started&&mode==="list")render()};
-document.addEventListener("cp-art",()=>{if(started&&mode==="list")render()});
 if(F&&F.isAdmin)setTimeout(subscribe,1500);
 })();
