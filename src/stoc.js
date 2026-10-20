@@ -160,15 +160,20 @@ function retFor(d){
   Object.values(r).forEach(items=>Object.entries(items||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&typeof v==="number")out[k]=(out[k]||0)+v}));
   return out;
 }
-function totals(){
-  const t={};const g=k=>t[k]=t[k]||{in:0,out:0,ret:0,adj:0};
+const isoToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+/* O ieșire e „planificată” până în ziua primului eveniment din săptămâna ei: marfa e rezervată, nu scoasă încă din depozit */
+const isPlanned=d=>d.tip==="iesire"&&d.when&&d.when>isoToday();
+function totals(skipDs){
+  const t={};const g=k=>t[k]=t[k]||{in:0,out:0,ret:0,adj:0,plan:0};
   Object.values(docs).forEach(d=>{
     const it=d.items||{};
     if(d.tip==="factura")Object.entries(it).forEach(([k,v])=>g(k).in+=v);
     else if(d.tip==="corectie")Object.entries(it).forEach(([k,v])=>g(k).adj+=v);
-    else if(d.tip==="iesire"){Object.entries(it).forEach(([k,v])=>g(k).out+=v);Object.entries(retFor(d)).forEach(([k,v])=>g(k).ret+=v)}
+    else if(d.tip==="iesire"){if(skipDs&&d.ds===skipDs)return;
+      if(isPlanned(d))Object.entries(it).forEach(([k,v])=>g(k).plan+=v);
+      else{Object.entries(it).forEach(([k,v])=>g(k).out+=v);Object.entries(retFor(d)).forEach(([k,v])=>g(k).ret+=v)}}
   });
-  Object.values(t).forEach(x=>x.stoc=x.in+x.adj-x.out+x.ret);
+  Object.values(t).forEach(x=>{x.stoc=x.in+x.adj-x.out+x.ret;x.disp=x.stoc-x.plan});
   return t;
 }
 
@@ -181,7 +186,9 @@ function iesireFrom(evd){
     const k=K(it.excelLabel);map[it.key]=k;
     if(s>0){items[k]=(items[k]||0)+s;labels[k]=it.label;cats[k]=it.cat}
   });
-  return {tip:"iesire",file:evd.fileName,title:D.title.big,ds:dsKey(evd.fileName),items,map,labels,cats,by:F.NAME,at:new Date().toISOString()};
+  const ds2=D.events.map(e=>e.date).filter(Boolean).sort((a,b)=>a-b),w=ds2[0]||D.title.date;
+  const when=w?`${w.getFullYear()}-${String(w.getMonth()+1).padStart(2,"0")}-${String(w.getDate()).padStart(2,"0")}`:"";
+  return {tip:"iesire",file:evd.fileName,title:D.title.big,ds:dsKey(evd.fileName),items,map,labels,cats,when,by:F.NAME,at:new Date().toISOString()};
 }
 async function writeIesire(evd){
   if(!admin()||!evd||!evd.aoa)return false;
@@ -190,6 +197,8 @@ async function writeIesire(evd){
   catch(e){toast("Nu am putut scădea marfa din stoc. Încearcă din nou din Stoc depozit.");return false}
 }
 window.__cpAI={loadAI,models:AI_MODELS,ready:aiReady};
+window.__stocAvail=(label,skipDs)=>{const t=totals(skipDs),x=t[K(label)];const any=Object.values(docs).some(d=>d.tip==="factura"||d.tip==="corectie");return any?{stoc:x?x.stoc:0,disp:x?x.disp:0}:null};
+window.__stocDs=evd=>evd&&evd.fileName?dsKey(evd.fileName):"";
 window.__stocIesire=async evd=>{if(await writeIesire(evd))toast(`Marfa pentru ${parseAOA(evd.aoa,evd.fileName).title.big} a fost scăzută din stoc.`)};
 
 function subscribe(){
@@ -202,6 +211,7 @@ function subscribe(){
       },()=>{});
     });
     if(mode==="list")render();
+    document.dispatchEvent(new Event("cp-stoc"));
   },()=>{V.innerHTML=`<p class="notice">Stocul nu se poate încărca acum. Verifică internetul și reîncarcă pagina.</p>`});
 }
 
@@ -217,7 +227,7 @@ async function buildOrder(){
   const P=await window.__cx.loadPrices(),t=totals(),cat=catalog(),lines=[];
   ORD_CATS.forEach(C=>{
     Object.entries(cat).filter(([k,x])=>x.cat===C.id).forEach(([k,x])=>{
-      const s=t[k]?t[k].stoc:0;if(!(s<0))return;
+      const s=t[k]?t[k].disp:0;if(!(s<0))return;
       const row=(P.rows||[]).find(r=>r.k===k&&r.s===C.sect)||(P.rows||[]).find(r=>r.k===k);
       /* La furnizor se comandă în aceleași unități ca în Excel (sticle de 1 L). Conversia în 0,7 L e doar pentru consumația clientului. */
       const f=row?(Number(row.f)||1):1,need=-s,conv=f!==1;
@@ -284,22 +294,23 @@ function viewList(){
   const t=totals(),cat=catalog(),qq=norm(q);
   const list=Object.values(docs).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   const evd=CP.evd(),pend=evd&&evd.aoa&&!docs["ies-"+dsKey(evd.fileName)];
-  const neg=Object.entries(t).filter(([k,x])=>x.stoc<0).length;
+  const neg=Object.entries(t).filter(([k,x])=>x.stoc<0).length,short=Object.entries(t).filter(([k,x])=>x.stoc>=0&&x.disp<0).length,hasIn=Object.values(docs).some(d=>d.tip==="factura"||d.tip==="corectie");
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length?`${Object.keys(t).length} articole urmărite`:"Stocul e gol"}</p>
-    <p class="ev-file">Încărcările se scad la încărcarea Excelului. Returul notat de barmani se adaugă înapoi.</p></div>
+    <p class="ev-file">Marfa pentru un eveniment e rezervată când faci fișa și iese din depozit în ziua evenimentului. Returul notat de barmani se adaugă înapoi.</p></div>
     ${admin()?`<div class="st-acts"><button class="btn primary" data-a="factura">Adaugă factură</button><button class="btn" data-a="inventar">Inventar</button><button class="btn" data-a="comanda">Comandă furnizor</button></div>`:""}</div>`;
   if(!list.length)h+=`<div class="ev-ok">${admin()?"Începe cu <b>Inventar</b>: numără ce ai acum în depozit și scrie cantitățile. Apoi adaugi facturile pe măsură ce vin.":"Paul nu a introdus încă stocul."}</div>`;
   if(pend&&admin())h+=`<div class="ev-alert st-pend">Excelul curent, <b>${esc(evd.fileName)}</b>, nu e scăzut din stoc. <button class="btn" data-a="scade">Scade acum</button></div>`;
-  if(neg)h+=`<div class="ev-alert">${neg} ${neg===1?"articol are":"articole au"} stoc negativ. Probabil lipsește o factură sau un inventar.</div>`;
+  if(neg)h+=`<div class="ev-alert">${neg} ${neg===1?"articol are":"articole au"} stoc sub zero. ${hasIn?"Probabil lipsește o factură.":"Încă nu ai introdus stocul din depozit."} Fă un <b>Inventar</b> cu ce ai acum pe raft: aplicația pornește de la cifrele reale și minusurile dispar.</div>`;
+  if(short)h+=`<div class="ev-alert">${short} ${short===1?"articol nu ajunge":"articole nu ajung"} pentru evenimentele planificate. Le găsești la <b>Comandă furnizor</b>.</div>`;
   if(list.length){
     h+=`<input class="search st-q" type="search" placeholder="Caută articol" value="${esc(q)}" aria-label="Caută articol">`;
     groups((k,x)=>!qq||norm(x.label).includes(qq)).forEach(g=>{
       h+=`<h2 class="ev-h2">${esc(g.c.name)}</h2><div class="ev-list">`;
       g.rows.forEach(([k,x])=>{
-        const s=t[k]||{in:0,out:0,ret:0,adj:0,stoc:0},cls=s.stoc<0?"neg":s.stoc===0?"zero":"";
-        h+=`<button class="st-row" data-k="${esc(k)}" aria-expanded="${open===k}"><span>${esc(x.label)}</span><b class="st-n ${cls}">${num(s.stoc)}</b></button>`;
+        const s=t[k]||{in:0,out:0,ret:0,adj:0,plan:0,stoc:0,disp:0},cls=s.stoc<0?"neg":s.disp<0?"neg":s.stoc===0?"zero":"";
+        h+=`<button class="st-row" data-k="${esc(k)}" aria-expanded="${open===k}"><span>${esc(x.label)}${s.plan?`<small class="st-res">rezervat ${num(s.plan)} → rămân ${num(s.disp)}</small>`:""}</span><b class="st-n ${cls}">${num(s.stoc)}</b></button>`;
         if(open===k){
-          h+=`<div class="st-det"><span>Intrat din facturi <b>${num(s.in)}</b></span><span>Încărcat la evenimente <b>−${num(s.out)}</b></span><span>Retur <b>+${num(s.ret)}</b></span>${s.adj?`<span>Corecții inventar <b>${s.adj>0?"+":""}${num(s.adj)}</b></span>`:""}</div>`;
+          h+=`<div class="st-det"><span>Intrat din facturi <b>${num(s.in)}</b></span><span>Încărcat la evenimente <b>−${num(s.out)}</b></span><span>Retur <b>+${num(s.ret)}</b></span>${s.adj?`<span>Corecții inventar <b>${s.adj>0?"+":""}${num(s.adj)}</b></span>`:""}${s.plan?`<span>Rezervat pentru evenimente viitoare <b>${num(s.plan)}</b></span>`:""}</div>`;
         }
       });
       h+=`</div>`;
@@ -409,4 +420,5 @@ function start(){if(started)return;started=true;V.innerHTML=`<p class="ev-file">
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="stoc")start()}));
 if(store.get("tab","retete")==="stoc")start();
 window.__stocRefresh=()=>{if(started&&mode==="list")render()};
+if(F&&F.isAdmin)setTimeout(subscribe,1500);
 })();

@@ -729,7 +729,7 @@ V.addEventListener("click",async e=>{
   if(t.closest("[data-bk]")){bkRun();return}
   const tx=t.closest("[data-thx]");if(tx){F.fs.doc(`${F.base}/contracte/${tx.dataset.thx}`).set({thanksAt:new Date().toISOString()},{merge:true}).catch(()=>{});return}
   const tk=t.closest("[data-thxskip]");if(tk){F.fs.doc(`${F.base}/contracte/${tk.dataset.thxskip}`).set({thanksSkip:true},{merge:true}).catch(()=>{});return}
-  const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume))})}return}
+  const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume)),menuIds:r.menuIds})}return}
   const pon=t.closest("[data-porn]");if(pon){const c=list.find(x=>x.id===pon.dataset.porn);if(c)portalPublish(c);return}
   const pou=t.closest("[data-porup]");if(pou){const c=list.find(x=>x.id===pou.dataset.porup);if(c){portalPublish(c).then(()=>portalRefresh(c,false))}return}
   const pow=t.closest("[data-porwa]");if(pow){const c=list.find(x=>x.id===pow.dataset.porwa);if(c&&c.portalTok){const tel=telWa(c.tel);window.open((tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(porMsg(c)),"_blank")}return}

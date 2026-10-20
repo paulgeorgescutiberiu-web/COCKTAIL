@@ -26,7 +26,7 @@ function enStart(pre){
     const c=pre.col,A=EVD.aoa;
     rows.forEach(x=>{const v=A[x.r]&&A[x.r][c];if(!blank(v))vals[x.L]=String(v)});
   }
-  EN={col:pre.col??null,nume:pre.nume||"",data:pre.data||"",ora:pre.ora||"",pers:pre.pers||"",echipa:pre.echipa||"",transport:pre.transport||"",note:pre.note||"",rows,vals,target,msg:"",from:pre.from||"",del:[]};
+  EN={col:pre.col??null,nume:pre.nume||"",data:pre.data||"",ora:pre.ora||"",pers:pre.pers||"",echipa:pre.echipa||"",transport:pre.transport||"",note:pre.note||"",rows,vals,target,msg:"",from:pre.from||"",del:[],menuIds:Array.isArray(pre.menuIds)&&pre.menuIds.length?pre.menuIds.slice():null};
   if(EN.col==null)EN.target=(D&&EVD)?"append":"new";
   route="nou";render();const v=$("#evView");if(v)v.scrollIntoView({block:"start"});
   if(pre.auto&&EN.pers&&D)enAuto();
@@ -62,10 +62,12 @@ function viewNou(){
     h+=`<div class="en-tg"><label><input type="radio" name="enT" value="append"${e.target==="append"?" checked":""}> Adaug la săptămâna încărcată acum (${esc(ttl)}, ${D.events.length} ${D.events.length===1?"eveniment":"evenimente"})</label>
       <label><input type="radio" name="enT" value="new"${e.target==="new"?" checked":""}> Încep o săptămână nouă cu acest eveniment <small>(săptămâna de acum se mută în „Săptămâni anterioare”)</small></label></div>`;
   }
+  if(e.menuIds){const R0=enRecipes(),nm=e.menuIds.map(id=>(R0.find(r=>r.id===id)||{}).name).filter(Boolean);
+    h+=`<div class="ev-ok en-menu"><b>Meniul ales de client:</b> ${esc(nm.join(", "))}. Premixurile și alcoolul de bază se calculează după el: cele din cocktailurile alese primesc mai mult, celelalte 0. <button type="button" class="btn" data-enact="nomenu">Calculează pentru tot meniul</button></div>`}
   h+=`<div class="en-acts"><button class="btn" type="button" data-enact="auto">Completează cantitățile după numărul de persoane</button></div>
     <p class="ev-file">Calculez din ce s-a trimis la evenimentele din săptămâna încărcată acum, raportat la numărul de persoane. Verifică și ajustează.</p>`;
   CATS.forEach(c=>{const L=G[c.id]||[];
-    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>`<label><span class="en-lb">${esc(x.label)}<button type="button" class="en-x" data-enact="del" data-l="${esc(x.L)}" title="Scoate ${esc(x.label)}" aria-label="Scoate ${esc(x.label)}">×</button></span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}></label>`).join("")+`</div>
+    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>`<label><span class="en-lb"><span>${esc(x.label)}${QTY_CATS.includes(c.id)?` <small class="en-u">${esc(enUnit(x.L,c.id))}</small>`:""}</span><button type="button" class="en-x" data-enact="del" data-l="${esc(x.L)}" title="Scoate ${esc(x.label)}" aria-label="Scoate ${esc(x.label)}">×</button></span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}>${QTY_CATS.includes(c.id)?`<small class="en-st" data-st="${esc(x.L)}">${enStockHint(x.L,e.vals[x.L])}</small>`:""}</label>`).join("")+`</div>
       <div class="en-add"><input data-enadd-n="${c.id}" placeholder="Articol nou în ${esc(c.name.toLowerCase())}" aria-label="Articol nou"><input data-enadd-q="${c.id}" placeholder="${QTY_CATS.includes(c.id)?"cantitate":"da / nr."}" aria-label="Cantitate"><button type="button" class="btn" data-enact="add" data-c="${c.id}">+ Adaugă</button></div>`});
   if(e.del.length)h+=`<p class="ev-file">Scoase din fișă: ${e.del.map(L=>{const x=e.rows.find(r=>r.L===L);return `<button type="button" class="en-day" data-enact="undel" data-l="${esc(L)}">↩ ${esc(KNOWN[L]?KNOWN[L][0]:capL(x?x.lab:L))}</button>`}).join(" ")}</p>`;
   if(e.msg)h+=`<p class="ev-alert">${esc(e.msg)}</p>`;
@@ -75,7 +77,7 @@ function viewNou(){
 function enAuto(){
   enGrab();const p=parseFloat(String(EN.pers).replace(",","."));
   if(!(p>0)){EN.msg="Scrie întâi numărul de persoane.";render();return}
-  const R0=enRatios();let n=0;
+  const R0=enMenuRatios(enRatios(),EN.menuIds);let n=0;
   EN.rows.forEach(x=>{const r=R0[x.L];if(r==null||EN.vals[x.L])return;let q=r*p;q=q<3?Math.ceil(q*2)/2:Math.ceil(q);if(q>0){EN.vals[x.L]=String(q).replace(".",",");n++}});
   EN.msg=n?"":"Nu am găsit date de consum pentru calcul. Încarcă un Excel sau completează de mână.";
   render();if(n)toast(`Am completat ${n} cantități. Verifică-le înainte să salvezi.`);
@@ -140,6 +142,7 @@ function enClick(t){
   const a=b.dataset.enact;
   if(a==="cancel"){EN=null;route="ziua";render();return true}
   if(a==="auto"){enAuto();return true}
+  if(a==="nomenu"){enGrab();EN.menuIds=null;render();return true}
   if(a==="del"){enGrab();const L=b.dataset.l;if(!EN.del.includes(L))EN.del.push(L);delete EN.vals[L];render();return true}
   if(a==="undel"){enGrab();EN.del=EN.del.filter(x=>x!==b.dataset.l);render();return true}
   if(a==="add"){enGrab();const c=b.dataset.c,V=$("#evView"),ni=V.querySelector(`[data-enadd-n="${c}"]`),qi=V.querySelector(`[data-enadd-q="${c}"]`);
@@ -205,3 +208,32 @@ function enSaveArt(L,label,cat){try{const F=window.CPFS;if(F&&F.isAdmin)F.fs.doc
 (function enLoadArt(){try{const F=window.CPFS;if(!F)return;F.fs.doc(`${F.base}/config/articole`).get().then(d=>{const m=d.exists&&d.data().map;if(!m)return;let ch=false;
   Object.entries(m).forEach(([L,v])=>{if(Array.isArray(v)&&!KNOWN[L]){KNOWN[L]=v;ch=true}});
   if(ch&&EVD){loadData();render();if(window.__stocRefresh)window.__stocRefresh()}}).catch(()=>{})}catch(e){}})();
+
+/* Unitatea în care se numără fiecare articol (ca în Excel și în stoc) */
+const EN_UNITS={"GHEATA":"kg","LADA LIME":"lăzi","PORTO BUC":"buc","GREF":"buc","CIMBRISOR":"caserole","ROZMARIN":"caserole","MENTA":"caserole","DESHIDRATATE":"pungi","FLORI COMES":"caserole","PROSECCO":"sticle 0,75 L","FRESH LAMAIE":"sticle 1 L","APA MINERALA":"sticle","COLA 1 L":"sticle 1 L","ALOE 1,5L":"sticle 1,5 L","KINLEY 1,5":"sticle 1,5 L","SAN PELEGRIN":"sticle","CRANBERRY":"cutii 1 L","ORANGE":"cutii 1 L","MAR VERDE":"cutii 1 L"};
+function enUnit(L,cat){if(EN_UNITS[L])return EN_UNITS[L];if(/\bKG\b/.test(L))return "kg";if(cat==="alcool")return "sticle 1 L";if(cat==="premix")return "sticle";if(cat==="soft")return "sticle";if(cat==="garnish")return "buc";return "buc"}
+/* Cât e în depozit pentru acest articol, după celelalte evenimente din săptămână */
+function enStockHint(L,raw){
+  if(!window.__stocAvail)return "";const evd=EVD,ds=window.__stocDs?window.__stocDs(evd):"";
+  const a=window.__stocAvail(L,EN&&EN.target==="new"?"":ds);if(!a)return "";
+  let others=0;if(D&&EN&&EN.target!=="new"){const it=D.items.find(i=>i.excelLabel===L);if(it)D.events.forEach(ev=>{if(EN.col!=null&&ev.col===EN.col)return;const x=ev.values[it.key];if(x&&typeof x.v==="number")others+=x.v})}
+  const avail=Math.round((a.disp-others)*100)/100,q=parseFloat(String(raw||"").replace(",","."));
+  if(q>0&&q>avail)return `<span class="warn">în depozit ${num(Math.max(avail,0))} · lipsesc ${num(Math.round((q-Math.max(avail,0))*100)/100)} → intră în Comandă furnizor</span>`;
+  return `în depozit ${num(avail)}`;
+}
+document.addEventListener("cp-stoc",()=>{if(!EN)return;document.querySelectorAll("#evView .en-st").forEach(h=>{const i=h.parentElement.querySelector("[data-eq]");if(i)h.innerHTML=enStockHint(h.dataset.st,i.value)})});
+document.addEventListener("input",ev=>{const i=ev.target;if(!EN||!i.matches||!i.matches("[data-eq]"))return;const h=i.parentElement&&i.parentElement.querySelector(".en-st");if(h)h.innerHTML=enStockHint(i.dataset.eq,i.value)});
+/* Rețetele și legătura lor cu premixurile și alcoolul din fișă */
+function enRecipes(){try{return JSON.parse(document.getElementById("recipes-data").textContent)||[]}catch(e){return []}}
+const EN_ALIAS={PASSIFLORA:"PORNSTAR",WHISKEY:"JAMESON",WHISKY:"JAMESON",DISARONNO:"AMARETTO","ROM ESPECIAL":"ROM 1L",ROM:"ROM 1L",VODKA:"VODKA 1L"};
+function enRowFor(n,cat){const raw=norm(String(n).replace(/^premix\s+/i,""));const cands=[raw,EN_ALIAS[raw],EN_ALIAS[raw.split(" ")[0]],raw.split(" ")[0]].filter(Boolean);
+  for(const c of cands){const x=EN.rows.find(r=>{const k=KNOWN[r.L],rc=r.cat||(k?k[1]:"altele");return rc===cat&&(r.L===c||r.L.startsWith(c+" ")||norm(r.L).replace(/ 1L$/,"")===c)});if(x)return x.L}return null}
+function enUses(recipes){const pm=new Set(),sp=new Set();recipes.forEach(r=>(r.ing||[]).forEach(i=>{const n=String(i.n||"");
+  if(i.k==="premix"||/^premix/i.test(n)){const L=enRowFor(n,"premix");if(L)pm.add(L)}else{const L=enRowFor(n,"alcool");if(L)sp.add(L)}}));return {pm,sp}}
+function enMenuRatios(R0,ids){
+  if(!ids||!ids.length||!EN)return R0;const all=enRecipes(),chosen=all.filter(r=>ids.includes(r.id));if(!chosen.length)return R0;
+  const A=enUses(all),C=enUses(chosen),out={...R0};
+  [[A.pm,C.pm],[A.sp,C.sp]].forEach(([grp,sel])=>{const tot=[...grp].reduce((s,L)=>s+(R0[L]||0),0),selTot=[...sel].reduce((s,L)=>s+(R0[L]||0),0);
+    if(!tot||!selTot)return;grp.forEach(L=>{out[L]=sel.has(L)?(R0[L]||0)*tot/selTot:0})});
+  return out;
+}

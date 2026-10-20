@@ -29,6 +29,10 @@ rep("</style>\n</head>",""".ev-btns{display:flex;gap:8px;flex-wrap:wrap;justify-
 .en-acts{margin:6px 0 4px}
 .en-q{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .en-lb{display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
+.en-u{font-weight:500;opacity:.75}
+.en-st{font-weight:500;font-size:.78rem;color:var(--muted)}
+.en-st .warn{color:#c0392b;font-weight:700}
+.en-menu{margin:8px 0}.en-menu .btn{margin-top:8px}
 .en-x{flex:none;border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:0 2px;cursor:pointer;border-radius:6px}
 .en-x:hover,.en-x:focus-visible{color:#c0392b;background:rgba(192,57,43,.1)}
 .en-add{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:8px;margin:10px 0 4px}

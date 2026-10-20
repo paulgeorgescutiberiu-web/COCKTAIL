@@ -179,7 +179,7 @@ function pendHTML(){const P=pending();if(!P.length)return "";
 document.addEventListener("click",e=>{
   const a=e.target.closest("[data-ctev]");if(a){const c=CT.find(x=>x.id===a.dataset.ctev);if(!c||!window.__evNew)return;const r=c.portalResp||{};
     const note=[r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",c.notesTxt||""].filter(Boolean).join(". ");
-    window.__evNew({nume:tcase(c.locatie||c.nume||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||"").replace(/\D/g,""),note,from:tcase(String(c.nume||"").split(/\s+/)[0]),auto:true});return}
+    window.__evNew({nume:tcase(c.locatie||c.nume||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||"").replace(/\D/g,""),note,from:tcase(String(c.nume||"").split(/\s+/)[0]),auto:true,menuIds:r.menuIds});return}
   const s=e.target.closest("[data-ctskip]");if(s){F.fs.doc(`${F.base}/contracte/${s.dataset.ctskip}`).set({evSkip:true},{merge:true}).catch(()=>{});return}
 });
 window.__qr={code,link,leadsHTML,show,sync,pendHTML};
