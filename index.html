@@ -408,6 +408,10 @@ a.btn.primary{color:var(--on-leaf)}
 .qr-lead small{display:block;color:var(--muted);font-size:.82rem;margin-top:2px}
 .qr-lead.off{opacity:.55}
 .qr-lead a{color:inherit}
+.ct-pend-r{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)}
+.ct-pend-r small{display:block;color:var(--muted)}
+.ct-pend{margin-bottom:14px}
+.cx-warn{margin-top:12px}.cx-warn ul{margin:8px 0 10px 18px;padding:0}.cx-warn li{margin:4px 0}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -992,6 +996,7 @@ function viewRetur(e){
   let h=`<div class="ev-progress"><div class="ev-pbar"><i id="evRetBar" style="width:${all.length?filled/all.length*100:0}%"></i></div><span class="ev-ptext" id="evRetCount">Retur notat la ${filled} din ${all.length}</span></div>
     <p class="ev-mode">Scrie cât s-a întors din fiecare articol. Consumul se calculează singur: trimis minus retur. Lasă gol ce nu ați numărat. ${esc(lastEdit(r))}</p>`;
   if(ro)h+=`<p class="ev-mode">Poți vedea returul, dar nu îl poți modifica.</p>`;
+  if(filled)h+=retIssuesHTML(e,false).replace(/<div class="cx-btns">[\s\S]*?<\/div><\/div>$/,"</div>");
   G.forEach(g=>{
     h+=`<h2 class="ev-h2">${g.name}</h2><div class="ev-list">`;
     g.rows.forEach(({it,x})=>{
@@ -1014,7 +1019,7 @@ function viewConsum(){
   D.events.forEach(e=>{const {all,filled}=retStats(e);
     h+=`<button class="ev-trow" data-rr="${e.id}" style="--c:var(${e.c})"><div class="ev-time ${e.time?"":"none"}">${esc(e.time||"—")}</div><div class="ev-bar"></div>
       <div><div class="ev-name">${esc(e.name)}</div><div class="ev-meta">${e.persons?esc(e.persons)+" persoane, ":""}retur notat la ${filled} din ${all.length}</div>
-      ${!filled&&all.length?`<span class="ev-flag">retur nenotat</span>`:""}${retFor(e.id).note?`<div class="ev-meta">Observații: ${esc(retFor(e.id).note)}</div>`:""}</div></button>`});
+      ${!filled&&all.length?`<span class="ev-flag">retur nenotat</span>`:""}${(()=>{if(!filled)return "";const I=retIssues(e);return (I.over.length?`<span class="ev-flag">${I.over.length} cu retur mai mare decât trimis</span> `:"")+(I.miss.length?`<span class="ev-flag">${I.miss.length} fără retur</span>`:"")})()}${retFor(e.id).note?`<div class="ev-meta">Observații: ${esc(retFor(e.id).note)}</div>`:""}</div></button>`});
   h+=`</div>`;
   let any=false;
   CATS.filter(c=>QTY_CATS.includes(c.id)).forEach(c=>{
@@ -1072,8 +1077,9 @@ function renderTabs(){
   const cur=$("#evTabs [aria-current=\"true\"]");if(cur)$("#evTabs").scrollLeft=cur.offsetLeft-$("#evTabs").clientWidth/2+cur.clientWidth/2;
 }
 function viewZiua(){
+  const pend=window.__qr&&window.__qr.pendHTML?window.__qr.pendHTML():"";
   const s=[...D.events].sort((a,b)=>{const x=(dKey(a.date)||"9999")+(a.time||"99"),y=(dKey(b.date)||"9999")+(b.time||"99");return x<y?-1:x>y?1:0});
-  const multi=D.days.length>1;let h="",lastDay=null;
+  const multi=D.days.length>1;let h=pend,lastDay=null;
   if(!multi)h+=`<div class="ev-timeline">`;
   s.forEach(e=>{
     if(multi&&dKey(e.date)!==lastDay){if(lastDay!==null)h+=`</div>`;lastDay=dKey(e.date);h+=`<h2 class="ev-h2 ev-day">${esc(e.date?dLong(e.date):"Fără dată")}</h2><div class="ev-timeline">`}
@@ -1277,7 +1283,7 @@ async function downloadConsum(e,btn){
 function cxButtons(){
   if(!cxAdmin()||!D)return "";
   return `<h2 class="ev-h2">Excel consumație</h2><p class="ev-mode">Pentru client: produsele consumate, cu prețurile tale și totalul. Fișierul se poate edita în Excel.</p>
-    <div class="cx-btns">${D.events.map(e=>`<button class="btn" data-cx="${e.id}" style="--c:var(${e.c})"><span class="dot"></span>${esc(e.name)}</button>`).join("")}</div>
+    <div class="cx-btns">${D.events.map(e=>`<button class="btn" data-cx="${e.id}" style="--c:var(${e.c})"><span class="dot"></span>${esc(e.name)}</button>`).join("")}</div><div id="cxWarn"></div>
     <p style="margin-top:10px"><button class="btn" data-r="preturi">Lista de prețuri</button></p>`;
 }
 function viewPreturi(){
@@ -1318,8 +1324,22 @@ function grabPrices(){
     let v=el.value;if(k==="pret"||k==="f"){const n=Number(String(v).replace(",","."));v=v.trim()===""?(k==="f"?1:null):isFinite(n)?n:r[k]}r[k]=v});
   document.querySelectorAll("#evView [data-pf]").forEach(el=>{const k=el.dataset.pf;pDraft[k]=k==="discPct"?(Number(String(el.value).replace(",","."))||0):el.value});
 }
+/* Verificarea returului înainte de Excelul de consum */
+function retIssues(e){const all=retStats(e).all,over=[],miss=[];
+  all.forEach(p=>{const rv=retVal(e.id,p.it.key);if(rv==null)miss.push(p.it.label);else if(rv>p.x.v)over.push({l:p.it.label,s:p.x.v,r:rv})});
+  return {over,miss,any:all.length>miss.length,n:all.length}}
+function retIssuesHTML(e,withDl){const I=retIssues(e);if(!I.over.length&&!(I.any&&I.miss.length)&&I.any)return "";
+  let h=`<div class="ev-alert cx-warn"><b>${esc(e.name)}: verifică returul înainte de consum</b><ul>`;
+  if(!I.any)h+=`<li>Returul nu e notat deloc. Consumul ar ieși egal cu tot ce s-a trimis.</li>`;
+  I.over.forEach(o=>h+=`<li><b>${esc(o.l)}</b>: retur ${num(o.r)}, dar s-au trimis doar ${num(o.s)}. Consumul iese 0.</li>`);
+  if(I.any&&I.miss.length)h+=`<li>Fără retur la ${I.miss.length} ${I.miss.length===1?"articol":"articole"}: ${I.miss.map(esc).join(", ")}. Le socotesc consumate în întregime.</li>`;
+  h+=`</ul><div class="cx-btns"><button class="btn primary" data-rr="${e.id}">Corectează returul</button>${withDl?`<button class="btn" data-cxforce="${e.id}">Descarcă oricum</button>`:""}</div></div>`;
+  return h}
 function cxClick(t){
-  const cx=t.closest("[data-cx]");if(cx){const e=D.events.find(x=>x.id===cx.dataset.cx);if(e)downloadConsum(e,cx);return true}
+  const cf=t.closest("[data-cxforce]");if(cf){const e=D.events.find(x=>x.id===cf.dataset.cxforce);const w=$("#cxWarn");if(w)w.innerHTML="";if(e)downloadConsum(e,cf);return true}
+  const cx=t.closest("[data-cx]");if(cx){const e=D.events.find(x=>x.id===cx.dataset.cx);if(!e)return true;
+    const wh=retIssuesHTML(e,true),w=$("#cxWarn");if(wh&&w){w.innerHTML=wh;w.scrollIntoView({block:"nearest"});return true}
+    downloadConsum(e,cx);return true}
   const add=t.closest("[data-padd]");if(add){grabPrices();pDraft.rows.push(cxR(add.dataset.padd,"","","",null,""));pMsg="";render();return true}
   const del=t.closest("[data-pdel]");if(del){grabPrices();pDraft.rows.splice(+del.dataset.pdel,1);pMsg="";render();return true}
   const sv=t.closest("[data-psave]");if(sv){savePrices(sv);return true}
@@ -1364,6 +1384,7 @@ function enStart(pre){
   EN={col:pre.col??null,nume:pre.nume||"",data:pre.data||"",ora:pre.ora||"",pers:pre.pers||"",echipa:pre.echipa||"",transport:pre.transport||"",note:pre.note||"",rows,vals,target,msg:"",from:pre.from||""};
   if(EN.col==null)EN.target=(D&&EVD)?"append":"new";
   route="nou";render();const v=$("#evView");if(v)v.scrollIntoView({block:"start"});
+  if(pre.auto&&EN.pers&&D)enAuto();
 }
 function enGuessTarget(iso){
   if(!D||!EVD)return "new";if(!iso)return "append";
@@ -2173,6 +2194,7 @@ function viewList(){
     <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button></div></div>`;
   h+=gPick();
   if(window.__qr)h+=window.__qr.leadsHTML();
+  h+=thanksHTML();
   if(!list.length)return h+`<div class="ev-ok">Niciun contract încă. Apasă „Contract nou”.</div>`;
   const R=list.filter(c=>c.rent&&c.rent.calc&&(c.dataEv||"")<now);
   if(R.length){const v=R.reduce((a,c)=>a+c.rent.calc.venit,0),pr=R.reduce((a,c)=>a+c.rent.calc.profit,0);
@@ -2753,6 +2775,8 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
+  const tx=t.closest("[data-thx]");if(tx){F.fs.doc(`${F.base}/contracte/${tx.dataset.thx}`).set({thanksAt:new Date().toISOString()},{merge:true}).catch(()=>{});return}
+  const tk=t.closest("[data-thxskip]");if(tk){F.fs.doc(`${F.base}/contracte/${tk.dataset.thxskip}`).set({thanksSkip:true},{merge:true}).catch(()=>{});return}
   const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume))})}return}
   const pon=t.closest("[data-porn]");if(pon){const c=list.find(x=>x.id===pon.dataset.porn);if(c)portalPublish(c);return}
   const pou=t.closest("[data-porup]");if(pou){const c=list.find(x=>x.id===pou.dataset.porup);if(c){portalPublish(c).then(()=>portalRefresh(c,false))}return}
@@ -2808,6 +2832,18 @@ function startPost(){if(F.isAdmin&&!sub)subscribe();socRender()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="contracte")start();if(b.dataset.view==="postare")startPost()}));
 if(store.get("tab","evenimente")==="contracte")start();
 if(store.get("tab","evenimente")==="postare")startPost();
+/* ---------- după eveniment: mulțumire + recenzie ---------- */
+const addDays=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const firstName=n=>{const w=String(n||"").trim().split(/\s+/);return tcase(w.length>1?w[1]:w[0]||"")};
+const reviewLink=()=>((firma&&firma.reviewUrl)||"").trim()||"https://www.facebook.com/cocktailphilosophy/reviews";
+function thanksDue(){const t=today();return list.filter(c=>c.dataEv&&!c.thanksAt&&!c.thanksSkip&&addDays(c.dataEv,1)<=t&&addDays(c.dataEv,21)>=t).sort((a,b)=>String(a.dataEv).localeCompare(b.dataEv))}
+function thanksTxt(c){const fn=firstName(c.nume);
+  return `Bună${fn?", "+fn:""}! Mulțumim mult că ne-ați ales pentru evenimentul de la ${tcase(c.locatie||"")} 🍸 Sperăm că invitații s-au distrat la bar cât ne-am distrat și noi.\n\nDacă v-a plăcut, ne-ar ajuta enorm o recenzie scurtă, durează un minut: ${reviewLink()}\n\nȘi dacă aveți poze de la bar, ni le puteți trimite aici, ne bucurăm de fiecare. 😊\nPaul, Cocktail Philosophy`}
+function thanksHTML(){const L=thanksDue();if(!L.length)return "";
+  return `<div class="ct-card"><div class="ct-h"><b>Mulțumiri de trimis după eveniment</b><span>${L.length} ${L.length===1?"client":"clienți"}</span></div>
+    <p class="ev-file">Mesajul se deschide gata scris în WhatsApp, cu linkul de recenzie${firma&&firma.reviewUrl?"":" (acum cel de Facebook; pune linkul Google la Datele firmei → Pagina de la bar)"}. Tu doar apeși Trimite.</p>`+
+    L.map(c=>`<div class="qr-lead"><div><b>${esc(tcase(c.nume))}</b> · ${esc(tcase(c.locatie||""))}<small>eveniment pe ${esc(shortDate(c.dataEv))}${c.tel?" · "+esc(c.tel):" · fără telefon în contract"}</small></div>
+      <div class="qr-la">${c.tel?`<a class="btn primary" data-thx="${c.id}" href="https://wa.me/${telWa(c.tel)}?text=${encodeURIComponent(thanksTxt(c))}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button class="btn" data-thxskip="${c.id}">Nu trimit</button></div></div>`).join("")+`</div>`}
 window.__ctNew=pre=>{const b=document.querySelector('nav.tabs button[data-view="contracte"]');if(b)b.click();f={...BLANK(),...pre};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)};
 window.__ctRefresh=()=>{if(started&&mode==="list"&&!V.hidden)render()};
 window.__ctList=()=>list;window.__ctFirma=()=>firma;
@@ -2958,7 +2994,7 @@ async function sync(){
   try{await F.fs.doc("bar/info").set({...x,at:new Date().toISOString()});lastSig=sig}catch(e){}
 }
 if(F.isAdmin){
-  F.fs.collection(`${F.base}/contracte`).onSnapshot(s=>{CT=s.docs.map(d=>({...d.data(),id:d.id}));sync()},()=>{});
+  F.fs.collection(`${F.base}/contracte`).onSnapshot(s=>{CT=s.docs.map(d=>({...d.data(),id:d.id}));sync();if(window.__evRefresh)window.__evRefresh()},()=>{});
   F.fs.doc(`${F.base}/privat/firma`).get().then(d=>{FIRMA=d.exists?d.data():{};sync()}).catch(()=>{});
   F.fs.collection("barScan").onSnapshot(s=>{SCANS={};s.docs.forEach(d=>SCANS[d.id]=d.data().n||0);refresh()},()=>{});
   F.fs.collection("barLead").onSnapshot(s=>{LEADS=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));refresh()},()=>{});
@@ -3079,7 +3115,29 @@ async function allPDF(btn){
   }catch(e){btn.textContent="Nu a mers. Verifică internetul.";setTimeout(()=>{btn.textContent=lab;btn.disabled=false},3000)}
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-qrall]");if(b&&!b.disabled)allPDF(b)});
-window.__qr={code,link,leadsHTML,show,sync};
+/* ---------- contracte semnate din săptămâna încărcată, care nu sunt încă în fișă ---------- */
+const tcase=s=>String(s||"").toLocaleLowerCase("ro-RO").replace(/(^|[\s-])(\S)/g,(m,a,b)=>a+b.toLocaleUpperCase("ro-RO"));
+function weekRange(D){const ds=D.events.map(e=>e.date).filter(Boolean),ref=ds[0]||(D.title&&D.title.date);if(!ref)return null;
+  const d=new Date(ref);d.setHours(0,0,0,0);const wd=(d.getDay()+6)%7,a=new Date(d);a.setDate(d.getDate()-wd);const b=new Date(a);b.setDate(a.getDate()+6);return [iso(a),iso(b)]}
+const isSigned=c=>!!(c.signedId||(c.portalResp&&c.portalResp.signedAt)||c.avansPlatit);
+function pending(){
+  const D=curD();if(!F.isAdmin||!D||!CT.length)return [];const W=weekRange(D);if(!W)return [];
+  return CT.filter(c=>c.dataEv&&c.dataEv>=W[0]&&c.dataEv<=W[1]&&isSigned(c)&&!c.evSkip).filter(c=>{
+    const w=nrm(c.locatie+" "+c.nume);
+    return !D.events.some(e=>{const d=iso(evDate(e,D));if(d&&d!==c.dataEv)return false;const en=nrm(e.name);return w.some(x=>en.includes(x))})});
+}
+function pendHTML(){const P=pending();if(!P.length)return "";
+  return `<div class="ev-alert ct-pend"><b>${P.length===1?"Un contract semnat nu e încă în fișa săptămânii":P.length+" contracte semnate nu sunt încă în fișa săptămânii"}</b>`+
+    P.map(c=>`<div class="ct-pend-r"><span>${esc(tcase(c.locatie||c.nume))} · ${esc(fdate(c.dataEv))}${c.oraEv?" · "+esc(c.oraEv):""}${c.invitati?" · "+esc(c.invitati)+" pers.":""}<small>client ${esc(tcase(c.nume))}</small></span>
+      <span class="qr-la"><button class="btn primary" data-ctev="${esc(c.id)}">Adaugă în fișă</button><button class="btn" data-ctskip="${esc(c.id)}">Nu e nevoie</button></span></div>`).join("")+
+    `<p class="ev-file">Se deschide fișa completată din contract, cu cantitățile calculate după numărul de persoane. Le verifici și apeși „Salvează evenimentul”.</p></div>`}
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-ctev]");if(a){const c=CT.find(x=>x.id===a.dataset.ctev);if(!c||!window.__evNew)return;const r=c.portalResp||{};
+    const note=[r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",c.notesTxt||""].filter(Boolean).join(". ");
+    window.__evNew({nume:tcase(c.locatie||c.nume||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||"").replace(/\D/g,""),note,from:tcase(String(c.nume||"").split(/\s+/)[0]),auto:true});return}
+  const s=e.target.closest("[data-ctskip]");if(s){F.fs.doc(`${F.base}/contracte/${s.dataset.ctskip}`).set({evSkip:true},{merge:true}).catch(()=>{});return}
+});
+window.__qr={code,link,leadsHTML,show,sync,pendHTML};
 })();
 
 /* After a save reloads the page, reopen what was being edited */

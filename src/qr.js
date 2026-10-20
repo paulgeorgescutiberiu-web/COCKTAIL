@@ -39,7 +39,7 @@ async function sync(){
   try{await F.fs.doc("bar/info").set({...x,at:new Date().toISOString()});lastSig=sig}catch(e){}
 }
 if(F.isAdmin){
-  F.fs.collection(`${F.base}/contracte`).onSnapshot(s=>{CT=s.docs.map(d=>({...d.data(),id:d.id}));sync()},()=>{});
+  F.fs.collection(`${F.base}/contracte`).onSnapshot(s=>{CT=s.docs.map(d=>({...d.data(),id:d.id}));sync();if(window.__evRefresh)window.__evRefresh()},()=>{});
   F.fs.doc(`${F.base}/privat/firma`).get().then(d=>{FIRMA=d.exists?d.data():{};sync()}).catch(()=>{});
   F.fs.collection("barScan").onSnapshot(s=>{SCANS={};s.docs.forEach(d=>SCANS[d.id]=d.data().n||0);refresh()},()=>{});
   F.fs.collection("barLead").onSnapshot(s=>{LEADS=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));refresh()},()=>{});
@@ -160,5 +160,27 @@ async function allPDF(btn){
   }catch(e){btn.textContent="Nu a mers. Verifică internetul.";setTimeout(()=>{btn.textContent=lab;btn.disabled=false},3000)}
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-qrall]");if(b&&!b.disabled)allPDF(b)});
-window.__qr={code,link,leadsHTML,show,sync};
+/* ---------- contracte semnate din săptămâna încărcată, care nu sunt încă în fișă ---------- */
+const tcase=s=>String(s||"").toLocaleLowerCase("ro-RO").replace(/(^|[\s-])(\S)/g,(m,a,b)=>a+b.toLocaleUpperCase("ro-RO"));
+function weekRange(D){const ds=D.events.map(e=>e.date).filter(Boolean),ref=ds[0]||(D.title&&D.title.date);if(!ref)return null;
+  const d=new Date(ref);d.setHours(0,0,0,0);const wd=(d.getDay()+6)%7,a=new Date(d);a.setDate(d.getDate()-wd);const b=new Date(a);b.setDate(a.getDate()+6);return [iso(a),iso(b)]}
+const isSigned=c=>!!(c.signedId||(c.portalResp&&c.portalResp.signedAt)||c.avansPlatit);
+function pending(){
+  const D=curD();if(!F.isAdmin||!D||!CT.length)return [];const W=weekRange(D);if(!W)return [];
+  return CT.filter(c=>c.dataEv&&c.dataEv>=W[0]&&c.dataEv<=W[1]&&isSigned(c)&&!c.evSkip).filter(c=>{
+    const w=nrm(c.locatie+" "+c.nume);
+    return !D.events.some(e=>{const d=iso(evDate(e,D));if(d&&d!==c.dataEv)return false;const en=nrm(e.name);return w.some(x=>en.includes(x))})});
+}
+function pendHTML(){const P=pending();if(!P.length)return "";
+  return `<div class="ev-alert ct-pend"><b>${P.length===1?"Un contract semnat nu e încă în fișa săptămânii":P.length+" contracte semnate nu sunt încă în fișa săptămânii"}</b>`+
+    P.map(c=>`<div class="ct-pend-r"><span>${esc(tcase(c.locatie||c.nume))} · ${esc(fdate(c.dataEv))}${c.oraEv?" · "+esc(c.oraEv):""}${c.invitati?" · "+esc(c.invitati)+" pers.":""}<small>client ${esc(tcase(c.nume))}</small></span>
+      <span class="qr-la"><button class="btn primary" data-ctev="${esc(c.id)}">Adaugă în fișă</button><button class="btn" data-ctskip="${esc(c.id)}">Nu e nevoie</button></span></div>`).join("")+
+    `<p class="ev-file">Se deschide fișa completată din contract, cu cantitățile calculate după numărul de persoane. Le verifici și apeși „Salvează evenimentul”.</p></div>`}
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-ctev]");if(a){const c=CT.find(x=>x.id===a.dataset.ctev);if(!c||!window.__evNew)return;const r=c.portalResp||{};
+    const note=[r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",c.notesTxt||""].filter(Boolean).join(". ");
+    window.__evNew({nume:tcase(c.locatie||c.nume||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||"").replace(/\D/g,""),note,from:tcase(String(c.nume||"").split(/\s+/)[0]),auto:true});return}
+  const s=e.target.closest("[data-ctskip]");if(s){F.fs.doc(`${F.base}/contracte/${s.dataset.ctskip}`).set({evSkip:true},{merge:true}).catch(()=>{});return}
+});
+window.__qr={code,link,leadsHTML,show,sync,pendHTML};
 })();

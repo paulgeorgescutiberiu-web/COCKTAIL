@@ -144,6 +144,7 @@ function viewList(){
     <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button></div></div>`;
   h+=gPick();
   if(window.__qr)h+=window.__qr.leadsHTML();
+  h+=thanksHTML();
   if(!list.length)return h+`<div class="ev-ok">Niciun contract încă. Apasă „Contract nou”.</div>`;
   const R=list.filter(c=>c.rent&&c.rent.calc&&(c.dataEv||"")<now);
   if(R.length){const v=R.reduce((a,c)=>a+c.rent.calc.venit,0),pr=R.reduce((a,c)=>a+c.rent.calc.profit,0);
@@ -724,6 +725,8 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
+  const tx=t.closest("[data-thx]");if(tx){F.fs.doc(`${F.base}/contracte/${tx.dataset.thx}`).set({thanksAt:new Date().toISOString()},{merge:true}).catch(()=>{});return}
+  const tk=t.closest("[data-thxskip]");if(tk){F.fs.doc(`${F.base}/contracte/${tk.dataset.thxskip}`).set({thanksSkip:true},{merge:true}).catch(()=>{});return}
   const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume))})}return}
   const pon=t.closest("[data-porn]");if(pon){const c=list.find(x=>x.id===pon.dataset.porn);if(c)portalPublish(c);return}
   const pou=t.closest("[data-porup]");if(pou){const c=list.find(x=>x.id===pou.dataset.porup);if(c){portalPublish(c).then(()=>portalRefresh(c,false))}return}
@@ -779,6 +782,18 @@ function startPost(){if(F.isAdmin&&!sub)subscribe();socRender()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="contracte")start();if(b.dataset.view==="postare")startPost()}));
 if(store.get("tab","evenimente")==="contracte")start();
 if(store.get("tab","evenimente")==="postare")startPost();
+/* ---------- după eveniment: mulțumire + recenzie ---------- */
+const addDays=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const firstName=n=>{const w=String(n||"").trim().split(/\s+/);return tcase(w.length>1?w[1]:w[0]||"")};
+const reviewLink=()=>((firma&&firma.reviewUrl)||"").trim()||"https://www.facebook.com/cocktailphilosophy/reviews";
+function thanksDue(){const t=today();return list.filter(c=>c.dataEv&&!c.thanksAt&&!c.thanksSkip&&addDays(c.dataEv,1)<=t&&addDays(c.dataEv,21)>=t).sort((a,b)=>String(a.dataEv).localeCompare(b.dataEv))}
+function thanksTxt(c){const fn=firstName(c.nume);
+  return `Bună${fn?", "+fn:""}! Mulțumim mult că ne-ați ales pentru evenimentul de la ${tcase(c.locatie||"")} 🍸 Sperăm că invitații s-au distrat la bar cât ne-am distrat și noi.\n\nDacă v-a plăcut, ne-ar ajuta enorm o recenzie scurtă, durează un minut: ${reviewLink()}\n\nȘi dacă aveți poze de la bar, ni le puteți trimite aici, ne bucurăm de fiecare. 😊\nPaul, Cocktail Philosophy`}
+function thanksHTML(){const L=thanksDue();if(!L.length)return "";
+  return `<div class="ct-card"><div class="ct-h"><b>Mulțumiri de trimis după eveniment</b><span>${L.length} ${L.length===1?"client":"clienți"}</span></div>
+    <p class="ev-file">Mesajul se deschide gata scris în WhatsApp, cu linkul de recenzie${firma&&firma.reviewUrl?"":" (acum cel de Facebook; pune linkul Google la Datele firmei → Pagina de la bar)"}. Tu doar apeși Trimite.</p>`+
+    L.map(c=>`<div class="qr-lead"><div><b>${esc(tcase(c.nume))}</b> · ${esc(tcase(c.locatie||""))}<small>eveniment pe ${esc(shortDate(c.dataEv))}${c.tel?" · "+esc(c.tel):" · fără telefon în contract"}</small></div>
+      <div class="qr-la">${c.tel?`<a class="btn primary" data-thx="${c.id}" href="https://wa.me/${telWa(c.tel)}?text=${encodeURIComponent(thanksTxt(c))}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button class="btn" data-thxskip="${c.id}">Nu trimit</button></div></div>`).join("")+`</div>`}
 window.__ctNew=pre=>{const b=document.querySelector('nav.tabs button[data-view="contracte"]');if(b)b.click();f={...BLANK(),...pre};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)};
 window.__ctRefresh=()=>{if(started&&mode==="list"&&!V.hidden)render()};
 window.__ctList=()=>list;window.__ctFirma=()=>firma;

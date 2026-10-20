@@ -29,6 +29,7 @@ function enStart(pre){
   EN={col:pre.col??null,nume:pre.nume||"",data:pre.data||"",ora:pre.ora||"",pers:pre.pers||"",echipa:pre.echipa||"",transport:pre.transport||"",note:pre.note||"",rows,vals,target,msg:"",from:pre.from||""};
   if(EN.col==null)EN.target=(D&&EVD)?"append":"new";
   route="nou";render();const v=$("#evView");if(v)v.scrollIntoView({block:"start"});
+  if(pre.auto&&EN.pers&&D)enAuto();
 }
 function enGuessTarget(iso){
   if(!D||!EVD)return "new";if(!iso)return "append";

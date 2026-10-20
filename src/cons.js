@@ -141,7 +141,7 @@ async function downloadConsum(e,btn){
 function cxButtons(){
   if(!cxAdmin()||!D)return "";
   return `<h2 class="ev-h2">Excel consumație</h2><p class="ev-mode">Pentru client: produsele consumate, cu prețurile tale și totalul. Fișierul se poate edita în Excel.</p>
-    <div class="cx-btns">${D.events.map(e=>`<button class="btn" data-cx="${e.id}" style="--c:var(${e.c})"><span class="dot"></span>${esc(e.name)}</button>`).join("")}</div>
+    <div class="cx-btns">${D.events.map(e=>`<button class="btn" data-cx="${e.id}" style="--c:var(${e.c})"><span class="dot"></span>${esc(e.name)}</button>`).join("")}</div><div id="cxWarn"></div>
     <p style="margin-top:10px"><button class="btn" data-r="preturi">Lista de prețuri</button></p>`;
 }
 function viewPreturi(){
@@ -182,8 +182,22 @@ function grabPrices(){
     let v=el.value;if(k==="pret"||k==="f"){const n=Number(String(v).replace(",","."));v=v.trim()===""?(k==="f"?1:null):isFinite(n)?n:r[k]}r[k]=v});
   document.querySelectorAll("#evView [data-pf]").forEach(el=>{const k=el.dataset.pf;pDraft[k]=k==="discPct"?(Number(String(el.value).replace(",","."))||0):el.value});
 }
+/* Verificarea returului înainte de Excelul de consum */
+function retIssues(e){const all=retStats(e).all,over=[],miss=[];
+  all.forEach(p=>{const rv=retVal(e.id,p.it.key);if(rv==null)miss.push(p.it.label);else if(rv>p.x.v)over.push({l:p.it.label,s:p.x.v,r:rv})});
+  return {over,miss,any:all.length>miss.length,n:all.length}}
+function retIssuesHTML(e,withDl){const I=retIssues(e);if(!I.over.length&&!(I.any&&I.miss.length)&&I.any)return "";
+  let h=`<div class="ev-alert cx-warn"><b>${esc(e.name)}: verifică returul înainte de consum</b><ul>`;
+  if(!I.any)h+=`<li>Returul nu e notat deloc. Consumul ar ieși egal cu tot ce s-a trimis.</li>`;
+  I.over.forEach(o=>h+=`<li><b>${esc(o.l)}</b>: retur ${num(o.r)}, dar s-au trimis doar ${num(o.s)}. Consumul iese 0.</li>`);
+  if(I.any&&I.miss.length)h+=`<li>Fără retur la ${I.miss.length} ${I.miss.length===1?"articol":"articole"}: ${I.miss.map(esc).join(", ")}. Le socotesc consumate în întregime.</li>`;
+  h+=`</ul><div class="cx-btns"><button class="btn primary" data-rr="${e.id}">Corectează returul</button>${withDl?`<button class="btn" data-cxforce="${e.id}">Descarcă oricum</button>`:""}</div></div>`;
+  return h}
 function cxClick(t){
-  const cx=t.closest("[data-cx]");if(cx){const e=D.events.find(x=>x.id===cx.dataset.cx);if(e)downloadConsum(e,cx);return true}
+  const cf=t.closest("[data-cxforce]");if(cf){const e=D.events.find(x=>x.id===cf.dataset.cxforce);const w=$("#cxWarn");if(w)w.innerHTML="";if(e)downloadConsum(e,cf);return true}
+  const cx=t.closest("[data-cx]");if(cx){const e=D.events.find(x=>x.id===cx.dataset.cx);if(!e)return true;
+    const wh=retIssuesHTML(e,true),w=$("#cxWarn");if(wh&&w){w.innerHTML=wh;w.scrollIntoView({block:"nearest"});return true}
+    downloadConsum(e,cx);return true}
   const add=t.closest("[data-padd]");if(add){grabPrices();pDraft.rows.push(cxR(add.dataset.padd,"","","",null,""));pMsg="";render();return true}
   const del=t.closest("[data-pdel]");if(del){grabPrices();pDraft.rows.splice(+del.dataset.pdel,1);pMsg="";render();return true}
   const sv=t.closest("[data-psave]");if(sv){savePrices(sv);return true}

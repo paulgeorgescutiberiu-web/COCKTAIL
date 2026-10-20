@@ -7,6 +7,8 @@
 <meta name="description" content="Meniul serii și barul mobil de cocktailuri Cocktail Philosophy pentru evenimentul tău.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZZMFYTMEMF"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-ZZMFYTMEMF",{page_title:"La bar (QR)"});</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <style>
@@ -109,6 +111,7 @@ const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>(
 const MON=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
 const q=new URLSearchParams(location.search),code=(q.get("e")||"").replace(/[^a-z0-9-]/g,"").slice(0,40)||"general";
 const WA="40743785655";
+const ga=(n,p)=>{try{window.gtag&&gtag("event",n,{event_code:code,...(p||{})})}catch(e){}};
 let fs=null,info=null,ev=null;
 const waLink=t=>`https://wa.me/${WA}?text=${encodeURIComponent(t)}`;
 $("#waDone").href=waLink("Bună! Am văzut barul vostru la un eveniment și aș vrea o ofertă.");
@@ -169,7 +172,7 @@ async function init(){
   if(!window.firebase){show();return}
   try{firebase.initializeApp(CFG);fs=firebase.firestore()}catch(e){show();return}
   try{const d=await fs.doc("bar/info").get();info=d.exists?d.data():null}catch(e){info=null}
-  show();countScan();
+  show();countScan();ga("bar_scan",{event_name_label:ev&&ev.n||"general"});
 }
 $("#f").addEventListener("submit",async e=>{
   e.preventDefault();const F=e.target,v=k=>(F.elements[k].value||"").trim(),err=$("#ferr");
@@ -182,9 +185,12 @@ $("#f").addEventListener("submit",async e=>{
   const dt=lead.data?(()=>{const m=lead.data.split("-");return `${+m[2]} ${MON[+m[1]-1]} ${m[0]}`})():"";
   const waTxt=`Bună! Sunt ${lead.nume}. Aș vrea o ofertă pentru un eveniment${dt?" pe "+dt:""}${lead.loc?", la "+lead.loc:""}${lead.inv?", "+lead.inv+" invitați":""}.${lead.msg?" "+lead.msg:""}`;
   try{if(!fs)throw 0;await fs.collection("barLead").add(lead);
-    F.classList.add("hide");$("#done").classList.remove("hide");$("#waDone").href=waLink(waTxt);
+    F.classList.add("hide");$("#done").classList.remove("hide");ga("generate_lead",{guests:lead.inv||""});$("#waDone").href=waLink(waTxt);
   }catch(x){b.disabled=false;b.textContent="Vreau ofertă";err.innerHTML=`Nu am putut trimite. <a href="${waLink(waTxt)}" style="color:var(--fg)" target="_blank" rel="noopener">Trimite-ne pe WhatsApp</a>.`;err.classList.remove("hide")}
 });
+document.addEventListener("click",e=>{const a=e.target.closest("a");if(!a)return;const h=a.href||"";
+  if(h.includes("wa.me"))ga("whatsapp_click");else if(a.id==="ig")ga("social_click",{network:"instagram"});else if(a.id==="fb")ga("social_click",{network:"facebook"});
+  else if(a.id==="rev")ga("review_click");else if(a.classList.contains("cta"))ga("offer_cta_click");else if(h.includes("/calculator"))ga("calculator_click")});
 init();
 })();
 </script>

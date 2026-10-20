@@ -8,7 +8,7 @@ Aplicația publicată (`/index.html`) e un singur fișier, construit din sursele
 bash src/build.sh
 ```
 
-Pașii, în ordine: `build2` → `dates` → `consp` → `evp` → `ctrp` → `ofp` → `tabp` → `qrp` → `build`.
+Pașii, în ordine: `build2` → `dates` → `consp` → `evp` → `ctrp` → `ofp` → `tabp` → `qrp` → `retp` → `build`.
 Fiecare pas citește `base2.html`, inserează o parte a aplicației și îl scrie la loc; `build.py` adaugă
 Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina repo-ului.
 
