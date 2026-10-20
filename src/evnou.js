@@ -67,7 +67,7 @@ function viewNou(){
   h+=`<div class="en-acts"><button class="btn" type="button" data-enact="auto">Completează cantitățile după numărul de persoane</button></div>
     <p class="ev-file">Calculez din ce s-a trimis la evenimentele din săptămâna încărcată acum, raportat la numărul de persoane. Verifică și ajustează.</p>`;
   CATS.forEach(c=>{const L=G[c.id]||[];
-    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>`<label><span class="en-lb"><span>${esc(x.label)}${QTY_CATS.includes(c.id)?` <small class="en-u">${esc(enUnit(x.L,c.id))}</small>`:""}</span><button type="button" class="en-x" data-enact="del" data-l="${esc(x.L)}" title="Scoate ${esc(x.label)}" aria-label="Scoate ${esc(x.label)}">×</button></span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}>${QTY_CATS.includes(c.id)?`<small class="en-st" data-st="${esc(x.L)}">${enStockHint(x.L,e.vals[x.L])}</small>`:""}</label>`).join("")+`</div>
+    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>e.editL===x.L?enEditHTML(x,c):`<label><span class="en-lb"><span>${esc(x.label)}${QTY_CATS.includes(c.id)?` <small class="en-u">${esc(enUnit(x.L,c.id))}</small>`:""}</span><span class="en-bt"><button type="button" class="en-x" data-enact="edit" data-l="${esc(x.L)}" title="Modifică ${esc(x.label)}" aria-label="Modifică ${esc(x.label)}">✎</button><button type="button" class="en-x" data-enact="del" data-l="${esc(x.L)}" title="Scoate ${esc(x.label)}" aria-label="Scoate ${esc(x.label)}">×</button></span></span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}>${QTY_CATS.includes(c.id)?`<small class="en-st" data-st="${esc(x.L)}">${enStockHint(x.L,e.vals[x.L])}</small>`:""}</label>`).join("")+`</div>
       <div class="en-add"><input data-enadd-n="${c.id}" placeholder="Articol nou în ${esc(c.name.toLowerCase())}" aria-label="Articol nou"><input data-enadd-q="${c.id}" placeholder="${QTY_CATS.includes(c.id)?"cantitate":"da / nr."}" aria-label="Cantitate"><button type="button" class="btn" data-enact="add" data-c="${c.id}">+ Adaugă</button></div>`});
   if(e.del.length)h+=`<p class="ev-file">Scoase din fișă: ${e.del.map(L=>{const x=e.rows.find(r=>r.L===L);return `<button type="button" class="en-day" data-enact="undel" data-l="${esc(L)}">↩ ${esc(KNOWN[L]?KNOWN[L][0]:capL(x?x.lab:L))}</button>`}).join(" ")}</p>`;
   if(e.msg)h+=`<p class="ev-alert">${esc(e.msg)}</p>`;
@@ -142,6 +142,13 @@ function enClick(t){
   const a=b.dataset.enact;
   if(a==="cancel"){EN=null;route="ziua";render();return true}
   if(a==="auto"){enAuto();return true}
+  if(a==="edit"){enGrab();EN.editL=b.dataset.l;render();const i=$("#evView").querySelector("[data-ed=n]");if(i)i.focus();return true}
+  if(a==="edcancel"){enGrab();EN.editL=null;render();return true}
+  if(a==="edsave"){const V=$("#evView"),L=EN.editL,g=k=>{const i=V.querySelector(`[data-ed=${k}]`);return i?i.value.trim():""};
+    const v=V.querySelector("[data-ed=v]");if(v){if(v.value.trim())EN.vals[L]=v.value.trim();else delete EN.vals[L]}
+    enGrab();const n=g("n"),c=g("c"),u=g("u");if(!n){EN.msg="Scrie numele articolului.";render();return true}
+    const x=EN.rows.find(r=>r.L===L);if(x)x.cat=c;EN.editL=null;EN.msg="";
+    window.__art.save(L,{label:n.charAt(0).toLocaleUpperCase("ro-RO")+n.slice(1),cat:c,unit:QTY_CATS.includes(c)?u:null}).then(()=>{if(route==="nou")render()});render();return true}
   if(a==="nomenu"){enGrab();EN.menuIds=null;render();return true}
   if(a==="del"){enGrab();const L=b.dataset.l;if(!EN.del.includes(L))EN.del.push(L);delete EN.vals[L];render();return true}
   if(a==="undel"){enGrab();EN.del=EN.del.filter(x=>x!==b.dataset.l);render();return true}
@@ -204,14 +211,24 @@ function enDays(){const out=[],t=new Date();t.setHours(0,0,0,0);const N=["Dum","
 }
 
 /* Articole adăugate de mână: numele și categoria lor se țin minte pentru toată echipa */
-function enSaveArt(L,label,cat){try{const F=window.CPFS;if(F&&F.isAdmin)F.fs.doc(`${F.base}/config/articole`).set({map:{[L]:[label,cat]}},{merge:true}).catch(()=>{})}catch(e){}}
-(function enLoadArt(){try{const F=window.CPFS;if(!F)return;F.fs.doc(`${F.base}/config/articole`).get().then(d=>{const m=d.exists&&d.data().map;if(!m)return;let ch=false;
-  Object.entries(m).forEach(([L,v])=>{if(Array.isArray(v)&&!KNOWN[L]){KNOWN[L]=v;ch=true}});
-  if(ch&&EVD){loadData();render();if(window.__stocRefresh)window.__stocRefresh()}}).catch(()=>{})}catch(e){}})();
+window.__art=window.__art||{units:{},hidden:{}};
+/* Salvează pentru toată echipa: nume și categorie (map), unitate (units), ascuns din stoc (hidden) */
+function artSave(L,o){try{const F=window.CPFS;if(!F||!F.isAdmin)return Promise.resolve();const up={};
+  if(o.label!=null&&o.cat!=null){KNOWN[L]=[o.label,o.cat];up.map={[L]:[o.label,o.cat]}}
+  if(o.unit!=null){window.__art.units[L]=o.unit;up.units={[L]:o.unit}}
+  if(o.hidden!=null){if(o.hidden)window.__art.hidden[L]=true;else delete window.__art.hidden[L];up.hidden={[L]:!!o.hidden}}
+  return F.fs.doc(`${F.base}/config/articole`).set(up,{merge:true}).catch(()=>{})}catch(e){return Promise.resolve()}}
+function enSaveArt(L,label,cat){artSave(L,{label,cat})}
+window.__art.save=(L,o)=>artSave(L,o).then(()=>{if(EVD){loadData();render()}document.dispatchEvent(new Event("cp-art"))});
+(function enLoadArt(){try{const F=window.CPFS;if(!F)return;F.fs.doc(`${F.base}/config/articole`).get().then(d=>{if(!d.exists)return;const x=d.data()||{};let ch=false;
+  Object.entries(x.map||{}).forEach(([L,v])=>{if(Array.isArray(v)&&(!KNOWN[L]||KNOWN[L][0]!==v[0]||KNOWN[L][1]!==v[1])){KNOWN[L]=v;ch=true}});
+  Object.assign(window.__art.units,x.units||{});Object.entries(x.hidden||{}).forEach(([L,v])=>{if(v)window.__art.hidden[L]=true});
+  if(EVD&&(ch||x.units)){loadData();render()}document.dispatchEvent(new Event("cp-art"))}).catch(()=>{})}catch(e){}})();
 
+window.__enUnit=(L,cat)=>enUnit(L,cat);
 /* Unitatea în care se numără fiecare articol (ca în Excel și în stoc) */
 const EN_UNITS={"GHEATA":"kg","LADA LIME":"lăzi","PORTO BUC":"buc","GREF":"buc","CIMBRISOR":"caserole","ROZMARIN":"caserole","MENTA":"caserole","DESHIDRATATE":"pungi","FLORI COMES":"caserole","PROSECCO":"sticle 0,75 L","FRESH LAMAIE":"sticle 1 L","APA MINERALA":"sticle","COLA 1 L":"sticle 1 L","ALOE 1,5L":"sticle 1,5 L","KINLEY 1,5":"sticle 1,5 L","SAN PELEGRIN":"sticle","CRANBERRY":"cutii 1 L","ORANGE":"cutii 1 L","MAR VERDE":"cutii 1 L"};
-function enUnit(L,cat){if(EN_UNITS[L])return EN_UNITS[L];if(/\bKG\b/.test(L))return "kg";if(cat==="alcool")return "sticle 1 L";if(cat==="premix")return "sticle";if(cat==="soft")return "sticle";if(cat==="garnish")return "buc";return "buc"}
+function enUnit(L,cat){const u=window.__art&&window.__art.units[L];if(u)return u;if(EN_UNITS[L])return EN_UNITS[L];if(/\bKG\b/.test(L))return "kg";if(cat==="alcool")return "sticle 1 L";if(cat==="premix")return "sticle";if(cat==="soft")return "sticle";if(cat==="garnish")return "buc";return "buc"}
 /* Cât e în depozit pentru acest articol, după celelalte evenimente din săptămână */
 function enStockHint(L,raw){
   if(!window.__stocAvail)return "";const evd=EVD,ds=window.__stocDs?window.__stocDs(evd):"";
@@ -237,3 +254,11 @@ function enMenuRatios(R0,ids){
     if(!tot||!selTot)return;grp.forEach(L=>{out[L]=sel.has(L)?(R0[L]||0)*tot/selTot:0})});
   return out;
 }
+
+function enEditHTML(x,c){const u=QTY_CATS.includes(c.id)?enUnit(x.L,c.id):"";
+  return `<div class="en-ed"><label>Nume<input data-ed="n" value="${esc(x.label)}"></label>
+    <label>Categorie<select data-ed="c">${CATS.map(k=>`<option value="${k.id}"${k.id===c.id?" selected":""}>${esc(k.name)}</option>`).join("")}</select></label>
+    <label>Unitate<input data-ed="u" value="${esc(u)}" placeholder="ex: sticle 1 L, kg, lăzi"></label>
+    <label>Cantitate<input data-ed="v" value="${esc(EN.vals[x.L]||"")}"></label>
+    <p class="ev-file">Numele, categoria și unitatea se schimbă pentru toată echipa, la toate evenimentele și în stoc. Rândul din Excel rămâne același, deci bifele și returul nu se pierd.</p>
+    <div class="qr-la"><button type="button" class="btn primary" data-enact="edsave">Salvează</button><button type="button" class="btn" data-enact="edcancel">Renunță</button></div></div>`}

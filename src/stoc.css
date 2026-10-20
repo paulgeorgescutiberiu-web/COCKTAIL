@@ -38,3 +38,15 @@
 .ord-q input{width:84px}
 .ord-q small{color:var(--muted);font-size:.8rem;min-width:84px}
 .st-res{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-top:2px}
+.st-ed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 16px 14px;border-top:1px dashed var(--line)}
+.st-ed label,.ord-ed label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:600;color:var(--muted);min-width:0}
+.st-ed input,.st-ed select,.ord-ed input,.ord-ed select{width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit}
+.st-ed .st-acts{grid-column:1/-1;align-items:center}
+.ord-ed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+.ord-ed-h{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;color:var(--muted)}
+.ord-ed .en-x{border:0;background:transparent;color:var(--muted);font-size:20px;cursor:pointer;border-radius:6px;padding:0 6px}
+.ord-ed .en-x:hover{color:#c0392b}
+.ord-tot{align-self:end;justify-self:end;font-weight:700;padding-bottom:8px}
+.ord-new{border:1.5px dashed var(--line);border-radius:12px}
+.ord-new .st-acts{grid-column:1/-1}
+@media (max-width:560px){.st-ed{grid-template-columns:1fr 1fr}}

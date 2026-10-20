@@ -30,6 +30,11 @@ rep("</style>\n</head>",""".ev-btns{display:flex;gap:8px;flex-wrap:wrap;justify-
 .en-q{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .en-lb{display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
 .en-u{font-weight:500;opacity:.75}
+.en-bt{display:flex;gap:2px;flex:none}
+.en-ed{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card)}
+.en-ed label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted)}
+.en-ed input,.en-ed select{padding:9px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit}
+.en-ed .ev-file,.en-ed .qr-la{grid-column:1/-1}
 .en-st{font-weight:500;font-size:.78rem;color:var(--muted)}
 .en-st .warn{color:#c0392b;font-weight:700}
 .en-menu{margin:8px 0}.en-menu .btn{margin-top:8px}
