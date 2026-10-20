@@ -15,6 +15,7 @@ rep("</style>\n</head>",""".ct-ocr input{background:#FFF4C2!important;color:#162
 .ct-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .ct-rt{display:table!important;width:100%!important;border-collapse:collapse;margin:4px 0 12px}.ct-rt td{padding:7px 4px;border-bottom:1px solid var(--line)}.ct-rt td:last-child{text-align:right;font-variant-numeric:tabular-nums}.ct-rt .tot td{font-weight:800;font-size:1.1rem;border-bottom:0}
 .ct-note{margin:8px 0 0;line-height:1.45}.ct-sg{align-items:center}.ct-sg a.ct-chip{text-decoration:none}.ct-up{cursor:pointer}.soc-cv{display:block;width:100%;max-width:420px;height:auto;border-radius:12px;margin:12px 0;background:#000}.soc-r{margin-top:12px}.ct-up.busy{opacity:.6;pointer-events:none}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
+.ct-bk-due{border-color:var(--accent,#c9822b)!important}
 .ct-h span,.ct-m{color:var(--muted);font-size:.9rem}
 .ct-b{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .ct-chip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:.85rem;cursor:pointer;color:var(--ink)}

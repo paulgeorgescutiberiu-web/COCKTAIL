@@ -141,10 +141,11 @@ function viewList(){
   const L=list.filter(c=>!qq||[c.nume,c.locatie].some(v=>String(v||"").toLowerCase().includes(qq)))
     .sort((a,b)=>{const fa=(a.dataEv||"")>=now,fb=(b.dataEv||"")>=now;if(fa!==fb)return fa?-1:1;return fa?String(a.dataEv).localeCompare(b.dataEv):String(b.dataEv).localeCompare(a.dataEv)});
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length} ${list.length===1?"contract":"contracte"}</p><p class="ev-file">Le vezi doar tu. Barmanii nu au acces la contracte.</p></div>
-    <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button></div></div>`;
+    <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button><button class="btn" data-bk="1">Backup Drive</button></div></div>`;
   h+=gPick();
   if(window.__qr)h+=window.__qr.leadsHTML();
   h+=thanksHTML();
+  h+=bkHTML();
   if(!list.length)return h+`<div class="ev-ok">Niciun contract încă. Apasă „Contract nou”.</div>`;
   const R=list.filter(c=>c.rent&&c.rent.calc&&(c.dataEv||"")<now);
   if(R.length){const v=R.reduce((a,c)=>a+c.rent.calc.venit,0),pr=R.reduce((a,c)=>a+c.rent.calc.profit,0);
@@ -725,6 +726,7 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
+  if(t.closest("[data-bk]")){bkRun();return}
   const tx=t.closest("[data-thx]");if(tx){F.fs.doc(`${F.base}/contracte/${tx.dataset.thx}`).set({thanksAt:new Date().toISOString()},{merge:true}).catch(()=>{});return}
   const tk=t.closest("[data-thxskip]");if(tk){F.fs.doc(`${F.base}/contracte/${tk.dataset.thxskip}`).set({thanksSkip:true},{merge:true}).catch(()=>{});return}
   const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume))})}return}
@@ -798,6 +800,40 @@ window.__ctNew=pre=>{const b=document.querySelector('nav.tabs button[data-view="
 window.__ctRefresh=()=>{if(started&&mode==="list"&&!V.hidden)render()};
 window.__ctList=()=>list;window.__ctFirma=()=>firma;
 window.__ct={parseMRZ,parseVisual,cnpOk,contractDoc,FIRMA_DEF};
+/* ---------- backup săptămânal al bazei de date în Google Drive ---------- */
+const BK={busy:false,msg:"",last:null,loaded:false};
+const bkDs=f=>"d-"+String(f).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,150);
+async function bkCollect(){
+  const out={app:"Cocktail Philosophy",at:new Date().toISOString(),base:F.base,docs:{}};
+  const col=async p=>{try{const q=await F.fs.collection(p).get();q.docs.forEach(d=>out.docs[p+"/"+d.id]=d.data())}catch(e){out.docs[p+"/__eroare"]=String(e&&e.code||e)}};
+  for(const c of ["config","privat","contracte","stoc","oameni","alias"])await col(`${F.base}/${c}`);
+  const files=new Set();try{const ev=JSON.parse(out.docs[`${F.base}/config/evenimente`].json);if(ev&&ev.fileName)files.add(ev.fileName)}catch(e){}
+  try{(out.docs[`${F.base}/config/arhiva`]&&out.docs[`${F.base}/config/arhiva`].list||[]).forEach(x=>files.add(x.fileName))}catch(e){}
+  for(const fn of files)for(const t of ["checks","retur"])await col(`${F.base}/${t}/${bkDs(fn)}/events`);
+  for(const c of ["barLead","barScan","portal"])await col(c);
+  try{const d=await F.fs.doc("bar/info").get();if(d.exists)out.docs["bar/info"]=d.data()}catch(e){}
+  out.count=Object.keys(out.docs).length;return out}
+async function bkRun(btn){
+  if(BK.busy)return;BK.busy=true;BK.msg="Se adună datele…";render();
+  try{const data=await bkCollect();BK.msg="Se urcă în Drive…";render();
+    const fq=n=>`name='${n}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`;
+    let fo=(await DQ(fq("Backup aplicație Cocktail Philosophy"))).files[0];
+    if(!fo)fo=await gf("https://www.googleapis.com/drive/v3/files?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:"Backup aplicație Cocktail Philosophy",mimeType:"application/vnd.google-apps.folder"})});
+    const name=`backup-${today()}.json`,blob=new Blob([JSON.stringify(data)],{type:"application/json"});
+    const up=await gf("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size",{method:"POST",body:mp({name,mimeType:"application/json",parents:[fo.id]},blob)});
+    BK.last={at:new Date().toISOString(),name,id:up.id,count:data.count,size:blob.size};
+    await F.fs.doc(`${F.base}/privat/backup`).set(BK.last);
+    BK.msg=`Backup făcut: ${data.count} înregistrări, ${Math.round(blob.size/1024)} KB, în Drive → „Backup aplicație Cocktail Philosophy”.`;
+  }catch(e){BK.msg="Backup-ul nu a reușit. "+(e&&e.msg||"Încearcă din nou.")}
+  BK.busy=false;render()}
+function bkHTML(){
+  if(!BK.loaded){BK.loaded=true;F.fs.doc(`${F.base}/privat/backup`).get().then(d=>{BK.last=d.exists?d.data():null;if(mode==="list")render()}).catch(()=>{})}
+  const days=BK.last&&BK.last.at?Math.floor((Date.now()-new Date(BK.last.at))/864e5):null,due=days==null||days>=7;
+  if(due&&!BK.busy&&!BK.auto&&G.tok&&Date.now()<G.exp-60000){BK.auto=true;setTimeout(bkRun,50)}
+  if(!due&&!BK.msg)return "";
+  return `<div class="ct-card${due?" ct-bk-due":""}"><div class="ct-h"><b>Backup în Google Drive</b><span>${days==null?"niciun backup încă":days===0?"ultimul: azi":`ultimul: acum ${days} ${days===1?"zi":"zile"}`}</span></div>
+    <p class="ev-file">${BK.msg?esc(BK.msg):"O copie a tuturor datelor (contracte, evenimente, retur, stoc, prețuri, cereri) se salvează ca fișier în Drive-ul tău. Apare aici o dată pe săptămână."}</p>
+    ${due||BK.busy?`<div class="ct-b"><button class="btn primary" data-bk="1"${BK.busy?" disabled":""}>${BK.busy?"Se face backup…":"Fă backup acum"}</button></div>`:""}</div>`}
 window.__gd={async uploadPublic(file,folderName){
   const fq=n=>`name='${n.replace(/'/g,"\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`;
   let fo=(await DQ(fq(folderName))).files[0];
