@@ -26,7 +26,7 @@ function enStart(pre){
     const c=pre.col,A=EVD.aoa;
     rows.forEach(x=>{const v=A[x.r]&&A[x.r][c];if(!blank(v))vals[x.L]=String(v)});
   }
-  EN={col:pre.col??null,nume:pre.nume||"",data:pre.data||"",ora:pre.ora||"",pers:pre.pers||"",echipa:pre.echipa||"",transport:pre.transport||"",note:pre.note||"",rows,vals,target,msg:"",from:pre.from||""};
+  EN={col:pre.col??null,nume:pre.nume||"",data:pre.data||"",ora:pre.ora||"",pers:pre.pers||"",echipa:pre.echipa||"",transport:pre.transport||"",note:pre.note||"",rows,vals,target,msg:"",from:pre.from||"",del:[]};
   if(EN.col==null)EN.target=(D&&EVD)?"append":"new";
   route="nou";render();const v=$("#evView");if(v)v.scrollIntoView({block:"start"});
   if(pre.auto&&EN.pers&&D)enAuto();
@@ -45,7 +45,7 @@ function enGrab(){
 }
 function viewNou(){
   const e=EN,ttl=D?D.title.big:"",edit=e.col!=null;
-  const groupsOf=()=>{const g={};e.rows.forEach(x=>{const k=KNOWN[x.L],cat=k?k[1]:"altele";(g[cat]=g[cat]||[]).push({...x,label:k?k[0]:capL(x.lab),cat})});return g};
+  const groupsOf=()=>{const g={};e.rows.forEach(x=>{if(e.del.includes(x.L))return;const k=KNOWN[x.L],cat=x.cat||(k?k[1]:"altele");(g[cat]=g[cat]||[]).push({...x,label:k?k[0]:capL(x.lab),cat})});return g};
   const G=groupsOf();
   let h=`<p style="margin:0 0 10px"><button class="btn" type="button" data-enact="cancel">← Înapoi la evenimente</button></p><div class="ev-hero"><p class="ev-sub">${edit?"Modifică fișa evenimentului":"Eveniment nou"}${e.from?` · din contractul ${esc(e.from)}`:""}</p>
     <p class="ev-file">${edit?"Schimbările apar imediat la toată echipa.":"Completezi aici fișa, fără Excel. Barmanii o văd imediat, iar marfa se scade din stoc."}</p></div>
@@ -56,7 +56,7 @@ function viewNou(){
       <label>Persoane<input data-en="pers" inputmode="numeric" value="${esc(e.pers)}"></label>
       <label>Echipa<input data-en="echipa" value="${esc(e.echipa)}" placeholder="ex: Ioana Sebi"></label>
       <label>Transport<input data-en="transport" value="${esc(e.transport)}" placeholder="ex: Toyota"></label>
-      <label class="en-w">Mențiuni speciale<textarea data-en="note" rows="3" placeholder="ex: cocktail cu și fără alcool Epicur, -3 sticle premix">${esc(e.note)}</textarea></label>
+      <label class="en-w">Mențiuni speciale<textarea data-en="note" rows="3" placeholder="ex: și cocktailuri fără alcool, -3 sticle premix">${esc(e.note)}</textarea></label>
     </div>`;
   if(!edit&&D){
     h+=`<div class="en-tg"><label><input type="radio" name="enT" value="append"${e.target==="append"?" checked":""}> Adaug la săptămâna încărcată acum (${esc(ttl)}, ${D.events.length} ${D.events.length===1?"eveniment":"evenimente"})</label>
@@ -64,8 +64,10 @@ function viewNou(){
   }
   h+=`<div class="en-acts"><button class="btn" type="button" data-enact="auto">Completează cantitățile după numărul de persoane</button></div>
     <p class="ev-file">Calculez din ce s-a trimis la evenimentele din săptămâna încărcată acum, raportat la numărul de persoane. Verifică și ajustează.</p>`;
-  CATS.forEach(c=>{const L=G[c.id];if(!L||!L.length)return;
-    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>`<label><span>${esc(x.label)}</span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}></label>`).join("")+`</div>`});
+  CATS.forEach(c=>{const L=G[c.id]||[];
+    h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="en-q">`+L.map(x=>`<label><span class="en-lb">${esc(x.label)}<button type="button" class="en-x" data-enact="del" data-l="${esc(x.L)}" title="Scoate ${esc(x.label)}" aria-label="Scoate ${esc(x.label)}">×</button></span><input data-eq="${esc(x.L)}" value="${esc(e.vals[x.L]||"")}" ${QTY_CATS.includes(c.id)?'inputmode="decimal"':""}></label>`).join("")+`</div>
+      <div class="en-add"><input data-enadd-n="${c.id}" placeholder="Articol nou în ${esc(c.name.toLowerCase())}" aria-label="Articol nou"><input data-enadd-q="${c.id}" placeholder="${QTY_CATS.includes(c.id)?"cantitate":"da / nr."}" aria-label="Cantitate"><button type="button" class="btn" data-enact="add" data-c="${c.id}">+ Adaugă</button></div>`});
+  if(e.del.length)h+=`<p class="ev-file">Scoase din fișă: ${e.del.map(L=>{const x=e.rows.find(r=>r.L===L);return `<button type="button" class="en-day" data-enact="undel" data-l="${esc(L)}">↩ ${esc(KNOWN[L]?KNOWN[L][0]:capL(x?x.lab:L))}</button>`}).join(" ")}</p>`;
   if(e.msg)h+=`<p class="ev-alert">${esc(e.msg)}</p>`;
   h+=`<div class="en-save"><button class="btn" type="button" data-enact="cancel">Renunță</button><button class="btn primary" type="button" data-enact="save">${edit?"Salvează fișa":"Salvează evenimentul"}</button></div>`;
   return h;
@@ -86,7 +88,7 @@ function enBuild(){
   const e=EN,name=e.nume.toUpperCase(),d=e.data?new Date(e.data+"T00:00:00"):null;
   const pers=e.pers?enCell("",e.pers):null,meta={"NR PERSOANE":pers,"DATA":d?`${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`:null,"ORA INCEPERE":e.ora||null,"ECHIPA":e.echipa||null,"TRANSPORT":e.transport||null,"MENTIUNI SPECIALE":e.note?e.note.replace(/\s*\n+\s*/g," "):null};
   if(e.target==="new"||!EVD||!EVD.aoa){
-    const rows=enTemplateRows(),aoa=[["SPECIFICAȚII / ARTICOLE",name]];
+    const rows=e.rows.filter(x=>!e.del.includes(x.L)),aoa=[["SPECIFICAȚII / ARTICOLE",name]];
     EN_META.forEach(L=>aoa.push([L,meta[L]]));
     rows.forEach(x=>aoa.push([x.lab,enCell(x.L,e.vals[x.L])]));
     const ref=d||new Date(),fileName=`${ref.getDate()}_${MONTHS[ref.getMonth()]}_${ref.getFullYear()}.app`;
@@ -110,7 +112,11 @@ function enBuild(){
     while(A[r].length<=col)A[r].push(null);A[r][col]=meta[L];
     if(L==="MENTIUNI SPECIALE"){for(let k=r+1;k<A.length&&blank(A[k][0]);k++){if(A[k].length>col)A[k][col]=null}}
   });
-  e.rows.forEach(x=>{if(x.r==null)return;while(A[x.r].length<=col)A[x.r].push(null);A[x.r][col]=enCell(x.L,e.vals[x.L])});
+  const tcol=A[0].findIndex((v,i)=>i>0&&norm(v)==="TOTAL"),evCols=A[0].map((v,i)=>i).filter(i=>i>0&&i!==tcol&&!blank(A[0][i]));
+  e.rows.forEach(x=>{const gone=e.del.includes(x.L);
+    if(x.r==null){if(gone)return;const v=enCell(x.L,e.vals[x.L]);const nr=new Array(A[0].length).fill(null);nr[0]=x.lab;nr[col]=v;if(tcol>0&&typeof v==="number")nr[tcol]=v;A.push(nr);x.r=A.length-1;return}
+    while(A[x.r].length<=col)A[x.r].push(null);A[x.r][col]=gone?null:enCell(x.L,e.vals[x.L]);
+    if(gone&&evCols.every(i=>blank(A[x.r][i])))A[x.r]=[];});
   return {fileName:EVD.fileName,aoa:A};
 }
 async function enSave(btn){
@@ -134,6 +140,16 @@ function enClick(t){
   const a=b.dataset.enact;
   if(a==="cancel"){EN=null;route="ziua";render();return true}
   if(a==="auto"){enAuto();return true}
+  if(a==="del"){enGrab();const L=b.dataset.l;if(!EN.del.includes(L))EN.del.push(L);delete EN.vals[L];render();return true}
+  if(a==="undel"){enGrab();EN.del=EN.del.filter(x=>x!==b.dataset.l);render();return true}
+  if(a==="add"){enGrab();const c=b.dataset.c,V=$("#evView"),ni=V.querySelector(`[data-enadd-n="${c}"]`),qi=V.querySelector(`[data-enadd-q="${c}"]`);
+    const n=(ni&&ni.value||"").trim(),q=(qi&&qi.value||"").trim();if(!n){if(ni)ni.focus();return true}
+    const lab=n.toLocaleUpperCase("ro-RO"),L=norm(lab);
+    if(enIsMeta(L)){EN.msg="Numele ăsta e rezervat pentru detaliile evenimentului. Alege alt nume.";render();return true}
+    EN.del=EN.del.filter(x=>x!==L);
+    let x=EN.rows.find(r=>r.L===L);if(!x){x={r:null,lab,L,cat:c};EN.rows.push(x)}
+    if(!KNOWN[L]){const nl=n.charAt(0).toLocaleUpperCase("ro-RO")+n.slice(1);KNOWN[L]=[nl,c];enSaveArt(L,nl,c)}
+    if(q)EN.vals[L]=q;EN.msg="";render();const nn=$("#evView").querySelector(`[data-eq="${L}"]`);if(nn&&!q)nn.focus();return true}
   if(a==="day"){enGrab();EN.data=b.dataset.d;render();return true}
   if(a==="save"){enSave(b);return true}
   return true;
@@ -183,3 +199,9 @@ function enDays(){const out=[],t=new Date();t.setHours(0,0,0,0);const N=["Dum","
   for(let i=0;i<14&&out.length<6;i++){const d=new Date(t);d.setDate(t.getDate()+i);const w=d.getDay();if(w===5||w===6||w===0)out.push({iso:iso(d),t:`${N[w]} ${d.getDate()}`})}
   return out;
 }
+
+/* Articole adăugate de mână: numele și categoria lor se țin minte pentru toată echipa */
+function enSaveArt(L,label,cat){try{const F=window.CPFS;if(F&&F.isAdmin)F.fs.doc(`${F.base}/config/articole`).set({map:{[L]:[label,cat]}},{merge:true}).catch(()=>{})}catch(e){}}
+(function enLoadArt(){try{const F=window.CPFS;if(!F)return;F.fs.doc(`${F.base}/config/articole`).get().then(d=>{const m=d.exists&&d.data().map;if(!m)return;let ch=false;
+  Object.entries(m).forEach(([L,v])=>{if(Array.isArray(v)&&!KNOWN[L]){KNOWN[L]=v;ch=true}});
+  if(ch&&EVD){loadData();render();if(window.__stocRefresh)window.__stocRefresh()}}).catch(()=>{})}catch(e){}})();

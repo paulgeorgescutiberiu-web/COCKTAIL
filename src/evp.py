@@ -28,6 +28,11 @@ rep("</style>\n</head>",""".ev-btns{display:flex;gap:8px;flex-wrap:wrap;justify-
 .en-tg label{display:flex;gap:8px;align-items:center}
 .en-acts{margin:6px 0 4px}
 .en-q{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.en-lb{display:flex;align-items:flex-start;justify-content:space-between;gap:4px}
+.en-x{flex:none;border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:0 2px;cursor:pointer;border-radius:6px}
+.en-x:hover,.en-x:focus-visible{color:#c0392b;background:rgba(192,57,43,.1)}
+.en-add{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;gap:8px;margin:10px 0 4px}
+.en-add input{width:100%;box-sizing:border-box;padding:9px 10px;border:1.5px dashed var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit}
 .en-save{position:sticky;bottom:0;display:flex;gap:10px;justify-content:flex-end;padding:12px 0;background:linear-gradient(transparent,var(--paper) 30%)}
 @media (max-width:760px){.en-grid{grid-template-columns:1fr 1fr}.en-q{grid-template-columns:1fr 1fr}}
 </style>
