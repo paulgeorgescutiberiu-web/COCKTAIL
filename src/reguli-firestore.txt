@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function logat() { return request.auth != null; }
+    function echipaOk(t) { return t.size() >= 20; }
+    function paul() {
+      return logat() && request.auth.token.email == "paul.georgescu.tiberiu@gmail.com"
+        && request.auth.token.email_verified == true;
+    }
+    match /echipe/{t}/config/{doc} {
+      allow read: if logat() && echipaOk(t);
+      allow write: if paul() && echipaOk(t);
+    }
+    match /echipe/{t}/oameni/{uid} {
+      allow read: if logat() && echipaOk(t);
+      allow write: if logat() && echipaOk(t) && request.auth.uid == uid;
+    }
+    match /echipe/{t}/contracte/{doc} {
+      allow read, write: if paul() && echipaOk(t);
+    }
+    match /echipe/{t}/privat/{doc} {
+      allow read, write: if paul() && echipaOk(t);
+    }
+    match /echipe/{t}/alias/{doc} {
+      allow read: if logat() && echipaOk(t);
+      allow write: if paul() && echipaOk(t);
+    }
+    match /echipe/{t}/stoc/{doc} {
+      allow read: if logat() && echipaOk(t);
+      allow write: if paul() && echipaOk(t);
+    }
+    match /echipe/{t}/{tip}/{ds}/events/{ev} {
+      allow read, write: if logat() && echipaOk(t) && tip in ['checks', 'retur'];
+    }
+    match /portal/{tok} {
+      allow get: if tok.size() >= 24;
+      allow list, create, delete: if paul();
+      allow update: if paul() || (tok.size() >= 24
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['resp'])
+        && request.resource.data.resp.size() < 15
+        && (!('sig' in request.resource.data.resp) || request.resource.data.resp.sig.size() < 300000)
+        && (!('resp' in resource.data) || !('signedAt' in resource.data.resp)
+            || (request.resource.data.resp.signedAt == resource.data.resp.signedAt
+                && request.resource.data.resp.sig == resource.data.resp.sig
+                && request.resource.data.resp.nume == resource.data.resp.nume)));
+    }
+    match /bar/{doc} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if paul();
+    }
+    match /barScan/{cod} {
+      allow get: if true;
+      allow list, delete: if paul();
+      allow create: if cod.size() <= 40 && request.resource.data.keys().hasOnly(['n', 'last'])
+        && request.resource.data.n == 1;
+      allow update: if request.resource.data.keys().hasOnly(['n', 'last'])
+        && request.resource.data.n == resource.data.n + 1;
+    }
+    match /barLead/{id} {
+      allow read, update, delete: if paul();
+      allow create: if request.resource.data.keys().hasOnly(['nume', 'tel', 'data', 'inv', 'loc', 'msg', 'ev', 'evn', 'at'])
+        && request.resource.data.nume is string && request.resource.data.nume.size() > 0 && request.resource.data.nume.size() <= 60
+        && request.resource.data.tel is string && request.resource.data.tel.size() >= 9 && request.resource.data.tel.size() <= 20
+        && request.resource.data.msg.size() <= 500 && request.resource.data.loc.size() <= 80
+        && request.resource.data.ev.size() <= 40 && request.resource.data.evn.size() <= 60;
+    }
+  }
+}
