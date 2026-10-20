@@ -29,7 +29,9 @@ h2{font-family:var(--d);font-weight:800;font-size:30px;line-height:1;text-transf
 .ck::after{content:"";position:absolute;left:-10%;bottom:42%;width:28%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.18)}
 .ck .ic{position:absolute;right:12px;top:10px;font-size:34px;line-height:1;filter:drop-shadow(0 3px 4px rgba(0,0,0,.18));z-index:1}
 .ck b{position:relative;z-index:1;font-family:var(--d);font-weight:800;font-size:clamp(21px,6.2vw,32px);line-height:.95;text-transform:uppercase;letter-spacing:.01em;overflow-wrap:normal;word-break:normal;hyphens:none}
-.ck small{position:relative;z-index:1;font-size:12px;line-height:1.25;font-weight:600;opacity:.85;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ck small{position:relative;z-index:1;font-size:12px;line-height:1.25;font-weight:600;opacity:.85;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ck .tg{position:relative;z-index:1;padding-right:40px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;opacity:.75}
+.ck em{position:relative;z-index:1;font-size:12px;line-height:1.25;font-style:italic;opacity:.9;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .ck .z{position:absolute;left:12px;top:12px;z-index:1;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;background:rgba(255,255,255,.85);color:#0b5d33;border-radius:999px;padding:3px 8px}
 @keyframes pop{from{opacity:0;transform:scale(.85) rotate(var(--r,0deg))}to{opacity:1;transform:scale(1) rotate(var(--r,0deg))}}
 @media (prefers-reduced-motion:reduce){.ck{animation:none}}
@@ -110,6 +112,24 @@ const LOOK={passiflora:["#ff9f1c","#ffd23f","#2a1300","🌺"],erasmus:["#7bd389"
   paloma:["#ff4f8b","#ffa45b","#fff","🍊"],negroni:["#b5179e","#f72585","#fff","🍷"],"villa-lobos":["#e0115f","#ff7eb6","#fff","🌸"],
   socrate:["#00c2a8","#a7f070","#03261f","🌵"],"green-apple":["#38b000","#ccff33","#0d2600","🍏"],"limonada-ghimbir":["#ffe14d","#fff3a3","#3a2c00","🍋"],
   "amaretto-sour":["#e9a35b","#ffd8a8","#2b1600","🥜"],epicur:["#2d9e6b","#b7f0c8","#04241a","🌱"],"epicur-fara-alcool":["#52d1a0","#e3fff0","#04241a","🌱"]};
+/* textele din meniul 2026 (Oferte → Meniu 2026): nume afișat, gust, ingrediente, descriere */
+const MENU={erasmus:["Erasmus","proaspăt · picant","vodka, ghimbir, pere, lime","Ghimbirul încălzește, para îmblânzește."],
+  harmony:["Harmony","floral · fructat","gin, lychee, lămâie, merișoare, sirop de soc","Flori de soc și lychee, ușor acrișor."],
+  platon:["Platon","herbal · citric","gin, lămâie, aloe vera, grapefruit, cimbrișor","Limpede, amărui, cu un gând de cimbrișor."],
+  "whiskey-sour":["Whiskey Sour","catifelat · acrișor","whiskey, migdale, portocală, lămâie, bitter","Clasicul, rescris cu migdale și portocală."],
+  passiflora:["Pornstar Cuban","tropical · dulce-acrișor","rom, fructul pasiunii, lămâie","Soare în pahar, pe ritm cubanez."],
+  hugo:["Hugo","clasic","prosecco, soc, lime, apă minerală",""],
+  paloma:["Paloma","clasic","tequila, grapefruit, lime, Tajín",""],
+  negroni:["Negroni","clasic","gin, Campari, vermut",""],
+  "aperol-spritz":["Aperol Spritz","clasic","Aperol, prosecco, apă minerală",""],
+  "botanical-g-t":["Botanical G&T","clasic","gin, apă tonică, ierburi & citrice",""],
+  "cuba-libre":["Cuba Libre","clasic","rom, lime, Coca-Cola",""],
+  "villa-lobos":["Villalobos","0% alcool","lychee, cranberry, lămâie","Roz, fructat, ușor acrișor."],
+  socrate:["Socrate","0% alcool","aloe vera, grapefruit, lămâie","Răcoritor, cu un final amărui."],
+  "green-apple":["Special Green Apple","0% alcool","mere verzi, scorțișoară & migdale, lămâie","Ca o plăcintă cu mere, dar rece."],
+  "limonada-ghimbir":["Tesla","0% alcool","sirop de ghimbir, pere, lămâie, apă minerală","Spumos, cu scânteie de ghimbir."]};
+const ALIAS={"pornstar-cuban":"passiflora",villalobos:"villa-lobos","special-green-apple":"green-apple",tesla:"limonada-ghimbir"};
+const mInfo=x=>{const k=MENU[x.id]?x.id:ALIAS[sl(x.name)]||(MENU[sl(x.name)]?sl(x.name):null);return k?MENU[k]:null};
 const PAL=[["#7b2ff7","#f107a3","#fff","✨"],["#00b4d8","#90e0ef","#002a33","🌊"],["#ff6d00","#ffb703","#2a1300","🔥"],["#06d6a0","#ffd166","#02261c","🌴"]];
 const sl=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 let pi=0;const look=x=>LOOK[x.id]||LOOK[sl(x.name)]||Object.entries(LOOK).find(([k])=>sl(x.name).includes(k))?.[1]||PAL[pi++%PAL.length];
@@ -121,10 +141,10 @@ function show(){
   let M=(info&&info.menu)||[];
   if(ev&&Array.isArray(ev.menu)&&ev.menu.length){const S=new Set(ev.menu);M=M.filter(x=>S.has(x.id))}
   if(M.length){$("#menuS").classList.remove("hide");$("#menuH").textContent=name?"Meniul serii":"Din meniul nostru";
-    const ingTxt=x=>{const L=(x.ing||[]).map(t=>String(t).replace(/\s*\(.*?\)/g,"")).filter(t=>!/^premix|^ap[ăa] minerala?|^apă minerală/i.test(t));return (L.length?L:["rețetă de casă"]).slice(0,3).join(" · ")};
+    const ingTxt=x=>{const L=(x.ing||[]).map(t=>String(t).replace(/\s*\(.*?\)/g,"")).filter(t=>!/^premix|^ap[ăa] minerala?|^apă minerală/i.test(t));return (L.length?L:["rețetă de casă"]).slice(0,3).map(t=>t===t.toUpperCase()?t.toLowerCase():t).join(", ")};
     const fs=n=>{const w=Math.max(...String(n).split(/\s+/).map(z=>z.length)),l=String(n).length;return w>9||l>16?"clamp(17px,4.9vw,24px)":w>7||l>11?"clamp(19px,5.6vw,28px)":"clamp(22px,6.6vw,32px)"};
-    $("#menu").innerHTML=M.map((x,i)=>{const c=look(x),r=[-1.6,1.2,-.8,1.6,.6,-1.2][i%6];
-      return `<div class="ck" style="--a:${c[0]};--b:${c[1]};--t:${c[2]||"#1a0d00"};--r:${r}deg;--dl:${(i*0.05).toFixed(2)}s">${x.zero?'<span class="z">fără alcool</span>':""}<span class="ic" aria-hidden="true">${c[3]||"🍹"}</span><b style="font-size:${fs(x.name)}">${esc(x.name)}</b><small>${esc(ingTxt(x))}</small></div>`}).join("")}
+    $("#menu").innerHTML=M.map((x,i)=>{const c=look(x),r=[-1.6,1.2,-.8,1.6,.6,-1.2][i%6],mi=mInfo(x),nm=mi?mi[0]:x.name;
+      return `<div class="ck" style="--a:${c[0]};--b:${c[1]};--t:${c[2]||"#1a0d00"};--r:${r}deg;--dl:${(i*0.05).toFixed(2)}s">${x.zero?'<span class="z">fără alcool</span>':""}<span class="ic" aria-hidden="true">${c[3]||"🍹"}</span>${mi&&mi[1]&&!/alcool|clasic/.test(mi[1])?`<span class="tg">${esc(mi[1])}</span>`:""}<b style="font-size:${fs(nm)}">${esc(nm)}</b><small>${esc(mi?mi[2]:ingTxt(x))}</small>${mi&&mi[3]?`<em>${esc(mi[3])}</em>`:""}</div>`}).join("")}
   const L=(info&&info.links)||{};
   if(L.ig)$("#ig").href=L.ig;if(L.fb)$("#fb").href=L.fb;
   if(L.review){const r=$("#rev");r.href=L.review;r.classList.remove("hide")}
