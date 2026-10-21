@@ -7,6 +7,12 @@ service cloud.firestore {
       return logat() && request.auth.token.email == "paul.georgescu.tiberiu@gmail.com"
         && request.auth.token.email_verified == true;
     }
+    // Echipa: fiecare barman își scrie doar disponibilitatea lui; toți din echipă o pot citi
+    match /echipe/{t}/disp/{uid} {
+      allow read: if logat() && echipaOk(t);
+      allow write: if logat() && echipaOk(t) && request.auth.uid == uid;
+    }
+
     match /echipe/{t}/config/{doc} {
       allow read: if logat() && echipaOk(t);
       allow write: if paul() && echipaOk(t);

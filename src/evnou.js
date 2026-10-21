@@ -54,7 +54,7 @@ function viewNou(){
       <label>Data<input type="date" data-en="data" value="${esc(e.data)}"><span id="enOver">${edit||!window.__qr||!window.__qr.sameDayHTML?"":window.__qr.sameDayHTML(e.data,null,true)}</span><span class="en-days">${enDays().map(x=>`<button type="button" class="en-day${x.iso===e.data?" on":""}" data-enact="day" data-d="${x.iso}">${x.t}</button>`).join("")}</span></label>
       <label>Ora începerii<input type="time" data-en="ora" value="${esc(e.ora)}"></label>
       <label>Persoane<input data-en="pers" inputmode="numeric" value="${esc(e.pers)}"></label>
-      <label>Echipa<input data-en="echipa" value="${esc(e.echipa)}" placeholder="ex: Ioana Sebi"></label>
+      <label>Echipa<input data-en="echipa" value="${esc(e.echipa)}" placeholder="ex: Ioana Sebi"><span id="enAvail" class="en-av">${enAvailHTML(e.data,e.echipa)}</span></label>
       <label>Transport<input data-en="transport" value="${esc(e.transport)}" placeholder="ex: Toyota"></label>
       <label class="en-w">Mențiuni speciale<textarea data-en="note" rows="3" placeholder="ex: și cocktailuri fără alcool, -3 sticle premix">${esc(e.note)}</textarea></label>
     </div>`;
@@ -142,6 +142,7 @@ function enClick(t){
   const a=b.dataset.enact;
   if(a==="cancel"){EN=null;route="ziua";render();return true}
   if(a==="auto"){enAuto();return true}
+  if(a==="team"){enGrab();const n=b.dataset.n,cur=String(EN.echipa||"").split(/[\s,;\/+]+/).filter(Boolean);if(!cur.some(x=>norm(x)===norm(n)))cur.push(n);EN.echipa=cur.join(" ");render();return true}
   if(a==="nomenu"){enGrab();EN.menuIds=null;render();return true}
   if(a==="del"){enGrab();const L=b.dataset.l;if(!EN.del.includes(L))EN.del.push(L);delete EN.vals[L];render();return true}
   if(a==="undel"){enGrab();EN.del=EN.del.filter(x=>x!==b.dataset.l);render();return true}
@@ -221,7 +222,7 @@ function enStockHint(L,raw){
   if(q>0&&q>avail)return `<span class="warn">în depozit ${num(Math.max(avail,0))} · lipsesc ${num(Math.round((q-Math.max(avail,0))*100)/100)} → intră în Comandă furnizor</span>`;
   return `în depozit ${num(avail)}`;
 }
-document.addEventListener("change",ev=>{const i=ev.target;if(EN&&i&&i.dataset&&i.dataset.en==="data"&&EN.col==null){const o=document.getElementById("enOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,null,true)}});
+document.addEventListener("change",ev=>{const i=ev.target;if(EN&&i&&i.dataset&&i.dataset.en==="data"&&EN.col==null){const o=document.getElementById("enOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,null,true)}if(EN&&i&&i.dataset&&i.dataset.en==="data"){EN.data=i.value;const a=document.getElementById("enAvail");if(a)a.innerHTML=enAvailHTML(i.value,EN.echipa)}});
 document.addEventListener("cp-stoc",()=>{if(!EN)return;document.querySelectorAll("#evView .en-st").forEach(h=>{const i=h.parentElement.querySelector("[data-eq]");if(i)h.innerHTML=enStockHint(h.dataset.st,i.value)})});
 document.addEventListener("input",ev=>{const i=ev.target;if(!EN||!i.matches||!i.matches("[data-eq]"))return;const h=i.parentElement&&i.parentElement.querySelector(".en-st");if(h)h.innerHTML=enStockHint(i.dataset.eq,i.value)});
 /* Rețetele și legătura lor cu premixurile și alcoolul din fișă */
@@ -286,3 +287,9 @@ async function prepClick(t){const b=t.closest("[data-prep]");if(!b)return false;
     try{await navigator.clipboard.writeText(txt);toast("Lista e copiată. Lipește-o în grupul de WhatsApp.")}catch(e){window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}
     return true}
   return true}
+
+/* barmanii care și-au marcat ziua ca disponibilă: atingi și intră în echipă */
+function enAvailHTML(d,team){if(!d||!window.__disp)return "";const a=window.__disp.availFor(d),T=String(team||"").split(/[\s,;\/+]+/).map(x=>norm(x));
+  const ok=a.ok.filter(n=>!T.includes(norm(String(n).split(" ")[0])));
+  return (ok.length?`<span>Pot lucra: </span>`+ok.map(n=>`<button type="button" class="en-day" data-enact="team" data-n="${esc(String(n).split(" ")[0])}">+ ${esc(n)}</button>`).join(""):"")+(a.no.length?`<span class="ev-file">Nu pot: ${a.no.map(esc).join(", ")}</span>`:"")}
+document.addEventListener("cp-disp",()=>{if(!EN)return;const o=document.getElementById("enAvail");if(o)o.innerHTML=enAvailHTML(EN.data,EN.echipa)});

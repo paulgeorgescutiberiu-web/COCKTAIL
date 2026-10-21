@@ -24,6 +24,7 @@ Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina r
 | `contracte.js` | Contracte, portalul clientului, plăți, rentabilitate, notițe, postare Instagram |
 | `oferte.js` | Ofertele și meniurile |
 | `raport.js` | Raportul lunar și plata barmanilor |
+| `disp.js` | Echipa: disponibilitatea barmanilor și confirmarea evenimentelor |
 | `qr.js` | QR-ul de la bar, cererile de ofertă, pagina publică `bar.html` |
 | `reguli-firestore.txt` | Regulile de securitate Firebase (se pun manual în consolă) |
 

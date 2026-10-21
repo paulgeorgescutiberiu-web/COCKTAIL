@@ -448,6 +448,17 @@ a.btn.primary{color:var(--on-leaf)}
 .rp-two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.rp-ed .st-acts{grid-column:1/-1}
 .rp-evs{padding:6px 16px 14px;display:flex;flex-direction:column;gap:6px}
 .rp-ev{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;align-items:center}
+.disp-ban{margin:0 0 12px}.disp-r{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line)}.disp-ban .disp-r{padding:8px 0}
+.disp-r small{display:block;color:var(--muted);font-size:.82rem}.ev-list>.disp-r:first-child{border-top:0}
+.disp-cal{border:1.5px solid var(--line);border-radius:14px;padding:10px;background:var(--card)}
+.disp-h,.disp-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.disp-h span{text-align:center;font-size:.75rem;font-weight:700;color:var(--muted)}
+.disp-d{position:relative;aspect-ratio:1;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}
+.disp-d b{font-size:.95rem}.disp-d small{font-size:.62rem;color:var(--muted);line-height:1}.disp-d i{font-style:normal;font-weight:800;font-size:.8rem;line-height:1}
+.disp-d.ok{background:#d7f2df;border-color:#3a9a5b;color:#0f4d26}.disp-d.no{background:#f6dcdc;border-color:#c0392b;color:#7a1d14}.disp-d.past{opacity:.35;cursor:default}
+.disp-d.ev::after{content:"";position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--accent,#c9822b)}
+.disp-ppl{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}.disp-p{padding:3px 9px;border-radius:999px;background:var(--line);font-size:.85rem;font-weight:600}.disp-p.ok{background:#d7f2df;color:#0f4d26}.disp-p.no{background:#f6dcdc;color:#7a1d14}.disp-p a{text-decoration:none}
+.disp-av{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:8px;padding:9px 12px;border-top:1px solid var(--line)}.disp-av:first-child{border-top:0}.disp-ok{color:#13612f;font-weight:600}.disp-no{color:#9a2a1f}
+.en-av{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:.8rem;font-weight:500}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -487,6 +498,7 @@ a.btn.primary{color:var(--on-leaf)}
   <nav class="tabs" role="tablist" aria-label="Secțiuni">
     <button role="tab" aria-selected="false" aria-controls="v-evenimente" data-view="evenimente">Evenimente</button>
     <button role="tab" aria-selected="false" aria-controls="v-stoc" data-view="stoc">Stoc depozit</button>
+    <button role="tab" aria-selected="false" aria-controls="v-echipa" data-view="echipa">Echipa</button>
     <button role="tab" aria-selected="false" aria-controls="v-oferte" data-view="oferte">Oferte</button>
     <button role="tab" aria-selected="false" aria-controls="v-contracte" data-view="contracte" class="edit-only">Contracte</button>
     <button role="tab" aria-selected="false" aria-controls="v-postare" data-view="postare" class="edit-only">Postare</button>
@@ -514,6 +526,7 @@ a.btn.primary{color:var(--on-leaf)}
       <div class="edit-only ev-btns"><button class="btn primary" type="button" id="evNou">Eveniment nou</button><button class="btn" type="button" id="evUpload">Încarcă Excel</button><button class="btn" type="button" id="evArh">Săptămâni anterioare</button><input type="file" id="evInput" accept=".xlsx,.xls,.xlsm,.ods" hidden=""></div>
     </div>
     <div class="ev-alert" id="evAlert" hidden=""></div>
+    <div id="dispBanner"></div>
     <div class="ev-tabs" id="evTabs" aria-label="Evenimente"></div>
     <div id="evView"></div>
   </section>
@@ -521,6 +534,7 @@ a.btn.primary{color:var(--on-leaf)}
   <section class="view" id="v-contracte" role="tabpanel" hidden=""></section>
   <section class="view" id="v-postare" role="tabpanel" hidden=""></section>
   <section class="view" id="v-raport" role="tabpanel" hidden=""></section>
+  <section class="view" id="v-echipa" role="tabpanel" hidden=""></section>
   <section class="view" id="v-oferte" role="tabpanel" hidden=""></section>
 </main>
 <footer>Cocktail Philosophy · Str. Tractorului 4, Sibiu · <a href="tel:+40743785655">0743 785 655</a></footer>
@@ -1088,7 +1102,7 @@ function parseRet(s){s=String(s).trim().replace(",",".");if(s==="")return null;c
 
 function heading(){
   const h=document.querySelector("h1");if(!h)return;
-  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram + Facebook</span>`;return}
+  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="echipa"){h.innerHTML=`Echipa<span class="yr">disponibilitate</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram + Facebook</span>`;return}
   h.innerHTML=tb==="evenimente"&&D?`Evenimente<span class="yr">${esc(D.title.big)}</span>`:`Rețetar<span class="yr">2026</span>`;
 }
 function loadData(){
@@ -1447,7 +1461,7 @@ function viewNou(){
       <label>Data<input type="date" data-en="data" value="${esc(e.data)}"><span id="enOver">${edit||!window.__qr||!window.__qr.sameDayHTML?"":window.__qr.sameDayHTML(e.data,null,true)}</span><span class="en-days">${enDays().map(x=>`<button type="button" class="en-day${x.iso===e.data?" on":""}" data-enact="day" data-d="${x.iso}">${x.t}</button>`).join("")}</span></label>
       <label>Ora începerii<input type="time" data-en="ora" value="${esc(e.ora)}"></label>
       <label>Persoane<input data-en="pers" inputmode="numeric" value="${esc(e.pers)}"></label>
-      <label>Echipa<input data-en="echipa" value="${esc(e.echipa)}" placeholder="ex: Ioana Sebi"></label>
+      <label>Echipa<input data-en="echipa" value="${esc(e.echipa)}" placeholder="ex: Ioana Sebi"><span id="enAvail" class="en-av">${enAvailHTML(e.data,e.echipa)}</span></label>
       <label>Transport<input data-en="transport" value="${esc(e.transport)}" placeholder="ex: Toyota"></label>
       <label class="en-w">Mențiuni speciale<textarea data-en="note" rows="3" placeholder="ex: și cocktailuri fără alcool, -3 sticle premix">${esc(e.note)}</textarea></label>
     </div>`;
@@ -1535,6 +1549,7 @@ function enClick(t){
   const a=b.dataset.enact;
   if(a==="cancel"){EN=null;route="ziua";render();return true}
   if(a==="auto"){enAuto();return true}
+  if(a==="team"){enGrab();const n=b.dataset.n,cur=String(EN.echipa||"").split(/[\s,;\/+]+/).filter(Boolean);if(!cur.some(x=>norm(x)===norm(n)))cur.push(n);EN.echipa=cur.join(" ");render();return true}
   if(a==="nomenu"){enGrab();EN.menuIds=null;render();return true}
   if(a==="del"){enGrab();const L=b.dataset.l;if(!EN.del.includes(L))EN.del.push(L);delete EN.vals[L];render();return true}
   if(a==="undel"){enGrab();EN.del=EN.del.filter(x=>x!==b.dataset.l);render();return true}
@@ -1614,7 +1629,7 @@ function enStockHint(L,raw){
   if(q>0&&q>avail)return `<span class="warn">în depozit ${num(Math.max(avail,0))} · lipsesc ${num(Math.round((q-Math.max(avail,0))*100)/100)} → intră în Comandă furnizor</span>`;
   return `în depozit ${num(avail)}`;
 }
-document.addEventListener("change",ev=>{const i=ev.target;if(EN&&i&&i.dataset&&i.dataset.en==="data"&&EN.col==null){const o=document.getElementById("enOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,null,true)}});
+document.addEventListener("change",ev=>{const i=ev.target;if(EN&&i&&i.dataset&&i.dataset.en==="data"&&EN.col==null){const o=document.getElementById("enOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,null,true)}if(EN&&i&&i.dataset&&i.dataset.en==="data"){EN.data=i.value;const a=document.getElementById("enAvail");if(a)a.innerHTML=enAvailHTML(i.value,EN.echipa)}});
 document.addEventListener("cp-stoc",()=>{if(!EN)return;document.querySelectorAll("#evView .en-st").forEach(h=>{const i=h.parentElement.querySelector("[data-eq]");if(i)h.innerHTML=enStockHint(h.dataset.st,i.value)})});
 document.addEventListener("input",ev=>{const i=ev.target;if(!EN||!i.matches||!i.matches("[data-eq]"))return;const h=i.parentElement&&i.parentElement.querySelector(".en-st");if(h)h.innerHTML=enStockHint(i.dataset.eq,i.value)});
 /* Rețetele și legătura lor cu premixurile și alcoolul din fișă */
@@ -1680,8 +1695,14 @@ async function prepClick(t){const b=t.closest("[data-prep]");if(!b)return false;
     return true}
   return true}
 
+/* barmanii care și-au marcat ziua ca disponibilă: atingi și intră în echipă */
+function enAvailHTML(d,team){if(!d||!window.__disp)return "";const a=window.__disp.availFor(d),T=String(team||"").split(/[\s,;\/+]+/).map(x=>norm(x));
+  const ok=a.ok.filter(n=>!T.includes(norm(String(n).split(" ")[0])));
+  return (ok.length?`<span>Pot lucra: </span>`+ok.map(n=>`<button type="button" class="en-day" data-enact="team" data-n="${esc(String(n).split(" ")[0])}">+ ${esc(n)}</button>`).join(""):"")+(a.no.length?`<span class="ev-file">Nu pot: ${a.no.map(esc).join(", ")}</span>`:"")}
+document.addEventListener("cp-disp",()=>{if(!EN)return;const o=document.getElementById("enAvail");if(o)o.innerHTML=enAvailHTML(EN.data,EN.echipa)});
+
 function render(){
-  const v=$("#evView");
+  const v=$("#evView");if(window.__disp)setTimeout(window.__disp.banner);
   if(EN&&route==="nou"){$("#evTabs").innerHTML="";v.innerHTML=viewNou();return}
   if(route==="arh"){if(!ARH){ARH={list:null,msg:"",busy:""};arhOpen();return}$("#evTabs").innerHTML="";v.innerHTML=viewArh();return}
   if(!D){$("#evTabs").innerHTML="";v.innerHTML=`<div class="ev-ok">Încarcă Excelul cu evenimentele ca să apară aici.</div>`;return}
@@ -3599,6 +3620,102 @@ function start(){if(started){render();return}started=true;load()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="raport")start()}));
 if(store.get("tab","evenimente")==="raport")start();
 window.__rap={team:()=>EQ?team():[]};
+})();
+
+/* ---------- Echipa: disponibilitatea barmanilor, evenimentele mele, anunțarea echipei ---------- */
+(function(){
+const V=document.getElementById("v-echipa"),F=window.CPFS;
+if(!V||!F)return;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MON=["ian","feb","mar","apr","mai","iun","iul","aug","sep","oct","nov","dec"],DAY=["Dum","Lun","Mar","Mie","Joi","Vin","Sâm"];
+const DAYL=["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"],MONL=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+const nrm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/\s+/g," ").trim();
+const first=s=>nrm(s).split(" ")[0]||"";
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const pd=s=>{const m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+const fday=s=>{const d=pd(s);return d?`${DAYL[d.getDay()]}, ${d.getDate()} ${MONL[d.getMonth()]}`:""};
+const telWa=t=>{let d=String(t||"").replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("0"))d="4"+d;return d};
+const toast=m=>{const t=document.getElementById("toast");if(!t)return;t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3500)};
+const dsKey=f=>"d-"+String(f).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,150);
+
+let ALL={},sub=null,TEL=null,started=false,view="mine";
+const me=()=>({uid:F.UID,name:F.NAME||""});
+const my=()=>ALL[F.UID]||{days:{},conf:{}};
+function subscribe(){if(sub)return;sub=F.fs.collection(`${F.base}/disp`).onSnapshot(s=>{const n={};s.docs.forEach(d=>n[d.id]=d.data());ALL=n;render();banner();document.dispatchEvent(new Event("cp-disp"))},()=>{V.innerHTML=`<p class="notice">Disponibilitatea nu se poate încărca. ${F.isAdmin?"Verifică regulile din Firebase (disp).":"Verifică internetul."}</p>`})}
+const save=part=>F.fs.doc(`${F.base}/disp/${F.UID}`).set({name:F.NAME||"",...part,at:new Date().toISOString()},{merge:true}).catch(()=>toast("Nu am putut salva. Verifică internetul."));
+
+/* evenimentele săptămânii încărcate și cine e în echipă */
+function weekEvents(){try{const e=window.__cp.evd();if(!e||!e.aoa)return {D:null,ds:""};return {D:window.__cp.parseAOA(e.aoa,e.fileName),ds:dsKey(e.fileName)}}catch(x){return {D:null,ds:""}}}
+function evISO(e,D){const d=e.date||(D&&D.title&&D.title.date);return d?iso(d):""}
+function mine(){const {D,ds}=weekEvents();if(!D)return [];const f=first(F.NAME);if(!f)return [];
+  return D.events.filter(e=>(e.team||[]).some(n=>first(n)===f)).map(e=>({e,ds,key:`${ds}|${e.col}`,d:evISO(e,D)}))}
+/* cine a marcat că poate / nu poate într-o zi */
+function availFor(d){const ok=[],no=[];Object.values(ALL).forEach(x=>{const v=x.days&&x.days[d];if(v==="da")ok.push(x.name);else if(v==="nu")no.push(x.name)});return {ok:ok.sort(),no:no.sort()}}
+function confOf(name,key){const f=first(name);const x=Object.values(ALL).find(y=>first(y.name)===f);return x&&x.conf?x.conf[key]:null}
+
+/* ---------- banner pentru barmani: „Ești în echipă la…” ---------- */
+function banner(){
+  const B=document.getElementById("dispBanner");if(!B)return;if(F.isAdmin){B.innerHTML="";return}
+  const L=mine().filter(x=>!x.d||x.d>=iso(new Date())),c=my().conf||{},todo=L.filter(x=>!c[x.key]);
+  if(!todo.length){B.innerHTML="";return}
+  B.innerHTML=`<div class="ev-alert disp-ban"><b>Ești în echipă ${todo.length===1?"la un eveniment":"la "+todo.length+" evenimente"}:</b>`+todo.map(x=>`<div class="disp-r"><span>${esc(x.e.name)}${x.d?" · "+esc(fday(x.d)):""}${x.e.time?" · ora "+esc(x.e.time):""}</span><span class="qr-la"><button class="btn primary" data-dc="da" data-k="${esc(x.key)}">Confirm</button><button class="btn" data-dc="nu" data-k="${esc(x.key)}">Nu pot</button></span></div>`).join("")+`</div>`;
+}
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-dc]");if(!b)return;const k=b.dataset.k,v=b.dataset.dc;
+  const conf={...(my().conf||{}),[k]:v};ALL[F.UID]={...my(),conf};await save({conf:{[k]:v}});banner();render();toast(v==="da"?"Mulțumim! Paul vede că ai confirmat.":"Am anunțat că nu poți.")});
+
+/* ---------- afișare ---------- */
+function calHTML(){
+  const today=new Date();today.setHours(0,0,0,0);const start=new Date(today);start.setDate(today.getDate()-((today.getDay()+6)%7));
+  const days=my().days||{},{D}=weekEvents(),evd=new Set(D?D.events.map(e=>evISO(e,D)).filter(Boolean):[]);
+  let h=`<div class="disp-cal"><div class="disp-h">${["Lun","Mar","Mie","Joi","Vin","Sâm","Dum"].map(x=>`<span>${x}</span>`).join("")}</div><div class="disp-g">`;
+  for(let i=0;i<63;i++){const d=new Date(start);d.setDate(start.getDate()+i);const k=iso(d),past=d<today,v=days[k];
+    h+=`<button class="disp-d ${v==="da"?"ok":v==="nu"?"no":""} ${past?"past":""} ${evd.has(k)?"ev":""}" data-dd="${k}" ${past?"disabled":""} aria-label="${esc(fday(k))}: ${v==="da"?"pot":v==="nu"?"nu pot":"nemarcat"}"><b>${d.getDate()}</b>${d.getDate()===1||i===0?`<small>${MON[d.getMonth()]}</small>`:""}<i>${v==="da"?"✓":v==="nu"?"✕":""}</i></button>`}
+  return h+`</div><p class="ev-file">Atinge o zi: o dată = <b>✓ pot</b>, a doua oară = <b>✕ nu pot</b>, a treia oară o golești. Paul vede zilele tale când face echipa.</p></div>`}
+function render(){
+  if(!started)return;
+  let h=`<div class="st-top"><div><p class="ev-sub">${F.isAdmin?"Echipa":"Salut, "+esc(F.NAME||"")+"!"}</p><p class="ev-file">${F.isAdmin?"Cine poate lucra și cine a confirmat evenimentele.":"Evenimentele la care ești în echipă și zilele în care poți lucra."}</p></div>`;
+  if(F.isAdmin)h+=`<div class="st-acts"><button class="btn${view==="mine"?"":" primary"}" data-dv="team">Echipa</button><button class="btn${view==="mine"?" primary":""}" data-dv="mine">Zilele mele</button></div>`;
+  h+=`</div>`;
+  if(F.isAdmin&&view==="team")h+=teamHTML();
+  else{const L=mine();h+=`<h2 class="ev-h2">Evenimentele mele</h2>`;
+    if(!L.length)h+=`<div class="ev-ok">Nu ești în echipă la evenimentele din săptămâna încărcată.</div>`;
+    else{const c=my().conf||{};h+=`<div class="ev-list">`+L.map(x=>`<div class="disp-r"><span><b>${esc(x.e.name)}</b><small>${x.d?esc(fday(x.d)):""}${x.e.time?" · ora "+esc(x.e.time):""}${x.e.persons?" · "+x.e.persons+" persoane":""} · echipa: ${esc((x.e.team||[]).join(", "))}</small></span><span class="qr-la">${c[x.key]==="da"?`<span class="ct-chip on">✓ confirmat</span>`:c[x.key]==="nu"?`<span class="ct-chip">✕ nu pot</span>`:""}<button class="btn${c[x.key]==="da"?"":" primary"}" data-dc="da" data-k="${esc(x.key)}">Confirm</button><button class="btn" data-dc="nu" data-k="${esc(x.key)}">Nu pot</button></span></div>`).join("")+`</div>`}
+    h+=`<h2 class="ev-h2">Când pot lucra</h2>`+calHTML();}
+  V.innerHTML=h;
+}
+function teamHTML(){
+  const {D,ds}=weekEvents();let h="";
+  if(D&&D.events.length){h+=`<h2 class="ev-h2">Echipa săptămânii · ${esc(D.title.big)}</h2><div class="ev-list">`;
+    D.events.forEach(e=>{const key=`${ds}|${e.col}`,d=evISO(e,D),T=e.team||[];
+      h+=`<div class="disp-r disp-ev"><span><b>${esc(e.name)}</b><small>${d?esc(fday(d)):""}${e.time?" · ora "+esc(e.time):""}</small></span><span class="disp-ppl">${T.length?T.map(n=>{const c=confOf(n,key),tel=TEL&&TEL[first(n)];
+        const txt=`Salut, ${n}! Te-am pus în echipă la ${e.name}${d?", "+fday(d):""}${e.time?", ora "+e.time:""}. Confirmă în aplicație (tab-ul Echipa) sau răspunde-mi aici. Mulțumesc!`;
+        return `<span class="disp-p ${c==="da"?"ok":c==="nu"?"no":""}">${esc(n)} ${c==="da"?"✓":c==="nu"?"✕":"·"}${tel?` <a href="https://wa.me/${telWa(tel)}?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener" title="Anunță pe WhatsApp">💬</a>`:""}</span>`}).join(""):`<small class="ev-file">fără echipă în fișă</small>`}</span></div>`});
+    h+=`</div><p class="ev-file">✓ a confirmat în aplicație · ✕ nu poate · punct = încă nu a răspuns. 💬 trimite mesajul pe WhatsApp (telefoanele le pui la Raport → Tarife și telefoane). Barmanii văd evenimentele lor în aplicație, în tab-ul Echipa, imediat ce salvezi fișa.</p>`}
+  const today=iso(new Date()),dates=new Set();Object.values(ALL).forEach(x=>Object.keys(x.days||{}).forEach(k=>{if(k>=today)dates.add(k)}));
+  if(D)D.events.forEach(e=>{const d=evISO(e,D);if(d>=today)dates.add(d)});
+  h+=`<h2 class="ev-h2">Cine poate lucra</h2>`;
+  const L=[...dates].sort().slice(0,40);
+  if(!L.length)h+=`<div class="ev-ok">Încă nimeni nu și-a marcat zilele. Spune-le barmanilor să intre în aplicație, la tab-ul Echipa.</div>`;
+  else h+=`<div class="rp-t">`+L.map(d=>{const a=availFor(d);return `<div class="disp-av"><span><b>${esc(fday(d))}</b></span><span>${a.ok.length?`<span class="disp-ok">✓ ${a.ok.map(esc).join(", ")}</span>`:""}${a.no.length?` <span class="disp-no">✕ ${a.no.map(esc).join(", ")}</span>`:""}${!a.ok.length&&!a.no.length?`<small class="ev-file">nimeni nu a marcat</small>`:""}</span></div>`}).join("")+`</div>`;
+  const who=Object.values(ALL).map(x=>x.name).filter(Boolean).sort();
+  if(who.length)h+=`<p class="ev-file">Și-au marcat zilele: ${who.map(esc).join(", ")}.</p>`;
+  return h;
+}
+V.addEventListener("click",async e=>{
+  const dv=e.target.closest("[data-dv]");if(dv){view=dv.dataset.dv;render();return}
+  const dd=e.target.closest("[data-dd]");if(dd&&!dd.disabled){const k=dd.dataset.dd,cur=(my().days||{})[k],nx=!cur?"da":cur==="da"?"nu":null;
+    const days={...(my().days||{})};if(nx)days[k]=nx;else delete days[k];ALL[F.UID]={...my(),days};render();
+    await F.fs.doc(`${F.base}/disp/${F.UID}`).set({name:F.NAME||"",days,conf:my().conf||{},at:new Date().toISOString()}).catch(()=>toast("Nu am putut salva."));return}
+});
+function start(){if(!started){started=true;V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;view=F.isAdmin?"team":"mine"}subscribe();
+  if(F.isAdmin&&!TEL)F.fs.doc(`${F.base}/privat/echipa`).get().then(d=>{const t=d.exists&&d.data().tel||{};TEL={};Object.entries(t).forEach(([k,v])=>TEL[first(k)]=v);render()}).catch(()=>{TEL={}});
+  render()}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="echipa")start()}));
+if(store.get("tab","evenimente")==="echipa")start();
+/* pornește în fundal ca să apară bannerul și disponibilitatea în fișă */
+setTimeout(subscribe,1200);
+window.__disp={availFor,banner};
+document.addEventListener("cp-evd",banner);
 })();
 
 /* After a save reloads the page, reopen what was being edited */
