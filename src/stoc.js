@@ -16,7 +16,7 @@ let extraCat={}, docs={}, rets={}, retSubs={}, sub=null, mode="list", q="", open
 const admin=()=>!!(F&&F.isAdmin);
 
 /* ---------- Citire factură din poză (Gemini prin Firebase AI Logic) ---------- */
-const AI_VER="12.19.0", AI_MODELS=["gemini-3.5-flash","gemini-3.5-flash-lite"];
+const AI_VER="12.19.0", AI_MODELS=["gemini-3.5-flash","gemini-3.5-flash-lite","gemini-3.1-flash-lite"];
 let aiP=null, aliasMap=null;
 const hashK=s=>{let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))>>>0;return "a"+h.toString(36)};
 function aiReady(){return !!(F&&F.recaptcha)}
@@ -77,6 +77,8 @@ function aiErr(e){
   if(/app.?check|appcheck|recaptcha|403|permission/i.test(m))return "Google a refuzat cererea: protecția App Check nu e încă activă. Verifică pașii de configurare din Firebase.";
   if(/429|quota|exhausted|rate/i.test(m))return "S-a atins limita gratuită de citiri pentru moment. Încearcă peste câteva minute sau mâine.";
   if(/fetch|network|import|load/i.test(m))return "Nu m-am putut conecta la serviciul de citire. Verifică internetul și încearcă din nou.";
+  if(/blocked|safety|SAFETY|recitation/i.test(m))return "Google a refuzat să descrie poza (filtrul lor de siguranță). Încearcă altă poză.";
+  if(/billing|API has not been used|disabled|SERVICE_DISABLED|not enabled/i.test(m))return "Serviciul Gemini nu e activat în proiectul Firebase (AI Logic → Get started).";
   if(/json/i.test(m))return "Nu am înțeles răspunsul. Încearcă o poză mai clară, dreaptă și bine luminată.";
   return "Citirea facturii nu a reușit. Încearcă din nou sau completează manual.";
 }
@@ -196,7 +198,7 @@ async function writeIesire(evd){
   try{await F.fs.doc(`${F.base}/stoc/ies-${d.ds}`).set(d);return true}
   catch(e){toast("Nu am putut scădea marfa din stoc. Încearcă din nou din Stoc depozit.");return false}
 }
-window.__cpAI={loadAI,models:AI_MODELS,ready:aiReady};
+window.__cpAI={loadAI,models:AI_MODELS,ready:aiReady,err:aiErr};
 window.__stocAvail=(label,skipDs)=>{const t=totals(skipDs),x=t[K(label)];const any=Object.values(docs).some(d=>d.tip==="factura"||d.tip==="corectie");return any?{stoc:x?x.stoc:0,disp:x?x.disp:0}:null};
 window.__stocDs=evd=>evd&&evd.fileName?dsKey(evd.fileName):"";
 window.__stocIesire=async evd=>{if(await writeIesire(evd))toast(`Marfa pentru ${parseAOA(evd.aoa,evd.fileName).title.big} a fost scăzută din stoc.`)};
