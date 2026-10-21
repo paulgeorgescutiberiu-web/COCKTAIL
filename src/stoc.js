@@ -73,12 +73,12 @@ function parseJSON(t){
   return JSON.parse(t.slice(i,j+1));
 }
 function aiErr(e){
-  const m=String(e&&(e.message||e.code)||e);
-  if(/app.?check|appcheck|recaptcha|403|permission/i.test(m))return "Google a refuzat cererea: protecția App Check nu e încă activă. Verifică pașii de configurare din Firebase.";
-  if(/429|quota|exhausted|rate/i.test(m))return "S-a atins limita gratuită de citiri pentru moment. Încearcă peste câteva minute sau mâine.";
-  if(/fetch|network|import|load/i.test(m))return "Nu m-am putut conecta la serviciul de citire. Verifică internetul și încearcă din nou.";
-  if(/blocked|safety|SAFETY|recitation/i.test(m))return "Google a refuzat să descrie poza (filtrul lor de siguranță). Încearcă altă poză.";
+  const m=String(e&&(e.message||e.code)||e).replace(/https?:\/\/\S+/g," ");
   if(/billing|API has not been used|disabled|SERVICE_DISABLED|not enabled/i.test(m))return "Serviciul Gemini nu e activat în proiectul Firebase (AI Logic → Get started).";
+  if(/app.?check|appcheck|recaptcha|403|permission/i.test(m))return "Google a refuzat cererea: protecția App Check nu e încă activă. Verifică pașii de configurare din Firebase.";
+  if(/\b429\b|quota|exhausted|rate.?limit/i.test(m))return "S-a atins limita gratuită de citiri pentru moment. Încearcă peste câteva minute sau mâine.";
+  if(/failed to fetch|network|import|load failed|dynamically imported/i.test(m))return "Nu m-am putut conecta la serviciul de citire. Verifică internetul și încearcă din nou.";
+  if(/blocked|safety|SAFETY|recitation/i.test(m))return "Google a refuzat să descrie poza (filtrul lor de siguranță). Încearcă altă poză.";
   if(/json/i.test(m))return "Nu am înțeles răspunsul. Încearcă o poză mai clară, dreaptă și bine luminată.";
   return "Citirea facturii nu a reușit. Încearcă din nou sau completează manual.";
 }

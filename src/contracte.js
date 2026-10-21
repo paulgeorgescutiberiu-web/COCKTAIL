@@ -529,7 +529,7 @@ async function socAI(again){
     let t=res.response.text();try{const j=JSON.parse(t.replace(/^```(json)?|```$/g,"").trim());t=j.text||t}catch(e){}
     t=String(t).replace(/\\n/g,"\n").trim();if(!t)throw new Error("gol");
     SOC.caption=t;SOC.aiMsg="";
-  }catch(e){console.warn(e);const raw=String(e&&(e.message||e.code)||e).replace(/\s+/g," ").slice(0,140);
+  }catch(e){console.warn(e);const raw=String(e&&(e.message||e.code)||e).replace(/https?:\/\/\S+/g,"…").replace(/^AI: Error fetching from …:?\s*/,"").replace(/\s+/g," ").slice(0,220);
     const why=X.err?X.err(e).replace("Citirea facturii nu a reușit. Încearcă din nou sau completează manual.","Textul automat nu a mers."):"";
     SOC.aiMsg=`Nu am putut scrie textul după poză. ${why} Poți folosi textul gata scris. (detaliu: ${raw})`}
   finally{SOC.ai=false;socRender()}
