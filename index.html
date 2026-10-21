@@ -2438,7 +2438,7 @@ function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();
   x.putImageData(d,0,0);x0=Math.max(0,x0-8);y0=Math.max(0,y0-8);x1=Math.min(c.width,x1+8);y1=Math.min(c.height,y1+8);
   const k=Math.min(1,700/(x1-x0)),o=document.createElement("canvas");o.width=Math.round((x1-x0)*k);o.height=Math.round((y1-y0)*k);
   o.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height);res(o.toDataURL("image/png"))};im.src=fr.result};fr.readAsDataURL(file)})}
-function render(){
+function render(){try{if(!G.oa)gPrep()}catch(e){}
   const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("ct-q");
   V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():viewList();
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
@@ -2873,17 +2873,25 @@ function evDesc(c){
 }
 const MARK="completat din aplicația Cocktail Philosophy";
 function loadGIS(){return loadScript("https://accounts.google.com/gsi/client","google").then(()=>window.google.accounts.oauth2)}
-async function gToken(){
-  if(G.tok&&Date.now()<G.exp-60000)return G.tok;
-  const cid=((firma&&firma.gClient)||FIRMA_DEF.gClient||"").trim();
-  if(!cid)throw {msg:"Lipsește Google Client ID. Completează-l la „Datele firmei” → Google Drive și Calendar."};
-  const oa=await loadGIS().catch(()=>{throw {msg:"Nu s-a încărcat conectarea Google. Verifică internetul."}});
+/* Fereastra Google trebuie deschisă direct din apăsarea butonului, altfel Chrome o blochează.
+   De aceea pregătim conectarea din timp și, la apăsare, cerem tokenul fără nicio așteptare înainte. */
+function gCid(){return ((firma&&firma.gClient)||FIRMA_DEF.gClient||"").trim()}
+function gPrep(){const cid=gCid();if(!cid||G.oa)return Promise.resolve(G.oa);return loadGIS().then(oa=>{G.oa=oa;return oa}).catch(()=>null)}
+function gAsk(oa,cid){
   return new Promise((res,rej)=>{
     G.tc=oa.initTokenClient({client_id:cid,scope:"https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/calendar.events",hint:"cocktailphilosophy@gmail.com",
       callback:r=>{if(r&&r.access_token){G.tok=r.access_token;G.exp=Date.now()+(+r.expires_in||3600)*1000;res(G.tok)}else rej({msg:"Conectarea la Google nu a reușit."})},
-      error_callback:e=>rej({msg:e&&e.type==="popup_closed"?"Ai închis fereastra Google înainte de final.":"Conectarea la Google nu a reușit (fereastra a fost blocată?)."})});
+      error_callback:e=>rej({msg:e&&e.type==="popup_closed"?"Ai închis fereastra Google înainte de final.":"Chrome a blocat fereastra Google. Apasă iconița din dreapta barei de adresă → „Permite întotdeauna ferestre pop-up” pentru acest site, apoi apasă din nou."})});
     G.tc.requestAccessToken({prompt:G.tok?"":"consent"});
   });
+}
+function gToken(){
+  if(G.tok&&Date.now()<G.exp-60000)return Promise.resolve(G.tok);
+  const cid=gCid();
+  if(!cid)return Promise.reject({msg:"Lipsește Google Client ID. Completează-l la „Datele firmei” → Google Drive și Calendar."});
+  if(G.pend)return G.pend;
+  if(G.oa){G.pend=gAsk(G.oa,cid).finally(()=>{G.pend=null});return G.pend}   // sincron, în aceeași apăsare
+  return loadGIS().then(oa=>{G.oa=oa;return gAsk(oa,cid)}).catch(e=>{throw e&&e.msg?e:{msg:"Nu s-a încărcat conectarea Google. Verifică internetul."}});
 }
 async function gf(url,o={}){
   const t=await gToken();const r=await fetch(url,{...o,headers:{Authorization:"Bearer "+t,...(o.headers||{})}});
@@ -3110,6 +3118,12 @@ function bkHTML(){
   return `<div class="ct-card${due?" ct-bk-due":""}"><div class="ct-h"><b>Backup în Google Drive</b><span>${days==null?"niciun backup încă":days===0?"ultimul: azi":`ultimul: acum ${days} ${days===1?"zi":"zile"}`}</span></div>
     <p class="ev-file">${BK.msg?esc(BK.msg):"O copie a tuturor datelor (contracte, evenimente, retur, stoc, prețuri, cereri) se salvează ca fișier în Drive-ul tău. Apare aici o dată pe săptămână."}</p>
     ${due||BK.busy?`<div class="ct-b"><button class="btn primary" data-bk="1"${BK.busy?" disabled":""}>${BK.busy?"Se face backup…":"Fă backup acum"}</button></div>`:""}</div>`}
+/* butoanele care lucrează cu Google: cerem conectarea chiar în momentul apăsării, ca fereastra să nu fie blocată */
+document.addEventListener("click",e=>{const t=e.target;if(!t||!t.closest)return;
+  if(!t.closest("[data-gs],[data-gp],[data-bk],[data-porsg]"))return;
+  const gp=t.closest("[data-gp]");if(gp&&gp.dataset.gp==="__cancel")return;
+  if(G.tok&&Date.now()<G.exp-60000)return;gToken().catch(()=>{})},true);
+setTimeout(()=>{gPrep()},2500);document.addEventListener("cp-firma",()=>gPrep());
 window.__gd={async uploadPublic(file,folderName){
   const fq=n=>`name='${n.replace(/'/g,"\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'root' in parents`;
   let fo=(await DQ(fq(folderName))).files[0];
