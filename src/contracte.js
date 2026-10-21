@@ -204,9 +204,9 @@ function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();
   x.putImageData(d,0,0);x0=Math.max(0,x0-8);y0=Math.max(0,y0-8);x1=Math.min(c.width,x1+8);y1=Math.min(c.height,y1+8);
   const k=Math.min(1,700/(x1-x0)),o=document.createElement("canvas");o.width=Math.round((x1-x0)*k);o.height=Math.round((y1-y0)*k);
   o.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height);res(o.toDataURL("image/png"))};im.src=fr.result};fr.readAsDataURL(file)})}
-function render(){try{if(!G.oa)gPrep()}catch(e){}
+function render(){try{if(!G.tc)gPrep()}catch(e){}
   const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("ct-q");
-  V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():viewList();
+  V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():(gConnHTML()+viewList());
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
   if(mode==="list"){payAuto();portalAuto()}
@@ -642,23 +642,26 @@ function loadGIS(){return loadScript("https://accounts.google.com/gsi/client","g
 /* Fereastra Google trebuie deschisă direct din apăsarea butonului, altfel Chrome o blochează.
    De aceea pregătim conectarea din timp și, la apăsare, cerem tokenul fără nicio așteptare înainte. */
 function gCid(){return ((firma&&firma.gClient)||FIRMA_DEF.gClient||"").trim()}
-function gPrep(){const cid=gCid();if(!cid||G.oa)return Promise.resolve(G.oa);return loadGIS().then(oa=>{G.oa=oa;return oa}).catch(()=>null)}
-function gAsk(oa,cid){
-  return new Promise((res,rej)=>{
-    G.tc=oa.initTokenClient({client_id:cid,scope:"https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/calendar.events",hint:"cocktailphilosophy@gmail.com",
-      callback:r=>{if(r&&r.access_token){G.tok=r.access_token;G.exp=Date.now()+(+r.expires_in||3600)*1000;res(G.tok)}else rej({msg:"Conectarea la Google nu a reușit."})},
-      error_callback:e=>rej({msg:e&&e.type==="popup_closed"?"Ai închis fereastra Google înainte de final.":"Chrome a blocat fereastra Google. Apasă iconița din dreapta barei de adresă → „Permite întotdeauna ferestre pop-up” pentru acest site, apoi apasă din nou."})});
-    G.tc.requestAccessToken({prompt:G.tok?"":"consent"});
-  });
-}
+const G_ERR={popup_failed_to_open:"Fereastra Google nu s-a putut deschide.",popup_closed:"Fereastra Google s-a închis înainte de final.",unknown:"Google nu a terminat conectarea."};
+/* clientul Google se creează o singură dată, din timp; la apăsare doar cerem tokenul (recomandarea Google) */
+function gInit(oa){if(G.tc)return G.tc;const cid=gCid();if(!cid)return null;
+  G.tc=oa.initTokenClient({client_id:cid,scope:"https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/calendar.events",hint:"cocktailphilosophy@gmail.com",
+    callback:r=>{const w=G.w;G.w=null;if(!w)return;if(r&&r.access_token){G.tok=r.access_token;G.exp=Date.now()+(+r.expires_in||3600)*1000;G.err=null;w.res(G.tok)}else{G.err=(r&&r.error)||"refuz";w.rej({msg:`Google a refuzat conectarea (${G.err}). Apasă „Conectează Google” și alege contul cocktailphilosophy@gmail.com.`})}},
+    error_callback:e=>{const w=G.w;G.w=null;const t=(e&&e.type)||"unknown";console.warn("GIS",e);G.err=t;G.errAt=Date.now();try{render()}catch(x){}if(w)w.rej({msg:`${G_ERR[t]||G_ERR.unknown} (cod: ${t}). Apasă butonul verde „Conectează Google” de sus.`})}});
+  return G.tc}
+function gPrep(){const cid=gCid();if(!cid)return Promise.resolve(null);if(G.oa){gInit(G.oa);return Promise.resolve(G.oa)}return loadGIS().then(oa=>{G.oa=oa;gInit(oa);return oa}).catch(()=>null)}
+function gAsk(){const tc=gInit(G.oa);if(!tc)return Promise.reject({msg:"Lipsește Google Client ID."});
+  return new Promise((res,rej)=>{G.w={res,rej};try{tc.requestAccessToken({prompt:G.tok?"":"consent"})}catch(e){G.w=null;rej({msg:"Conectarea Google nu a pornit. Reîncarcă pagina și încearcă din nou."})}})}
 function gToken(){
   if(G.tok&&Date.now()<G.exp-60000)return Promise.resolve(G.tok);
   const cid=gCid();
   if(!cid)return Promise.reject({msg:"Lipsește Google Client ID. Completează-l la „Datele firmei” → Google Drive și Calendar."});
   if(G.pend)return G.pend;
-  if(G.oa){G.pend=gAsk(G.oa,cid).finally(()=>{G.pend=null});return G.pend}   // sincron, în aceeași apăsare
-  return loadGIS().then(oa=>{G.oa=oa;return gAsk(oa,cid)}).catch(e=>{throw e&&e.msg?e:{msg:"Nu s-a încărcat conectarea Google. Verifică internetul."}});
+  if(G.errAt&&Date.now()-G.errAt<3000)return Promise.reject({msg:"Google nu e conectat. Apasă butonul verde „Conectează Google” de sus."});
+  if(G.oa){G.pend=gAsk().finally(()=>{G.pend=null});return G.pend}   // sincron, în aceeași apăsare
+  return loadGIS().then(oa=>{G.oa=oa;return gAsk()}).catch(e=>{throw e&&e.msg?e:{msg:"Nu s-a încărcat conectarea Google. Verifică internetul."}});
 }
+function gConnHTML(){return G.err&&!(G.tok&&Date.now()<G.exp-60000)?`<div class="ev-alert"><b>Google nu e conectat</b> <small class="ev-file">(cod: ${esc(G.err)})</small><div class="qr-la" style="margin-top:8px"><button class="btn primary" data-gconn="1">Conectează Google</button></div><p class="ev-file">Se deschide o fereastră Google: alege cocktailphilosophy@gmail.com și apasă Continuă. După aceea apasă din nou butonul de Drive.</p></div>`:""}
 async function gf(url,o={}){
   const t=await gToken();const r=await fetch(url,{...o,headers:{Authorization:"Bearer "+t,...(o.headers||{})}});
   if(r.status===401){G.tok=null;throw {msg:"Sesiunea Google a expirat. Apasă din nou."}}
@@ -886,6 +889,7 @@ function bkHTML(){
     ${due||BK.busy?`<div class="ct-b"><button class="btn primary" data-bk="1"${BK.busy?" disabled":""}>${BK.busy?"Se face backup…":"Fă backup acum"}</button></div>`:""}</div>`}
 /* butoanele care lucrează cu Google: cerem conectarea chiar în momentul apăsării, ca fereastra să nu fie blocată */
 document.addEventListener("click",e=>{const t=e.target;if(!t||!t.closest)return;
+  if(t.closest("[data-gconn]")){e.stopPropagation();G.tok=null;G.errAt=0;gToken().then(()=>{toast("Google conectat. Acum apasă din nou butonul de Drive.");render()}).catch(x=>toast(x&&x.msg||"Nu s-a conectat."));return}
   if(!t.closest("[data-gs],[data-gp],[data-bk],[data-porsg]"))return;
   const gp=t.closest("[data-gp]");if(gp&&gp.dataset.gp==="__cancel")return;
   if(G.tok&&Date.now()<G.exp-60000)return;gToken().catch(()=>{})},true);
