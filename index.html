@@ -451,6 +451,7 @@ a.btn.primary{color:var(--on-leaf)}
 .disp-ban{margin:0 0 12px}.disp-r{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line)}.disp-ban .disp-r{padding:8px 0}
 .disp-r small{display:block;color:var(--muted);font-size:.82rem}.ev-list>.disp-r:first-child{border-top:0}
 .disp-cal{border:1.5px solid var(--line);border-radius:14px;padding:10px;background:var(--card)}
+.disp-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}.disp-nav b{font-size:1.05rem}.disp-nav .btn{min-width:44px;font-size:1.2rem}.disp-sum{text-align:center;margin:0 0 8px}.disp-quick{margin-top:10px;flex-wrap:wrap}
 .disp-h,.disp-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.disp-h span{text-align:center;font-size:.75rem;font-weight:700;color:var(--muted)}
 .disp-d{position:relative;aspect-ratio:1;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}
 .disp-d b{font-size:.95rem}.disp-d small{font-size:.62rem;color:var(--muted);line-height:1}.disp-d i{font-style:normal;font-weight:800;font-size:.8rem;line-height:1}
@@ -3664,20 +3665,32 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-dc]"
   const conf={...(my().conf||{}),[k]:v};ALL[F.UID]={...my(),conf};await save({conf:{[k]:v}});banner();render();toast(v==="da"?"Mulțumim! Paul vede că ai confirmat.":"Am anunțat că nu poți.")});
 
 /* ---------- afișare ---------- */
+/* calendar lună cu lună, de azi până la 31 decembrie 2027 */
+const CAL_END=new Date(2027,11,31);let calM=null,admM=null;
+const MONC=m=>MONL[m][0].toUpperCase()+MONL[m].slice(1);
 function calHTML(){
-  const today=new Date();today.setHours(0,0,0,0);const start=new Date(today);start.setDate(today.getDate()-((today.getDay()+6)%7));
+  const today=new Date();today.setHours(0,0,0,0);const m0=new Date(today.getFullYear(),today.getMonth(),1);
+  if(!calM||calM<m0)calM=new Date(m0);const mEnd=new Date(CAL_END.getFullYear(),CAL_END.getMonth(),1);if(calM>mEnd)calM=new Date(mEnd);
+  const y=calM.getFullYear(),mo=calM.getMonth(),n=new Date(y,mo+1,0).getDate(),lead=(new Date(y,mo,1).getDay()+6)%7;
   const days=my().days||{},{D}=weekEvents(),evd=new Set(D?D.events.map(e=>evISO(e,D)).filter(Boolean):[]);
-  let h=`<div class="disp-cal"><div class="disp-h">${["Lun","Mar","Mie","Joi","Vin","Sâm","Dum"].map(x=>`<span>${x}</span>`).join("")}</div><div class="disp-g">`;
-  for(let i=0;i<63;i++){const d=new Date(start);d.setDate(start.getDate()+i);const k=iso(d),past=d<today,v=days[k];
-    h+=`<button class="disp-d ${v==="da"?"ok":v==="nu"?"no":""} ${past?"past":""} ${evd.has(k)?"ev":""}" data-dd="${k}" ${past?"disabled":""} aria-label="${esc(fday(k))}: ${v==="da"?"pot":v==="nu"?"nu pot":"nemarcat"}"><b>${d.getDate()}</b>${d.getDate()===1||i===0?`<small>${MON[d.getMonth()]}</small>`:""}<i>${v==="da"?"✓":v==="nu"?"✕":""}</i></button>`}
-  return h+`</div><p class="ev-file">Atinge o zi: o dată = <b>✓ pot</b>, a doua oară = <b>✕ nu pot</b>, a treia oară o golești. Paul vede zilele tale când face echipa.</p></div>`}
+  let cOk=0,cNo=0;Object.entries(days).forEach(([k,v])=>{if(k.startsWith(`${y}-${String(mo+1).padStart(2,"0")}`)){if(v==="da")cOk++;else if(v==="nu")cNo++}});
+  let h=`<div class="disp-cal"><div class="disp-nav"><button class="btn" data-dm="-1" ${calM<=m0?"disabled":""} aria-label="Luna anterioară">‹</button><b>${MONC(mo)} ${y}</b><button class="btn" data-dm="1" ${calM>=mEnd?"disabled":""} aria-label="Luna următoare">›</button></div>
+  <p class="ev-file disp-sum">${cOk||cNo?`✓ ${cOk} ${cOk===1?"zi":"zile"} pot · ✕ ${cNo} nu pot`:"Nicio zi marcată în luna asta."}</p>
+  <div class="disp-h">${["Lun","Mar","Mie","Joi","Vin","Sâm","Dum"].map(x=>`<span>${x}</span>`).join("")}</div><div class="disp-g">`;
+  for(let i=0;i<lead;i++)h+=`<span></span>`;
+  for(let dn=1;dn<=n;dn++){const d=new Date(y,mo,dn),k=iso(d),past=d<today,v=days[k];
+    h+=`<button class="disp-d ${v==="da"?"ok":v==="nu"?"no":""} ${past?"past":""} ${evd.has(k)?"ev":""}" data-dd="${k}" ${past?"disabled":""} aria-label="${esc(fday(k))}: ${v==="da"?"pot":v==="nu"?"nu pot":"nemarcat"}"><b>${dn}</b><i>${v==="da"?"✓":v==="nu"?"✕":""}</i></button>`}
+  return h+`</div><div class="qr-la disp-quick"><button class="btn" data-dq="we">✓ Toate weekendurile lunii</button><button class="btn" data-dq="clr">Golește luna</button></div>
+  <p class="ev-file">Atinge o zi: o dată = <b>✓ pot</b>, a doua oară = <b>✕ nu pot</b>, a treia oară o golești. Cu ‹ › mergi lună cu lună, până în decembrie 2027. Paul vede zilele tale când face echipa.</p></div>`}
+async function saveDays(days){ALL[F.UID]={...my(),days};render();
+  await F.fs.doc(`${F.base}/disp/${F.UID}`).set({name:F.NAME||"",days,conf:my().conf||{},at:new Date().toISOString()}).catch(()=>toast("Nu am putut salva."))}
 function render(){
   if(!started)return;
   let h=`<div class="st-top"><div><p class="ev-sub">${F.isAdmin?"Echipa":"Salut, "+esc(F.NAME||"")+"!"}</p><p class="ev-file">${F.isAdmin?"Cine poate lucra și cine a confirmat evenimentele.":"Evenimentele la care ești în echipă și zilele în care poți lucra."}</p></div>`;
   if(F.isAdmin)h+=`<div class="st-acts"><button class="btn${view==="mine"?"":" primary"}" data-dv="team">Echipa</button><button class="btn${view==="mine"?" primary":""}" data-dv="mine">Zilele mele</button></div>`;
   h+=`</div>`;
   if(F.isAdmin&&view==="team")h+=teamHTML();
-  else{const L=mine();h+=`<h2 class="ev-h2">Evenimentele mele</h2>`;
+  else{const L=mine().filter(x=>!x.d||x.d>=iso(new Date()));h+=`<h2 class="ev-h2">Evenimentele mele</h2>`;
     if(!L.length)h+=`<div class="ev-ok">Nu ești în echipă la evenimentele din săptămâna încărcată.</div>`;
     else{const c=my().conf||{};h+=`<div class="ev-list">`+L.map(x=>`<div class="disp-r"><span><b>${esc(x.e.name)}</b><small>${x.d?esc(fday(x.d)):""}${x.e.time?" · ora "+esc(x.e.time):""}${x.e.persons?" · "+x.e.persons+" persoane":""} · echipa: ${esc((x.e.team||[]).join(", "))}</small></span><span class="qr-la">${c[x.key]==="da"?`<span class="ct-chip on">✓ confirmat</span>`:c[x.key]==="nu"?`<span class="ct-chip">✕ nu pot</span>`:""}<button class="btn${c[x.key]==="da"?"":" primary"}" data-dc="da" data-k="${esc(x.key)}">Confirm</button><button class="btn" data-dc="nu" data-k="${esc(x.key)}">Nu pot</button></span></div>`).join("")+`</div>`}
     h+=`<h2 class="ev-h2">Când pot lucra</h2>`+calHTML();}
@@ -3693,9 +3706,11 @@ function teamHTML(){
     h+=`</div><p class="ev-file">✓ a confirmat în aplicație · ✕ nu poate · punct = încă nu a răspuns. 💬 trimite mesajul pe WhatsApp (telefoanele le pui la Raport → Tarife și telefoane). Barmanii văd evenimentele lor în aplicație, în tab-ul Echipa, imediat ce salvezi fișa.</p>`}
   const today=iso(new Date()),dates=new Set();Object.values(ALL).forEach(x=>Object.keys(x.days||{}).forEach(k=>{if(k>=today)dates.add(k)}));
   if(D)D.events.forEach(e=>{const d=evISO(e,D);if(d>=today)dates.add(d)});
-  h+=`<h2 class="ev-h2">Cine poate lucra</h2>`;
-  const L=[...dates].sort().slice(0,40);
-  if(!L.length)h+=`<div class="ev-ok">Încă nimeni nu și-a marcat zilele. Spune-le barmanilor să intre în aplicație, la tab-ul Echipa.</div>`;
+  const t0=new Date();t0.setHours(0,0,0,0);const m0=new Date(t0.getFullYear(),t0.getMonth(),1),mEnd=new Date(CAL_END.getFullYear(),CAL_END.getMonth(),1);
+  if(!admM||admM<m0)admM=new Date(m0);if(admM>mEnd)admM=new Date(mEnd);const pre=`${admM.getFullYear()}-${String(admM.getMonth()+1).padStart(2,"0")}`;
+  h+=`<h2 class="ev-h2">Cine poate lucra</h2><div class="disp-nav"><button class="btn" data-am="-1" ${admM<=m0?"disabled":""} aria-label="Luna anterioară">‹</button><b>${MONC(admM.getMonth())} ${admM.getFullYear()}</b><button class="btn" data-am="1" ${admM>=mEnd?"disabled":""} aria-label="Luna următoare">›</button></div>`;
+  const L=[...dates].filter(d=>d.startsWith(pre)).sort();
+  if(!L.length)h+=`<div class="ev-ok">Nimeni nu și-a marcat zile în luna asta. Spune-le barmanilor să intre în aplicație, la tab-ul Echipa.</div>`;
   else h+=`<div class="rp-t">`+L.map(d=>{const a=availFor(d);return `<div class="disp-av"><span><b>${esc(fday(d))}</b></span><span>${a.ok.length?`<span class="disp-ok">✓ ${a.ok.map(esc).join(", ")}</span>`:""}${a.no.length?` <span class="disp-no">✕ ${a.no.map(esc).join(", ")}</span>`:""}${!a.ok.length&&!a.no.length?`<small class="ev-file">nimeni nu a marcat</small>`:""}</span></div>`}).join("")+`</div>`;
   const who=Object.values(ALL).map(x=>x.name).filter(Boolean).sort();
   if(who.length)h+=`<p class="ev-file">Și-au marcat zilele: ${who.map(esc).join(", ")}.</p>`;
@@ -3703,9 +3718,13 @@ function teamHTML(){
 }
 V.addEventListener("click",async e=>{
   const dv=e.target.closest("[data-dv]");if(dv){view=dv.dataset.dv;render();return}
+  const am=e.target.closest("[data-am]");if(am&&!am.disabled){admM=new Date(admM.getFullYear(),admM.getMonth()+Number(am.dataset.am),1);render();return}
+  const dm=e.target.closest("[data-dm]");if(dm&&!dm.disabled){calM=new Date(calM.getFullYear(),calM.getMonth()+Number(dm.dataset.dm),1);render();return}
+  const dq=e.target.closest("[data-dq]");if(dq){const y=calM.getFullYear(),mo=calM.getMonth(),n=new Date(y,mo+1,0).getDate(),today=new Date();today.setHours(0,0,0,0);const days={...(my().days||{})};
+    for(let dn=1;dn<=n;dn++){const d=new Date(y,mo,dn);if(d<today)continue;const k=iso(d);if(dq.dataset.dq==="clr")delete days[k];else if([0,5,6].includes(d.getDay())&&!days[k])days[k]="da"}
+    await saveDays(days);toast(dq.dataset.dq==="clr"?"Am golit luna.":"Am marcat vinerea, sâmbăta și duminica.");return}
   const dd=e.target.closest("[data-dd]");if(dd&&!dd.disabled){const k=dd.dataset.dd,cur=(my().days||{})[k],nx=!cur?"da":cur==="da"?"nu":null;
-    const days={...(my().days||{})};if(nx)days[k]=nx;else delete days[k];ALL[F.UID]={...my(),days};render();
-    await F.fs.doc(`${F.base}/disp/${F.UID}`).set({name:F.NAME||"",days,conf:my().conf||{},at:new Date().toISOString()}).catch(()=>toast("Nu am putut salva."));return}
+    const days={...(my().days||{})};if(nx)days[k]=nx;else delete days[k];await saveDays(days);return}
 });
 function start(){if(!started){started=true;V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;view=F.isAdmin?"team":"mine"}subscribe();
   if(F.isAdmin&&!TEL)F.fs.doc(`${F.base}/privat/echipa`).get().then(d=>{const t=d.exists&&d.data().tel||{};TEL={};Object.entries(t).forEach(([k,v])=>TEL[first(k)]=v);render()}).catch(()=>{TEL={}});
