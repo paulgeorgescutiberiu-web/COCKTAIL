@@ -51,7 +51,7 @@ function viewNou(){
     <p class="ev-file">${edit?"Schimbările apar imediat la toată echipa.":"Completezi aici fișa, fără Excel. Barmanii o văd imediat, iar marfa se scade din stoc."}</p></div>
     <div class="en-grid">
       <label class="en-w">Locație / nume eveniment<input data-en="nume" value="${esc(e.nume)}" placeholder="ex: Montana"></label>
-      <label>Data<input type="date" data-en="data" value="${esc(e.data)}"><span class="en-days">${enDays().map(x=>`<button type="button" class="en-day${x.iso===e.data?" on":""}" data-enact="day" data-d="${x.iso}">${x.t}</button>`).join("")}</span></label>
+      <label>Data<input type="date" data-en="data" value="${esc(e.data)}"><span id="enOver">${edit||!window.__qr||!window.__qr.sameDayHTML?"":window.__qr.sameDayHTML(e.data,null,true)}</span><span class="en-days">${enDays().map(x=>`<button type="button" class="en-day${x.iso===e.data?" on":""}" data-enact="day" data-d="${x.iso}">${x.t}</button>`).join("")}</span></label>
       <label>Ora începerii<input type="time" data-en="ora" value="${esc(e.ora)}"></label>
       <label>Persoane<input data-en="pers" inputmode="numeric" value="${esc(e.pers)}"></label>
       <label>Echipa<input data-en="echipa" value="${esc(e.echipa)}" placeholder="ex: Ioana Sebi"></label>
@@ -221,6 +221,7 @@ function enStockHint(L,raw){
   if(q>0&&q>avail)return `<span class="warn">în depozit ${num(Math.max(avail,0))} · lipsesc ${num(Math.round((q-Math.max(avail,0))*100)/100)} → intră în Comandă furnizor</span>`;
   return `în depozit ${num(avail)}`;
 }
+document.addEventListener("change",ev=>{const i=ev.target;if(EN&&i&&i.dataset&&i.dataset.en==="data"&&EN.col==null){const o=document.getElementById("enOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,null,true)}});
 document.addEventListener("cp-stoc",()=>{if(!EN)return;document.querySelectorAll("#evView .en-st").forEach(h=>{const i=h.parentElement.querySelector("[data-eq]");if(i)h.innerHTML=enStockHint(h.dataset.st,i.value)})});
 document.addEventListener("input",ev=>{const i=ev.target;if(!EN||!i.matches||!i.matches("[data-eq]"))return;const h=i.parentElement&&i.parentElement.querySelector(".en-st");if(h)h.innerHTML=enStockHint(i.dataset.eq,i.value)});
 /* Rețetele și legătura lor cu premixurile și alcoolul din fișă */

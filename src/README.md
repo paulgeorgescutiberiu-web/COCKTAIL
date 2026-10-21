@@ -8,7 +8,7 @@ Aplicația publicată (`/index.html`) e un singur fișier, construit din sursele
 bash src/build.sh
 ```
 
-Pașii, în ordine: `build2` → `dates` → `consp` → `evp` → `ctrp` → `ofp` → `tabp` → `qrp` → `retp` → `build`.
+Pașii, în ordine: `build2` → `dates` → `consp` → `evp` → `ctrp` → `ofp` → `tabp` → `qrp` → `retp` → `rapp` → `build`.
 Fiecare pas citește `base2.html`, inserează o parte a aplicației și îl scrie la loc; `build.py` adaugă
 Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina repo-ului.
 
@@ -23,6 +23,7 @@ Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina r
 | `evnou.js` | „Eveniment nou”, editarea fișei, săptămâni anterioare |
 | `contracte.js` | Contracte, portalul clientului, plăți, rentabilitate, notițe, postare Instagram |
 | `oferte.js` | Ofertele și meniurile |
+| `raport.js` | Raportul lunar și plata barmanilor |
 | `qr.js` | QR-ul de la bar, cererile de ofertă, pagina publică `bar.html` |
 | `reguli-firestore.txt` | Regulile de securitate Firebase (se pun manual în consolă) |
 

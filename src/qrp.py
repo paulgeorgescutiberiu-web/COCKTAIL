@@ -19,6 +19,7 @@ rep("</style>\n</head>","""#qrModal{position:fixed;inset:0;z-index:60;background
 .qr-lead small{display:block;color:var(--muted);font-size:.82rem;margin-top:2px}
 .qr-lead.off{opacity:.55}
 .qr-lead a{color:inherit}
+.ov-box{margin:6px 0 0;font-size:.9rem;font-weight:500;line-height:1.4}.ov-ok{margin:4px 0 0}
 .ld-tabs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 4px}.ld-tabs .btn{margin-left:auto}
 .ld-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px;margin:6px 0 10px;border:1.5px solid var(--line);border-radius:12px;background:var(--paper)}
 .ld-form label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:600;color:var(--muted);min-width:0}

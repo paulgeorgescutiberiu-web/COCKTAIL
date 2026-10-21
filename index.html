@@ -422,6 +422,7 @@ a.btn.primary{color:var(--on-leaf)}
 .qr-lead small{display:block;color:var(--muted);font-size:.82rem;margin-top:2px}
 .qr-lead.off{opacity:.55}
 .qr-lead a{color:inherit}
+.ov-box{margin:6px 0 0;font-size:.9rem;font-weight:500;line-height:1.4}.ov-ok{margin:4px 0 0}
 .ld-tabs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 4px}.ld-tabs .btn{margin-left:auto}
 .ld-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px;margin:6px 0 10px;border:1.5px solid var(--line);border-radius:12px;background:var(--paper)}
 .ld-form label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:600;color:var(--muted);min-width:0}
@@ -435,6 +436,18 @@ a.btn.primary{color:var(--on-leaf)}
 .ct-pend{margin-bottom:14px}
 .prep-t{border:1.5px solid var(--line);border-radius:14px;overflow:hidden;margin:10px 0}.prep-r{display:grid;grid-template-columns:minmax(0,2.2fr) 1fr 1fr 1.2fr;gap:8px;padding:10px 12px;border-top:1px solid var(--line);align-items:center}.prep-r:first-child{border-top:0}.prep-h{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--card)}.prep-r small{display:block;color:var(--muted);font-size:.78rem}.prep-mk{font-weight:800}.prep-mk.ok{color:var(--muted);font-weight:600}.prep-ed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.prep-ed label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.9rem}.prep-ed textarea{padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:.92rem}@media (max-width:560px){.prep-ed{grid-template-columns:1fr}.prep-r{grid-template-columns:minmax(0,1.6fr) .8fr .8fr 1fr;font-size:.92rem}}
 .cx-warn{margin-top:12px}.cx-warn ul{margin:8px 0 10px 18px;padding:0}.cx-warn li{margin:4px 0}
+.rp-kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0}
+.rp-k{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--card);display:flex;flex-direction:column;gap:2px}
+.rp-k b{font-family:"Big Shoulders Display",Impact,sans-serif;font-size:1.7rem;font-weight:900;line-height:1}
+.rp-k span{font-weight:700;font-size:.85rem}.rp-k small{color:var(--muted);font-size:.78rem;line-height:1.3}
+.rp-t{border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.rp-r{display:grid;grid-template-columns:minmax(0,2fr) 1fr 1fr;gap:8px;padding:9px 12px;border-top:1px solid var(--line)}.rp-r:first-child{border-top:0}
+.rp-ed{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;padding:12px;border:1.5px solid var(--line);border-radius:12px;margin:8px 0}
+.rp-ed label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted)}
+.rp-ed input,.rp-ev input{width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit}
+.rp-two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.rp-ed .st-acts{grid-column:1/-1}
+.rp-evs{padding:6px 16px 14px;display:flex;flex-direction:column;gap:6px}
+.rp-ev{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;align-items:center}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -477,6 +490,7 @@ a.btn.primary{color:var(--on-leaf)}
     <button role="tab" aria-selected="false" aria-controls="v-oferte" data-view="oferte">Oferte</button>
     <button role="tab" aria-selected="false" aria-controls="v-contracte" data-view="contracte" class="edit-only">Contracte</button>
     <button role="tab" aria-selected="false" aria-controls="v-postare" data-view="postare" class="edit-only">Postare</button>
+    <button role="tab" aria-selected="false" aria-controls="v-raport" data-view="raport" class="edit-only">Raport</button>
     <button role="tab" aria-selected="false" aria-controls="v-retete" data-view="retete">Rețete</button>
   </nav>
 </header>
@@ -506,6 +520,7 @@ a.btn.primary{color:var(--on-leaf)}
   <section class="view" id="v-stoc" role="tabpanel" hidden=""></section>
   <section class="view" id="v-contracte" role="tabpanel" hidden=""></section>
   <section class="view" id="v-postare" role="tabpanel" hidden=""></section>
+  <section class="view" id="v-raport" role="tabpanel" hidden=""></section>
   <section class="view" id="v-oferte" role="tabpanel" hidden=""></section>
 </main>
 <footer>Cocktail Philosophy · Str. Tractorului 4, Sibiu · <a href="tel:+40743785655">0743 785 655</a></footer>
@@ -1073,7 +1088,7 @@ function parseRet(s){s=String(s).trim().replace(",",".");if(s==="")return null;c
 
 function heading(){
   const h=document.querySelector("h1");if(!h)return;
-  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram + Facebook</span>`;return}
+  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram + Facebook</span>`;return}
   h.innerHTML=tb==="evenimente"&&D?`Evenimente<span class="yr">${esc(D.title.big)}</span>`:`Rețetar<span class="yr">2026</span>`;
 }
 function loadData(){
@@ -1429,7 +1444,7 @@ function viewNou(){
     <p class="ev-file">${edit?"Schimbările apar imediat la toată echipa.":"Completezi aici fișa, fără Excel. Barmanii o văd imediat, iar marfa se scade din stoc."}</p></div>
     <div class="en-grid">
       <label class="en-w">Locație / nume eveniment<input data-en="nume" value="${esc(e.nume)}" placeholder="ex: Montana"></label>
-      <label>Data<input type="date" data-en="data" value="${esc(e.data)}"><span class="en-days">${enDays().map(x=>`<button type="button" class="en-day${x.iso===e.data?" on":""}" data-enact="day" data-d="${x.iso}">${x.t}</button>`).join("")}</span></label>
+      <label>Data<input type="date" data-en="data" value="${esc(e.data)}"><span id="enOver">${edit||!window.__qr||!window.__qr.sameDayHTML?"":window.__qr.sameDayHTML(e.data,null,true)}</span><span class="en-days">${enDays().map(x=>`<button type="button" class="en-day${x.iso===e.data?" on":""}" data-enact="day" data-d="${x.iso}">${x.t}</button>`).join("")}</span></label>
       <label>Ora începerii<input type="time" data-en="ora" value="${esc(e.ora)}"></label>
       <label>Persoane<input data-en="pers" inputmode="numeric" value="${esc(e.pers)}"></label>
       <label>Echipa<input data-en="echipa" value="${esc(e.echipa)}" placeholder="ex: Ioana Sebi"></label>
@@ -1599,6 +1614,7 @@ function enStockHint(L,raw){
   if(q>0&&q>avail)return `<span class="warn">în depozit ${num(Math.max(avail,0))} · lipsesc ${num(Math.round((q-Math.max(avail,0))*100)/100)} → intră în Comandă furnizor</span>`;
   return `în depozit ${num(avail)}`;
 }
+document.addEventListener("change",ev=>{const i=ev.target;if(EN&&i&&i.dataset&&i.dataset.en==="data"&&EN.col==null){const o=document.getElementById("enOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,null,true)}});
 document.addEventListener("cp-stoc",()=>{if(!EN)return;document.querySelectorAll("#evView .en-st").forEach(h=>{const i=h.parentElement.querySelector("[data-eq]");if(i)h.innerHTML=enStockHint(h.dataset.st,i.value)})});
 document.addEventListener("input",ev=>{const i=ev.target;if(!EN||!i.matches||!i.matches("[data-eq]"))return;const h=i.parentElement&&i.parentElement.querySelector(".en-st");if(h)h.innerHTML=enStockHint(i.dataset.eq,i.value)});
 /* Rețetele și legătura lor cu premixurile și alcoolul din fișă */
@@ -2314,7 +2330,7 @@ function viewForm(){
     <div class="st-meta">${inp("strada","Strada",{ph:"str. Ana Ipătescu"})}${inp("nr","Nr.")}${inp("bl","Bl.")}${inp("sc","Sc.")}${inp("et","Etaj")}${inp("ap","Ap.")}
     ${inp("localitate","Localitate",{ph:"SIBIU"})}${inp("judet","Județ",{ph:"SIBIU"})}</div>
     <h2 class="ev-h2">Eveniment</h2><div class="st-meta">
-    ${inp("dataContract","Data contractului",{type:"date"})}${inp("dataEv","Data evenimentului",{type:"date"})}${inp("locatie","Locația",{ph:"SYMPHONY"})}
+    ${inp("dataContract","Data contractului",{type:"date"})}${inp("dataEv","Data evenimentului",{type:"date"})}<div class="ct-full" id="ctOver">${window.__qr&&window.__qr.sameDayHTML?window.__qr.sameDayHTML(f.dataEv,f.id,true):""}</div>${inp("locatie","Locația",{ph:"SYMPHONY"})}
     ${inp("oraEv","Ora începerii (pentru calendar)",{type:"time"})}${inp("invitati","Nr. minim de invitați",{im:"numeric"})}${inp("obiect","Obiectul contractului")}</div>
     <h2 class="ev-h2">Preț și plată</h2><div class="st-meta">
     ${inp("pret","Preț",{im:"decimal"})}${sel("moneda","Moneda",["EURO","RON"])}${sel("unitate","Unitate",["/ PERSOANĂ","TOTAL"])}${sel("tva","TVA",["fără TVA","cu TVA inclus"])}</div>
@@ -2380,6 +2396,8 @@ function viewFirma(){
     <div class="st-meta">${row("socialHook","Adresa webhook Make (https://hook.eu1.make.com/…)")}</div>
     <h2 class="ev-h2">Plata avansului cu cardul (Revolut)</h2><p class="ev-file">Pentru butonul „Link de plată avans”. E adresa webhook-ului din Make (scenariul „Avans Revolut”), care creează linkul în Revolut Business. Cheia Revolut stă doar în Make, nu în aplicație.</p>
     <div class="st-meta">${row("payHook","Adresa webhook Make pentru plăți")}</div>
+    <h2 class="ev-h2">Ce echipament și oameni ai</h2><p class="ev-file">Când faci un contract pe o zi în care mai ai evenimente, aplicația îți spune dacă îți ajung.</p>
+    <div class="st-meta">${row("capBar","Baruri mobile")}${row("capCar","Mașini / remorci")}${row("capPpl","Barmani disponibili")}</div>
     <h2 class="ev-h2">Pagina de la bar (QR)</h2><p class="ev-file">Apar pe pagina pe care o deschid invitații când scanează QR-ul de pe bar. Linkul de recenzie îl iei din Google Maps: profilul tău → „Cere recenzii” → Copiază linkul.</p>
     <div class="st-meta">${row("reviewUrl","Link recenzie Google (https://g.page/r/…)")}${row("leadHook","Webhook Make pentru notificare la cerere nouă (opțional)")}${row("igUrl","Instagram (implicit instagram.com/cocktailphilosophy)")}${row("fbUrl","Facebook (implicit facebook.com/cocktailphilosophy)")}</div>
     <div class="st-save"><button class="btn primary" data-c="savefirma">Salvează</button></div>`;
@@ -2919,6 +2937,7 @@ V.addEventListener("change",e=>{
   const i=e.target.closest("[data-sgn]");if(!i||!i.files||!i.files[0])return;const c=list.find(x=>x.id===i.dataset.sgn);if(c)uploadSigned(c,i)});
 V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render();return}
 });
+V.addEventListener("change",e=>{const i=e.target;if(i&&i.dataset&&i.dataset.f==="dataEv"){const o=document.getElementById("ctOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,f&&f.id,true)}});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
@@ -3408,7 +3427,139 @@ function leadClick(t){
   return false}
 /* recalculează totalul ofertei când schimbi pachetul, invitații sau prețul */
 document.addEventListener("change",e=>{if(e.target.closest&&e.target.closest("[data-lof]")){grabOffer();if(e.target.dataset.lof==="inv")LOFF.pp=null;refresh()}});
-window.__qr={code,link,leadsHTML,show,sync,pendHTML};
+/* ---------- aceeași zi: câte evenimente ai deja și dacă îți ajung barurile, mașinile, oamenii ---------- */
+function sameDay(d,skipId){if(!d)return null;const D=curD(),ev=[],seen=new Set();
+  CT.filter(c=>c.dataEv===d&&c.id!==skipId).forEach(c=>{const n=tcase(c.locatie||c.nume||"");seen.add(nrm(n).join(" "));ev.push({n,t:c.oraEv||"",src:"contract",who:tcase(c.nume||"")})});
+  if(D)D.events.forEach(e=>{if(iso(evDate(e,D))!==d)return;const k=nrm(e.name).join(" ");if([...seen].some(s=>s&&(s.includes(k)||k.includes(s))))return;ev.push({n:titleCase(e.name),t:e.time||"",src:"fișă",who:(e.team||[]).join(" ")})});
+  const cap={bar:+FIRMA.capBar||0,car:+FIRMA.capCar||0,ppl:+FIRMA.capPpl||0};
+  return {ev,cap}}
+function sameDayHTML(d,skipId,adding){const r=sameDay(d,skipId);if(!r||!r.ev.length)return d?`<p class="ev-file ov-ok">Nimic altceva în ziua asta.</p>`:"";
+  const n=r.ev.length+(adding?1:0),c=r.cap,over=c.bar&&n>c.bar;
+  return `<div class="${over?"ev-alert":"ev-ok"} ov-box"><b>${r.ev.length===1?"Mai ai un eveniment":"Mai ai "+r.ev.length+" evenimente"} în ziua asta:</b> ${r.ev.map(x=>esc(x.n)+(x.t?" ("+esc(x.t)+")":"")).join(", ")}.`+
+    (c.bar||c.car||c.ppl?` <br>Cu acesta: <b>${n} ${n===1?"eveniment":"evenimente"}</b>${c.bar?` · ai ${c.bar} ${c.bar===1?"bar":"baruri"}`:""}${c.car?` · ${c.car} ${c.car===1?"mașină":"mașini"}`:""}${c.ppl?` · ${c.ppl} oameni (cam ${Math.floor(c.ppl/Math.max(1,n))} pe eveniment)`:""}.${over?" <b>Nu-ți ajung barurile.</b>":c.car&&n>c.car?" <b>Nu-ți ajung mașinile.</b>":""}`:` <small>Pune la Datele firmei câte baruri, mașini și oameni ai, ca să-ți spun dacă îți ajung.</small>`)+`</div>`}
+window.__qr={code,link,leadsHTML,show,sync,pendHTML,sameDayHTML};
+})();
+
+/* ---------- Raport lunar + echipa (barmani și plata lor) — doar administratorul ---------- */
+(function(){
+const V=document.getElementById("v-raport"),F=window.CPFS;
+if(!V||!F)return;
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MON=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+const nrm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/\s+/g," ").trim();
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const lei=v=>Math.round(v||0).toLocaleString("ro-RO")+" lei";
+const num=v=>(Math.round((v||0)*10)/10).toLocaleString("ro-RO");
+const pct=v=>Math.round((v||0)*100)+"%";
+const nr=v=>{const n=parseFloat(String(v??"").replace(/\s/g,"").replace(",","."));return isFinite(n)?n:0};
+const tcase=s=>String(s||"").toLocaleLowerCase("ro-RO").replace(/(^|[\s-])(\S)/g,(m,a,b)=>a+b.toLocaleUpperCase("ro-RO"));
+const telWa=t=>{let d=String(t||"").replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("0"))d="4"+d;return d};
+const toast=m=>{const t=document.getElementById("toast");if(!t)return;t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3500)};
+
+let month=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`})();
+let EQ=null,WEEKS=null,CT=[],LEADS=[],loading=false,openB=null,editT=false,msg="";
+const dsKey=f=>"d-"+String(f).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,150);
+
+/* toate săptămânile: cea curentă + arhiva */
+async function loadWeeks(){
+  const out=[],seen=new Set(),cp=window.__cp;
+  const add=evd=>{if(!evd||!evd.aoa||seen.has(evd.fileName))return;seen.add(evd.fileName);try{out.push({evd,D:cp.parseAOA(evd.aoa,evd.fileName),ds:dsKey(evd.fileName)})}catch(e){}};
+  add(cp&&cp.evd());
+  try{const L=window.__arh?await window.__arh.list():[];for(const x of L){try{add(await window.__arh.get(x.k))}catch(e){}}}catch(e){}
+  return out;
+}
+async function load(force){
+  if(loading)return;loading=true;render();
+  try{
+    const [eq,ct,ld,wk]=await Promise.all([
+      F.fs.doc(`${F.base}/privat/echipa`).get().then(d=>d.exists?d.data():{}).catch(()=>({})),
+      F.fs.collection(`${F.base}/contracte`).get().then(s=>s.docs.map(d=>({...d.data(),id:d.id}))).catch(()=>[]),
+      F.fs.collection("barLead").get().then(s=>s.docs.map(d=>({...d.data(),id:d.id}))).catch(()=>[]),
+      (!WEEKS||force)?loadWeeks():Promise.resolve(WEEKS)]);
+    EQ={rates:{},tel:{},def:"",pay:{},paid:{},...eq};CT=ct;LEADS=ld;WEEKS=wk;
+  }finally{loading=false;render()}
+}
+const saveEQ=part=>F.fs.doc(`${F.base}/privat/echipa`).set(part,{merge:true}).catch(()=>toast("Nu am putut salva. Verifică internetul."));
+
+/* evenimentele lunii, din toate fișele */
+function monthEvents(){
+  const out=[];(WEEKS||[]).forEach(w=>w.D.events.forEach(e=>{const d=e.date||w.D.title.date;if(!d||iso(d).slice(0,7)!==month)return;out.push({w,e,d:iso(d)})}));
+  return out.sort((a,b)=>a.d.localeCompare(b.d)||String(a.e.time||"").localeCompare(String(b.e.time||"")));
+}
+const payKey=(x,n)=>`${x.w.ds}|${x.e.col}|${nrm(n)}`;
+function rateOf(n){const r=EQ.rates[nrm(n)];return r!=null&&r!==""?nr(r):nr(EQ.def)}
+function amountOf(x,n){const k=payKey(x,n),v=EQ.pay[k];return v!=null&&v!==""?nr(v):rateOf(n)}
+function team(){
+  const T={};monthEvents().forEach(x=>(x.e.team||[]).forEach(n=>{const k=nrm(n);if(!k||k==="PAUL")return;const t=T[k]=T[k]||{n:tcase(n),k,ev:[],sum:0};const a=amountOf(x,n);t.ev.push({x,a});t.sum+=a}));
+  return Object.values(T).sort((a,b)=>b.sum-a.sum||a.n.localeCompare(b.n,"ro"));
+}
+
+/* ---------- afișare ---------- */
+function monthLabel(m){const [y,mm]=m.split("-");return `${MON[+mm-1]} ${y}`}
+function shift(m,d){const [y,mm]=m.split("-").map(Number),t=new Date(y,mm-1+d,1);return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}`}
+function render(){
+  if(!F.isAdmin){V.innerHTML=`<div class="ev-ok">Raportul îl vede doar administratorul.</div>`;return}
+  let h=`<div class="st-top"><div><p class="ev-sub">Raport · ${esc(monthLabel(month))}</p><p class="ev-file">Din fișele evenimentelor (inclusiv săptămânile anterioare), contracte, rentabilitate și cereri.</p></div>
+    <div class="st-acts"><button class="btn" data-rp="prev" aria-label="Luna anterioară">←</button><button class="btn" data-rp="next" aria-label="Luna următoare">→</button><button class="btn" data-rp="reload">Actualizează</button></div></div>`;
+  if(!EQ){V.innerHTML=h+`<p class="ev-file">Se încarcă…</p>`;return}
+  const ME=monthEvents(),pers=ME.reduce((a,x)=>a+(typeof x.e.persons==="number"?x.e.persons:0),0);
+  const MC=CT.filter(c=>String(c.dataEv||"").slice(0,7)===month),R=MC.filter(c=>c.rent&&c.rent.calc);
+  const ven=R.reduce((a,c)=>a+(c.rent.calc.venit||0),0),prof=R.reduce((a,c)=>a+(c.rent.calc.profit||0),0),baut=R.reduce((a,c)=>a+(c.rent.calc.bautura||0),0);
+  const invR=R.reduce((a,c)=>a+nr(c.rent.invitati||c.invitati),0);
+  const T=team(),payTot=T.reduce((a,t)=>a+t.sum,0);
+  const ML=LEADS.filter(x=>String(x.at||"").slice(0,7)===month),won=ML.filter(x=>x.st==="ct").length;
+  const kp=(v,l,s)=>`<div class="rp-k"><b>${v}</b><span>${l}</span>${s?`<small>${s}</small>`:""}</div>`;
+  h+=`<div class="rp-kpi">${kp(ME.length,"evenimente",`${num(pers)} persoane`)}${kp(MC.length,"contracte în lună","")}
+    ${kp(R.length?lei(ven):"—","venit",R.length?`din ${R.length} cu rentabilitate calculată`:"calculează rentabilitatea la contracte")}
+    ${kp(R.length?lei(prof):"—","profit",R.length&&ven?`marjă ${pct(prof/ven)}`:"")}
+    ${kp(invR&&baut?lei(baut/invR):"—","consum / persoană",invR&&baut?"băutura, din rentabilitate":"")}
+    ${kp(lei(payTot),"plată barmani",`${T.length} ${T.length===1?"om":"oameni"}`)}
+    ${kp(ML.length,"cereri de ofertă",ML.length?`${won} câștigate (${pct(won/ML.length)})`:"")}</div>`;
+  if(MC.length&&R.length<MC.length)h+=`<p class="ev-file">${MC.length-R.length} ${MC.length-R.length===1?"contract nu are":"contracte nu au"} rentabilitatea calculată, deci venitul și profitul sunt parțiale. Le completezi la Contracte → Rentabilitate, după eveniment.</p>`;
+  /* locații */
+  const loc={};ME.forEach(x=>{const k=x.e.name;loc[k]=loc[k]||{n:k,ev:0,p:0};loc[k].ev++;loc[k].p+=typeof x.e.persons==="number"?x.e.persons:0});
+  const LL=Object.values(loc).sort((a,b)=>b.ev-a.ev||b.p-a.p);
+  if(LL.length)h+=`<h2 class="ev-h2">Locații</h2><div class="rp-t">`+LL.slice(0,10).map(l=>`<div class="rp-r"><span>${esc(l.n)}</span><span>${l.ev} ${l.ev===1?"eveniment":"evenimente"}</span><span>${num(l.p)} pers.</span></div>`).join("")+`</div>`;
+  /* barmani */
+  h+=`<h2 class="ev-h2">Barmani · plata pe ${esc(MON[+month.split("-")[1]-1])}</h2>`;
+  h+=`<p class="ev-file">Suma pe eveniment vine din tariful fiecărui om (sau tariful general). O poți schimba la orice eveniment. Numele se iau din rândul „Echipa” al fișei.</p>`;
+  if(editT||!nr(EQ.def)&&!Object.keys(EQ.rates).length){
+    const names=[...new Set([...T.map(t=>t.n),...Object.keys(EQ.rates).map(tcase)])].sort((a,b)=>a.localeCompare(b,"ro"));
+    h+=`<div class="rp-ed"><label>Tarif general pe eveniment (lei)<input data-rt="__def" inputmode="decimal" value="${esc(EQ.def||"")}" placeholder="ex: 250"></label>`+
+      names.map(n=>`<label>${esc(n)}<span class="rp-two"><input data-rt="${esc(nrm(n))}" inputmode="decimal" value="${esc(EQ.rates[nrm(n)]??"")}" placeholder="tarif general"><input data-tel="${esc(nrm(n))}" inputmode="tel" value="${esc(EQ.tel[nrm(n)]||"")}" placeholder="telefon"></span></label>`).join("")+
+      `<div class="st-acts"><button class="btn primary" data-rp="saverates">Salvează tarifele</button>${editT?`<button class="btn" data-rp="canceltar">Renunță</button>`:""}</div></div>`;
+  }else h+=`<p><button class="btn" data-rp="tarife">Tarife și telefoane</button></p>`;
+  if(!T.length)h+=`<div class="ev-ok">Nicio echipă trecută în fișele din luna asta.</div>`;
+  else{h+=`<div class="ev-list">`;T.forEach(t=>{const pk=`${month}|${t.k}`,paid=!!EQ.paid[pk];
+    h+=`<div class="rp-b"><button class="st-row" data-rb="${esc(t.k)}" aria-expanded="${openB===t.k}"><span>${esc(t.n)}<small class="st-res">${t.ev.length} ${t.ev.length===1?"eveniment":"evenimente"}${paid?" · ✓ plătit":""}</small></span><b class="st-n">${lei(t.sum)}</b></button>`;
+    if(openB===t.k){h+=`<div class="rp-evs">`+t.ev.map(({x,a})=>`<label class="rp-ev"><span>${esc(x.d.split("-").reverse().slice(0,2).join("."))} · ${esc(x.e.name)}</span><input data-pay="${esc(payKey(x,t.n))}" inputmode="decimal" value="${esc(String(a))}"><small>lei</small></label>`).join("")+
+      `<div class="st-acts"><button class="btn primary" data-rp="savepay" data-k="${esc(t.k)}">Salvează sumele</button><button class="btn" data-rp="paid" data-k="${esc(t.k)}">${paid?"Marchează neplătit":"✓ Marchează plătit"}</button>${EQ.tel[t.k]?`<a class="btn" target="_blank" rel="noopener" href="https://wa.me/${telWa(EQ.tel[t.k])}?text=${encodeURIComponent(payTxt(t))}">Trimite pe WhatsApp</a>`:`<small class="ev-file">Pune telefonul la „Tarife și telefoane” ca să-i trimiți decontul pe WhatsApp.</small>`}</div></div>`}
+    h+=`</div>`});h+=`</div><p class="ev-sub" style="text-align:right">Total barmani: ${lei(payTot)}</p>`}
+  if(msg)h+=`<p class="ev-ok">${esc(msg)}</p>`;
+  V.innerHTML=h;
+}
+function payTxt(t){return `Salut, ${t.n.split(" ")[0]}! Decontul pe ${monthLabel(month)}:\n`+t.ev.map(({x,a})=>`- ${x.d.split("-").reverse().slice(0,2).join(".")} ${x.e.name}: ${Math.round(a)} lei`).join("\n")+`\nTotal: ${Math.round(t.sum)} lei\nMulțumesc!`}
+
+V.addEventListener("click",async e=>{
+  const t=e.target,b=t.closest("[data-rp]"),rb=t.closest("[data-rb]");
+  if(rb){openB=openB===rb.dataset.rb?null:rb.dataset.rb;render();return}
+  if(!b)return;const a=b.dataset.rp;
+  if(a==="prev"||a==="next"){month=shift(month,a==="prev"?-1:1);openB=null;msg="";render();return}
+  if(a==="reload"){msg="";load(true);return}
+  if(a==="tarife"){editT=true;render();return}
+  if(a==="canceltar"){editT=false;render();return}
+  if(a==="saverates"){const rates={},tel={};let def=EQ.def;
+    V.querySelectorAll("[data-rt]").forEach(i=>{const v=i.value.trim();if(i.dataset.rt==="__def")def=v;else if(v)rates[i.dataset.rt]=v});
+    V.querySelectorAll("[data-tel]").forEach(i=>{const v=i.value.trim();if(v)tel[i.dataset.tel]=v});
+    EQ.def=def;EQ.rates=rates;EQ.tel={...EQ.tel,...tel};editT=false;await F.fs.doc(`${F.base}/privat/echipa`).set({...EQ}).catch(()=>toast("Nu am putut salva."));msg="Tarifele sunt salvate.";render();return}
+  if(a==="savepay"){const up={};V.querySelectorAll("[data-pay]").forEach(i=>{up[i.dataset.pay]=i.value.trim()});EQ.pay={...EQ.pay,...up};await saveEQ({pay:up});msg="Sumele sunt salvate.";render();return}
+  if(a==="paid"){const pk=`${month}|${b.dataset.k}`,v=!EQ.paid[pk];EQ.paid[pk]=v;await saveEQ({paid:{[pk]:v}});render();return}
+});
+let started=false;
+function start(){if(started){render();return}started=true;load()}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="raport")start()}));
+if(store.get("tab","evenimente")==="raport")start();
+window.__rap={team:()=>EQ?team():[]};
 })();
 
 /* After a save reloads the page, reopen what was being edited */

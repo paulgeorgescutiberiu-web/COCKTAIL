@@ -118,7 +118,7 @@ function viewForm(){
     <div class="st-meta">${inp("strada","Strada",{ph:"str. Ana Ipătescu"})}${inp("nr","Nr.")}${inp("bl","Bl.")}${inp("sc","Sc.")}${inp("et","Etaj")}${inp("ap","Ap.")}
     ${inp("localitate","Localitate",{ph:"SIBIU"})}${inp("judet","Județ",{ph:"SIBIU"})}</div>
     <h2 class="ev-h2">Eveniment</h2><div class="st-meta">
-    ${inp("dataContract","Data contractului",{type:"date"})}${inp("dataEv","Data evenimentului",{type:"date"})}${inp("locatie","Locația",{ph:"SYMPHONY"})}
+    ${inp("dataContract","Data contractului",{type:"date"})}${inp("dataEv","Data evenimentului",{type:"date"})}<div class="ct-full" id="ctOver">${window.__qr&&window.__qr.sameDayHTML?window.__qr.sameDayHTML(f.dataEv,f.id,true):""}</div>${inp("locatie","Locația",{ph:"SYMPHONY"})}
     ${inp("oraEv","Ora începerii (pentru calendar)",{type:"time"})}${inp("invitati","Nr. minim de invitați",{im:"numeric"})}${inp("obiect","Obiectul contractului")}</div>
     <h2 class="ev-h2">Preț și plată</h2><div class="st-meta">
     ${inp("pret","Preț",{im:"decimal"})}${sel("moneda","Moneda",["EURO","RON"])}${sel("unitate","Unitate",["/ PERSOANĂ","TOTAL"])}${sel("tva","TVA",["fără TVA","cu TVA inclus"])}</div>
@@ -184,6 +184,8 @@ function viewFirma(){
     <div class="st-meta">${row("socialHook","Adresa webhook Make (https://hook.eu1.make.com/…)")}</div>
     <h2 class="ev-h2">Plata avansului cu cardul (Revolut)</h2><p class="ev-file">Pentru butonul „Link de plată avans”. E adresa webhook-ului din Make (scenariul „Avans Revolut”), care creează linkul în Revolut Business. Cheia Revolut stă doar în Make, nu în aplicație.</p>
     <div class="st-meta">${row("payHook","Adresa webhook Make pentru plăți")}</div>
+    <h2 class="ev-h2">Ce echipament și oameni ai</h2><p class="ev-file">Când faci un contract pe o zi în care mai ai evenimente, aplicația îți spune dacă îți ajung.</p>
+    <div class="st-meta">${row("capBar","Baruri mobile")}${row("capCar","Mașini / remorci")}${row("capPpl","Barmani disponibili")}</div>
     <h2 class="ev-h2">Pagina de la bar (QR)</h2><p class="ev-file">Apar pe pagina pe care o deschid invitații când scanează QR-ul de pe bar. Linkul de recenzie îl iei din Google Maps: profilul tău → „Cere recenzii” → Copiază linkul.</p>
     <div class="st-meta">${row("reviewUrl","Link recenzie Google (https://g.page/r/…)")}${row("leadHook","Webhook Make pentru notificare la cerere nouă (opțional)")}${row("igUrl","Instagram (implicit instagram.com/cocktailphilosophy)")}${row("fbUrl","Facebook (implicit facebook.com/cocktailphilosophy)")}</div>
     <div class="st-save"><button class="btn primary" data-c="savefirma">Salvează</button></div>`;
@@ -723,6 +725,7 @@ V.addEventListener("change",e=>{
   const i=e.target.closest("[data-sgn]");if(!i||!i.files||!i.files[0])return;const c=list.find(x=>x.id===i.dataset.sgn);if(c)uploadSigned(c,i)});
 V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render();return}
 });
+V.addEventListener("change",e=>{const i=e.target;if(i&&i.dataset&&i.dataset.f==="dataEv"){const o=document.getElementById("ctOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,f&&f.id,true)}});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}

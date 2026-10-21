@@ -271,5 +271,15 @@ function leadClick(t){
   return false}
 /* recalculează totalul ofertei când schimbi pachetul, invitații sau prețul */
 document.addEventListener("change",e=>{if(e.target.closest&&e.target.closest("[data-lof]")){grabOffer();if(e.target.dataset.lof==="inv")LOFF.pp=null;refresh()}});
-window.__qr={code,link,leadsHTML,show,sync,pendHTML};
+/* ---------- aceeași zi: câte evenimente ai deja și dacă îți ajung barurile, mașinile, oamenii ---------- */
+function sameDay(d,skipId){if(!d)return null;const D=curD(),ev=[],seen=new Set();
+  CT.filter(c=>c.dataEv===d&&c.id!==skipId).forEach(c=>{const n=tcase(c.locatie||c.nume||"");seen.add(nrm(n).join(" "));ev.push({n,t:c.oraEv||"",src:"contract",who:tcase(c.nume||"")})});
+  if(D)D.events.forEach(e=>{if(iso(evDate(e,D))!==d)return;const k=nrm(e.name).join(" ");if([...seen].some(s=>s&&(s.includes(k)||k.includes(s))))return;ev.push({n:titleCase(e.name),t:e.time||"",src:"fișă",who:(e.team||[]).join(" ")})});
+  const cap={bar:+FIRMA.capBar||0,car:+FIRMA.capCar||0,ppl:+FIRMA.capPpl||0};
+  return {ev,cap}}
+function sameDayHTML(d,skipId,adding){const r=sameDay(d,skipId);if(!r||!r.ev.length)return d?`<p class="ev-file ov-ok">Nimic altceva în ziua asta.</p>`:"";
+  const n=r.ev.length+(adding?1:0),c=r.cap,over=c.bar&&n>c.bar;
+  return `<div class="${over?"ev-alert":"ev-ok"} ov-box"><b>${r.ev.length===1?"Mai ai un eveniment":"Mai ai "+r.ev.length+" evenimente"} în ziua asta:</b> ${r.ev.map(x=>esc(x.n)+(x.t?" ("+esc(x.t)+")":"")).join(", ")}.`+
+    (c.bar||c.car||c.ppl?` <br>Cu acesta: <b>${n} ${n===1?"eveniment":"evenimente"}</b>${c.bar?` · ai ${c.bar} ${c.bar===1?"bar":"baruri"}`:""}${c.car?` · ${c.car} ${c.car===1?"mașină":"mașini"}`:""}${c.ppl?` · ${c.ppl} oameni (cam ${Math.floor(c.ppl/Math.max(1,n))} pe eveniment)`:""}.${over?" <b>Nu-ți ajung barurile.</b>":c.car&&n>c.car?" <b>Nu-ți ajung mașinile.</b>":""}`:` <small>Pune la Datele firmei câte baruri, mașini și oameni ai, ca să-ți spun dacă îți ajung.</small>`)+`</div>`}
+window.__qr={code,link,leadsHTML,show,sync,pendHTML,sameDayHTML};
 })();
