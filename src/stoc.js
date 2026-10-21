@@ -204,7 +204,7 @@ window.__stocIesire=async evd=>{if(await writeIesire(evd))toast(`Marfa pentru ${
 function subscribe(){
   if(sub||!F)return;
   sub=F.fs.collection(`${F.base}/stoc`).onSnapshot(snap=>{
-    const next={};snap.docs.forEach(d=>next[d.id]=d.data());docs=next;
+    const next={};snap.docs.forEach(d=>next[d.id]=d.data());docs=next;loaded=true;
     Object.values(docs).filter(d=>d.tip==="iesire"&&d.ds&&!retSubs[d.ds]).forEach(d=>{
       retSubs[d.ds]=F.fs.collection(`${F.base}/retur/${d.ds}/events`).onSnapshot(s=>{
         const r={};s.docs.forEach(x=>r[x.id]=(x.data()||{}).items||{});rets[d.ds]=r;if(mode==="list")render();
@@ -424,7 +424,8 @@ V.addEventListener("click",async e=>{
 });
 
 let started=false;
-function start(){if(started)return;started=true;V.innerHTML=`<p class="ev-file">Se încarcă stocul…</p>`;subscribe()}
+let loaded=false;
+function start(){if(started)return;started=true;if(loaded){render();return}V.innerHTML=`<p class="ev-file">Se încarcă stocul…</p>`;subscribe()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="stoc")start()}));
 if(store.get("tab","retete")==="stoc")start();
 window.__stocRefresh=()=>{if(started&&mode==="list")render()};
