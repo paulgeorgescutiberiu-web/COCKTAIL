@@ -12,7 +12,7 @@ rep('''  h+=`<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>An
   h+=`<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>Anterior</small><b>${esc(prev.name)}</b></button>`:"<span></span>"}${next?`<button data-r="${next.id}"><small>Următor</small><b>${esc(next.name)}</b></button>`:"<span></span>"}</div></div>`;
   return h;
 }''')
-rep('$("#evView").addEventListener("click",ev=>{\n  if(cxClick(ev.target))return;','$("#evView").addEventListener("click",ev=>{\n  if(enClick(ev.target))return;\n  if(arhClick(ev.target))return;\n  const ed=ev.target.closest("[data-enedit]");if(ed){enFromEvent(ed.dataset.enedit);return}\n  if(cxClick(ev.target))return;')
+rep('$("#evView").addEventListener("click",ev=>{\n  if(cxClick(ev.target))return;','$("#evView").addEventListener("click",ev=>{\n  if(enClick(ev.target))return;\n  if(arhClick(ev.target))return;\n  if(ev.target.closest("[data-prep]")){prepClick(ev.target);return}\n  const ed=ev.target.closest("[data-enedit]");if(ed){enFromEvent(ed.dataset.enedit);return}\n  if(cxClick(ev.target))return;')
 rep("</style>\n</head>",""".ev-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .en-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .en-day{padding:6px 10px;border:1.5px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);font:inherit;font-size:.85rem;cursor:pointer}

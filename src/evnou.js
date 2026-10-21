@@ -237,3 +237,51 @@ function enMenuRatios(R0,ids){
     if(!tot||!selTot)return;grp.forEach(L=>{out[L]=sel.has(L)?(R0[L]||0)*tot/selTot:0})});
   return out;
 }
+const prepQ=(q,u)=>{q=Math.round(q*100)/100;const U=String(u||"").toLowerCase();if(U==="g"&&q>=1000)return num(Math.round(q/10)/100)+" kg";if(U==="ml"&&q>=1000)return num(Math.round(q/10)/100)+" L";return num(q)+(u?" "+u:"")};
+/* ---------- Preparare premixuri: câte sticle trebuie făcute pentru evenimentele săptămânii ---------- */
+let PREP={rec:null,edit:false,msg:""};
+function prepLoadRec(){if(PREP.rec)return;PREP.rec={};try{const F=window.CPFS;F.fs.doc(`${F.base}/config/premixuri`).get().then(d=>{PREP.rec=d.exists&&d.data().map||{};if(route==="prep")render()}).catch(()=>{})}catch(e){}}
+const prepParse=t=>String(t||"").split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{const m=l.match(/^(.*?)[\s:–-]+(\d+(?:[.,]\d+)?)\s*([^\d\s].*)?$/);return m?{n:m[1].trim(),q:parseFloat(m[2].replace(",",".")),u:(m[3]||"").trim()}:{n:l,q:null,u:""}});
+const prepFmt=a=>(a||[]).map(i=>`${i.n} ${i.q!=null?num(i.q):""}${i.u?" "+i.u:""}`.trim()).join("\n");
+function prepRows(){
+  if(!D)return [];const ds=window.__stocDs?window.__stocDs(EVD):"";
+  return D.items.filter(it=>it.cat==="premix").map(it=>{let need=0;const per=[];
+    D.events.forEach(e=>{const x=e.values[it.key];if(x&&typeof x.v==="number"&&x.v>0){need+=x.v;per.push(`${e.name} ${num(x.v)}`)}});
+    const a=window.__stocAvail?window.__stocAvail(it.excelLabel,ds):null,shelf=a?Math.max(0,a.disp):null;
+    const make=Math.max(0,Math.ceil(need-(shelf||0)-1e-9));
+    return {it,L:it.excelLabel,need,per,shelf,make}}).filter(r=>r.need>0);
+}
+function viewPrep(){
+  prepLoadRec();const R=prepRows(),rec=PREP.rec||{},admin=window.CPFS&&window.CPFS.isAdmin;
+  let h=`<p class="ev-mode">Câte sticle din fiecare premix trebuie preparate pentru evenimentele din ${esc(D.title.big)}: ce pleacă la evenimente, minus ce e deja în depozit.</p>`;
+  if(!R.length)return h+`<div class="ev-ok">În fișa săptămânii nu sunt premixuri.</div>`;
+  const noStock=R.every(r=>r.shelf==null);
+  if(noStock)h+=`<div class="ev-alert">Stocul de premixuri nu e introdus, așa că socotesc că depozitul e gol. Fă un Inventar la Stoc ca să vezi ce ai deja.</div>`;
+  h+=`<div class="prep-t"><div class="prep-r prep-h"><span>Premix</span><span>La evenimente</span><span>În depozit</span><span>De preparat</span></div>`+
+    R.map(r=>`<div class="prep-r"><span><b>${esc(r.it.label)}</b><small>${esc(r.per.join(" · "))}</small></span><span>${num(r.need)}</span><span>${r.shelf==null?"—":num(r.shelf)}</span><span class="prep-mk ${r.make?"":"ok"}">${r.make?num(r.make)+" sticle":"✓ ajunge"}</span></div>`).join("")+`</div>`;
+  const tot={};R.forEach(r=>{(rec[r.L]||[]).forEach(i=>{if(i.q==null||!r.make)return;const k=norm(i.n)+"|"+i.u;tot[k]=tot[k]||{n:i.n,u:i.u,q:0};tot[k].q+=i.q*r.make})});
+  const T=Object.values(tot);
+  if(T.length)h+=`<h2 class="ev-h2">Ingrediente pentru preparare</h2><div class="ev-list">`+T.sort((a,b)=>a.n.localeCompare(b.n,"ro")).map(i=>`<div class="st-in"><span>${esc(i.n)}</span><b>${esc(prepQ(i.q,i.u))}</b></div>`).join("")+`</div>`;
+  else if(R.some(r=>r.make))h+=`<p class="ev-file">Ca să vezi și ingredientele de cumpărat, ${admin?"scrie mai jos rețeta fiecărui premix (pentru o sticlă de 0,7 L).":"Paul trebuie să adauge rețetele premixurilor."}</p>`;
+  h+=`<div class="st-save"><button class="btn primary" data-prep="copy">Copiază lista pentru WhatsApp</button></div>`;
+  if(admin){h+=`<h2 class="ev-h2">Rețetele premixurilor <small class="ev-file">(pentru o sticlă de 0,7 L)</small></h2>`;
+    if(!PREP.edit)h+=`<p><button class="btn" data-prep="edit">${Object.keys(rec).length?"Modifică rețetele":"Adaugă rețetele"}</button></p>`+Object.entries(rec).map(([L,a])=>`<p class="ev-file"><b>${esc((KNOWN[L]||[capL(L)])[0])}:</b> ${esc(prepFmt(a).replace(/\n/g," · "))}</p>`).join("");
+    else{h+=`<p class="ev-file">Câte un ingredient pe rând, cu cantitatea și unitatea, de exemplu „Zahăr 400 g” sau „Suc de lămâie 200 ml”.</p><div class="prep-ed">`+
+      D.items.filter(it=>it.cat==="premix").map(it=>`<label>${esc(it.label)}<textarea data-prec="${esc(it.excelLabel)}" rows="4" placeholder="Zahăr 400 g&#10;Apă 300 ml">${esc(prepFmt(rec[it.excelLabel]))}</textarea></label>`).join("")+
+      `</div><div class="st-save"><button class="btn" data-prep="cancel">Renunță</button> <button class="btn primary" data-prep="save">Salvează rețetele</button></div>`}
+    if(PREP.msg)h+=`<p class="ev-ok">${esc(PREP.msg)}</p>`}
+  return h;
+}
+async function prepClick(t){const b=t.closest("[data-prep]");if(!b)return false;const a=b.dataset.prep;
+  if(a==="edit"){PREP.edit=true;PREP.msg="";render();return true}
+  if(a==="cancel"){PREP.edit=false;render();return true}
+  if(a==="save"){const m={};document.querySelectorAll("#evView [data-prec]").forEach(x=>{const p=prepParse(x.value);if(p.length)m[x.dataset.prec]=p});
+    try{const F=window.CPFS;await F.fs.doc(`${F.base}/config/premixuri`).set({map:m,at:new Date().toISOString()});PREP.rec=m;PREP.edit=false;PREP.msg="Rețetele sunt salvate."}catch(e){PREP.msg="Nu am putut salva. Verifică internetul."}
+    render();return true}
+  if(a==="copy"){const R=prepRows(),rec=PREP.rec||{};
+    let txt=`Preparare premixuri · ${D.title.big}\n\n`+R.map(r=>`${r.it.label}: ${r.make?r.make+" sticle de preparat":"ajunge din depozit"} (la evenimente ${num(r.need)}${r.shelf!=null?", în depozit "+num(r.shelf):""})`).join("\n");
+    const tot={};R.forEach(r=>(rec[r.L]||[]).forEach(i=>{if(i.q==null||!r.make)return;const k=norm(i.n)+"|"+i.u;tot[k]=tot[k]||{n:i.n,u:i.u,q:0};tot[k].q+=i.q*r.make}));
+    const T=Object.values(tot);if(T.length)txt+=`\n\nIngrediente:\n`+T.map(i=>`- ${i.n}: ${prepQ(i.q,i.u)}`).join("\n");
+    try{await navigator.clipboard.writeText(txt);toast("Lista e copiată. Lipește-o în grupul de WhatsApp.")}catch(e){window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}
+    return true}
+  return true}
