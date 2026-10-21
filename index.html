@@ -2373,6 +2373,7 @@ function viewList(){
       <div class="ct-b ct-sg">${c.signedId?`<a class="ct-chip on" href="https://drive.google.com/file/d/${esc(c.signedId)}/view" target="_blank" rel="noopener">✓ Semnat de client${c.signedAt?" · "+esc(shortDate(c.signedAt)):""} · vezi</a>`:`<span class="ct-chip">Nesemnat de client</span>`}
       <label class="btn${c.signedId?"":" primary"} ct-up">${c.signedId?"Înlocuiește contractul semnat":"Încarcă contractul semnat de client"}<input type="file" accept="application/pdf,image/*" data-sgn="${c.id}" hidden></label></div>
       ${payRow(c)}
+      ${invRow(c)}
       ${portalRow(c)}
       ${c.rent&&c.rent.calc?`<div class="ct-m">Rentabilitate: venit ${lei(c.rent.calc.venit)} · profit <b>${lei(c.rent.calc.profit)}</b> (${pct(c.rent.calc.marja)})</div>`:""}
       <div class="ct-b"><button class="btn" data-fisa="${c.id}">Fișă eveniment</button><button class="btn" data-rent="${c.id}">Rentabilitate</button><button class="btn" data-notes="${c.id}">Notițe${(c.notes||[]).length?` (${c.notes.length})`:""}</button></div>
@@ -2396,6 +2397,8 @@ function viewFirma(){
     <div class="st-meta">${row("socialHook","Adresa webhook Make (https://hook.eu1.make.com/…)")}</div>
     <h2 class="ev-h2">Plata avansului cu cardul (Revolut)</h2><p class="ev-file">Pentru butonul „Link de plată avans”. E adresa webhook-ului din Make (scenariul „Avans Revolut”), care creează linkul în Revolut Business. Cheia Revolut stă doar în Make, nu în aplicație.</p>
     <div class="st-meta">${row("payHook","Adresa webhook Make pentru plăți")}</div>
+    <h2 class="ev-h2">Facturare SmartBill</h2><p class="ev-file">Pentru butoanele „Factură avans” și „Factură finală” de la contracte. E adresa webhook-ului din Make (scenariul „Factură SmartBill”). Cheia SmartBill stă doar în Make, nu în aplicație.</p>
+    <div class="st-meta">${row("invHook","Adresa webhook Make pentru facturi")}${row("sbSerie","Seria facturilor în SmartBill (ex: CPH)")}<label>TVA<select data-fi="sbTva">${[["neplatitor","Neplătitor de TVA"],["21","Plătitor, 21%"],["11","Plătitor, 11%"]].map(([v,n])=>`<option value="${v}"${(x.sbTva||"neplatitor")===v?" selected":""}>${n}</option>`).join("")}</select></label><label>Cum se creează<select data-fi="sbDraft"><option value="da"${(x.sbDraft||"da")==="da"?" selected":""}>Ciornă (o verific în SmartBill)</option><option value="nu"${x.sbDraft==="nu"?" selected":""}>Factură emisă direct</option></select></label></div>
     <h2 class="ev-h2">Ce echipament și oameni ai</h2><p class="ev-file">Când faci un contract pe o zi în care mai ai evenimente, aplicația îți spune dacă îți ajung.</p>
     <div class="st-meta">${row("capBar","Baruri mobile")}${row("capCar","Mașini / remorci")}${row("capPpl","Barmani disponibili")}</div>
     <h2 class="ev-h2">Pagina de la bar (QR)</h2><p class="ev-file">Apar pe pagina pe care o deschid invitații când scanează QR-ul de pe bar. Linkul de recenzie îl iei din Google Maps: profilul tău → „Cere recenzii” → Copiază linkul.</p>
@@ -2591,6 +2594,39 @@ function payRow(c){
     <div class="ct-m">Link de plată creat ${esc(shortDate(String(o.at||"").slice(0,10)))} · ${esc(c.avans)} ${esc(c.monedaAvans)}. Când clientul plătește, avansul se bifează singur.</div>`;
   return `<div class="ct-b"><button class="btn" data-paynew="${c.id}">💳 Link de plată avans (${esc(c.avans)} ${esc(c.monedaAvans)})</button></div>`;
 }
+/* ---------- Facturare SmartBill (prin scenariul Make „Factură SmartBill”) ---------- */
+const INV={busy:{},arm:{}};
+const cnum=v=>{const n=Number(String(v||"").trim().replace(/\s/g,"").replace(/\.(?=\d{3}(\D|$))/g,"").replace(",","."));return isFinite(n)&&n>0?n:0};
+function invTotal(c){const p=cnum(c.pret);if(!p)return 0;return c.unitate==="TOTAL"?p:p*cnum(c.invitati)}
+function invAvans(c){return cnum(c.avans)}
+function invRow(c){
+  const hook=(firma&&firma.invHook||"").trim();if(!hook)return "";
+  const A=c.invAvans,Fi=c.invFinal,tot=invTotal(c),av=invAvans(c),cur=c.moneda==="EURO"?"EUR":"RON",avCur=c.monedaAvans==="EURO"?"EUR":"RON";
+  const done=x=>`🧾 ${esc(x.series||"")} ${esc(x.number||"")}${x.draft?" (ciornă)":""} · ${esc(shortDate(String(x.at||"").slice(0,10)))}`;
+  if(INV.busy[c.id])return `<div class="ct-b"><button class="btn" disabled>Se emite factura…</button></div>`;
+  let h=`<div class="ct-b">`;
+  if(A)h+=`<span class="ct-chip on">Avans: ${done(A)}</span>`;else if(av)h+=`<button class="btn" data-inv="avans" data-id="${c.id}">${INV.arm[c.id+"avans"]?"Sigur? Emite factura de avans":`🧾 Factură avans ${esc(String(av))} ${avCur}`}</button>`;
+  if(Fi)h+=`<span class="ct-chip on">Finală: ${done(Fi)}</span>`;else if(tot){const sub=(A||c.avansPlatit)&&avCur===cur;h+=`<button class="btn" data-inv="final" data-id="${c.id}">${INV.arm[c.id+"final"]?"Sigur? Emite factura finală":`🧾 Factură ${sub?"rest":"finală"} ${esc(String(Math.round((tot-(sub?av:0))*100)/100))} ${cur}`}</button>`}
+  return h+`</div>`}
+async function invNew(c,kind){
+  const hook=(firma&&firma.invHook||"").trim();INV.busy[c.id]=true;render();
+  try{const cur=c.moneda==="EURO"?"EUR":"RON",avCur=c.monedaAvans==="EURO"?"EUR":"RON",tot=invTotal(c),av=invAvans(c);
+    const withAv=kind==="final"&&(c.invAvans||c.avansPlatit)&&avCur===cur;
+    const amount=kind==="avans"?av:Math.round((tot-(withAv?av:0))*100)/100,currency=kind==="avans"?avCur:cur;
+    const evd=shortDate(c.dataEv),loc=tcase(c.locatie||"");
+    const product=kind==="avans"?`Avans servicii bar cocktail - eveniment ${evd}${loc?", "+loc:""}`:`Servicii bar cocktail - eveniment ${evd}${loc?", "+loc:""}${withAv?" (rest de plată după avans)":""}`;
+    const adr=[c.strada&&("Str. "+tcase(c.strada)),c.nr&&("nr. "+c.nr),c.bl&&("bl. "+c.bl),c.sc&&("sc. "+c.sc),c.et&&("et. "+c.et),c.ap&&("ap. "+c.ap)].filter(Boolean).join(", ");
+    const vat=(firma.sbTva||"neplatitor").trim(),draft=(firma.sbDraft||"da")!=="nu";
+    const r=await fetch(hook,{method:"POST",body:new URLSearchParams({action:"invoice",kind,ref:c.id,cif:String(firma.cui||"").replace(/\D/g,""),series:(firma.sbSerie||"").trim(),draft:draft?"true":"false",
+      issueDate:today(),client_name:tcase(c.nume||""),client_cnp:c.cnp||"",client_address:adr,client_city:tcase(c.localitate||""),client_county:tcase(c.judet||""),client_phone:c.tel||"",
+      product,amount:String(amount),currency,vat,taxIncluded:c.tva==="cu TVA inclus"||vat==="neplatitor"?"true":"false",mentions:`Contract din ${shortDate(c.dataContract)}`})});
+    const t=await r.text();let j=null;try{j=JSON.parse(t)}catch(e){}
+    if(!r.ok||!j||j.errorText||!j.number)throw {msg:"SmartBill a refuzat factura"+(j&&j.errorText?": "+j.errorText:". Verifică scenariul „Factură SmartBill” din Make.")};
+    const x={series:j.series||"",number:String(j.number),draft,amount,currency,at:new Date().toISOString()};
+    await F.fs.doc(`${F.base}/contracte/${c.id}`).set({[kind==="avans"?"invAvans":"invFinal"]:x},{merge:true});
+    toast(draft?`Factura e creată ca ciornă în SmartBill (${x.series} ${x.number}). O verifici și o emiți de acolo.`:`Factura ${x.series} ${x.number} e emisă în SmartBill.`)}
+  catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut emite factura. Verifică internetul.")}
+  finally{delete INV.busy[c.id];render()}}
 async function payCall(params){
   const hook=(firma&&firma.payHook||"").trim();
   if(!/^https:\/\/hook\.[a-z0-9]+\.make\.com\//.test(hook))throw {msg:"Lipsește adresa webhook-ului pentru plăți. Pune-o la Datele firmei → Plata avansului cu cardul."};
@@ -2942,6 +2978,9 @@ V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
   if(t.closest("[data-bk]")){bkRun();return}
+  const iv=t.closest("[data-inv]");if(iv){const c=list.find(x=>x.id===iv.dataset.id),k=iv.dataset.inv,ak=iv.dataset.id+k;if(!c)return;
+    if(!INV.arm[ak]){INV.arm[ak]=true;render();setTimeout(()=>{if(INV.arm[ak]){delete INV.arm[ak];if(mode==="list")render()}},4000);return}
+    delete INV.arm[ak];invNew(c,k);return}
   const tx=t.closest("[data-thx]");if(tx){F.fs.doc(`${F.base}/contracte/${tx.dataset.thx}`).set({thanksAt:new Date().toISOString()},{merge:true}).catch(()=>{});return}
   const tk=t.closest("[data-thxskip]");if(tk){F.fs.doc(`${F.base}/contracte/${tk.dataset.thxskip}`).set({thanksSkip:true},{merge:true}).catch(()=>{});return}
   const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume)),menuIds:r.menuIds})}return}
