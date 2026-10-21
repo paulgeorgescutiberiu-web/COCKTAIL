@@ -451,6 +451,15 @@ a.btn.primary{color:var(--on-leaf)}
 .disp-ban{margin:0 0 12px}.disp-r{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line)}.disp-ban .disp-r{padding:8px 0}
 .disp-r small{display:block;color:var(--muted);font-size:.82rem}.ev-list>.disp-r:first-child{border-top:0}
 .disp-cal{border:1.5px solid var(--line);border-radius:14px;padding:10px;background:var(--card)}
+.fb-n{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:#c0392b;color:#fff;font-size:.75rem;line-height:20px;margin-left:4px}
+.fb-sum{display:flex;gap:16px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:14px;padding:14px;background:var(--card);margin:6px 0 10px}
+.fb-avg{display:flex;flex-direction:column;align-items:center;min-width:110px}.fb-avg b{font-size:2.4rem;line-height:1}.fb-avg small{color:var(--muted)}
+.fb-st{color:#e0a100;letter-spacing:1px}.fb-dist{flex:1;min-width:180px;display:flex;flex-direction:column;gap:4px}
+.fb-bar{display:grid;grid-template-columns:30px 1fr 26px;gap:8px;align-items:center;font-size:.85rem}.fb-bar i{display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,#e0a100 var(--w),var(--line) var(--w))}.fb-bar b{text-align:right}
+.fb-sel{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:.85rem;color:var(--muted)}.fb-sel select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
+.fb-item{padding:12px 14px;border-top:1px solid var(--line);position:relative}.ev-list>.fb-item:first-child{border-top:0}.fb-item.low{background:rgba(192,57,43,.07)}
+.fb-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}.fb-h small{color:var(--muted)}.fb-ck{margin:6px 0 0;font-weight:600}.fb-m{margin:6px 0 0;font-style:italic}
+.fb-del{margin-top:8px;padding:4px 12px;font-size:.8rem}
 .disp-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}.disp-nav b{font-size:1.05rem}.disp-nav .btn{min-width:44px;font-size:1.2rem}.disp-sum{text-align:center;margin:0 0 8px}.disp-quick{margin-top:10px;flex-wrap:wrap}
 .disp-h,.disp-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.disp-h span{text-align:center;font-size:.75rem;font-weight:700;color:var(--muted)}
 .disp-d{position:relative;aspect-ratio:1;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}
@@ -1103,7 +1112,7 @@ function parseRet(s){s=String(s).trim().replace(",",".");if(s==="")return null;c
 
 function heading(){
   const h=document.querySelector("h1");if(!h)return;
-  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="echipa"){h.innerHTML=`Echipa<span class="yr">disponibilitate</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram + Facebook</span>`;return}
+  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="echipa"){h.innerHTML=`Echipa<span class="yr">și feedback</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram + Facebook</span>`;return}
   h.innerHTML=tb==="evenimente"&&D?`Evenimente<span class="yr">${esc(D.title.big)}</span>`:`Rețetar<span class="yr">2026</span>`;
 }
 function loadData(){
@@ -3710,14 +3719,42 @@ async function saveDays(days){ALL[F.UID]={...my(),days};render();
 function render(){
   if(!started)return;
   let h=`<div class="st-top"><div><p class="ev-sub">${F.isAdmin?"Echipa":"Salut, "+esc(F.NAME||"")+"!"}</p><p class="ev-file">${F.isAdmin?"Cine poate lucra și cine a confirmat evenimentele.":"Evenimentele la care ești în echipă și zilele în care poți lucra."}</p></div>`;
-  if(F.isAdmin)h+=`<div class="st-acts"><button class="btn${view==="mine"?"":" primary"}" data-dv="team">Echipa</button><button class="btn${view==="mine"?" primary":""}" data-dv="mine">Zilele mele</button></div>`;
+  const vb=(k,t)=>`<button class="btn${view===k?" primary":""}" data-dv="${k}">${t}</button>`,nNew=fbNew();
+  h+=`<div class="st-acts">${F.isAdmin?vb("team","Echipa"):""}${vb("mine","Zilele mele")}${vb("fb","Feedback ⭐"+(nNew?` <span class="fb-n">${nNew}</span>`:""))}</div>`;
   h+=`</div>`;
-  if(F.isAdmin&&view==="team")h+=teamHTML();
+  if(view==="fb")h+=fbHTML();
+  else if(F.isAdmin&&view==="team")h+=teamHTML();
   else{const L=mine().filter(x=>!x.d||x.d>=iso(new Date()));h+=`<h2 class="ev-h2">Evenimentele mele</h2>`;
     if(!L.length)h+=`<div class="ev-ok">Nu ești în echipă la evenimentele din săptămâna încărcată.</div>`;
     else{const c=my().conf||{};h+=`<div class="ev-list">`+L.map(x=>`<div class="disp-r"><span><b>${esc(x.e.name)}</b><small>${x.d?esc(fday(x.d)):""}${x.e.time?" · ora "+esc(x.e.time):""}${x.e.persons?" · "+x.e.persons+" persoane":""} · echipa: ${esc((x.e.team||[]).join(", "))}</small></span><span class="qr-la">${c[x.key]==="da"?`<span class="ct-chip on">✓ confirmat</span>`:c[x.key]==="nu"?`<span class="ct-chip">✕ nu pot</span>`:""}<button class="btn${c[x.key]==="da"?"":" primary"}" data-dc="da" data-k="${esc(x.key)}">Confirm</button><button class="btn" data-dc="nu" data-k="${esc(x.key)}">Nu pot</button></span></div>`).join("")+`</div>`}
     h+=`<h2 class="ev-h2">Când pot lucra</h2>`+calHTML();}
   V.innerHTML=h;
+}
+/* ---------- feedback de la invitați (QR-ul de pe bar) ---------- */
+let FB=null,fbSub=null,fbEv="",fbDel=null;
+function fbSubscribe(){if(fbSub)return;fbSub=F.fs.collection("barFeedback").onSnapshot(s=>{FB=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));render()},()=>{FB="err";render()})}
+const fbSeenK="cp-fb-seen";
+function fbNew(){if(!Array.isArray(FB))return 0;let t="";try{t=localStorage.getItem(fbSeenK)||""}catch(e){}return FB.filter(x=>String(x.at)>t).length}
+const stars=n=>"★".repeat(n)+"☆".repeat(5-n);
+const avg=L=>L.length?(L.reduce((a,x)=>a+(+x.r||0),0)/L.length):0;
+const ld=a=>{const d=new Date(a);return isNaN(d)?String(a||"").slice(0,10):iso(d)},lt=a=>{const d=new Date(a);return isNaN(d)?"":`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
+function fbGroup(x){const d=ld(x.at);return `${d}|${x.evn||(x.ev&&x.ev!=="general"?x.ev:"QR general")}`}
+function fbHTML(){
+  if(FB==="err")return `<div class="ev-alert">Feedbackul nu se poate încărca. Dacă ești barman: intră o dată în aplicație cu linkul echipei, apoi reîncarcă. Paul: verifică regulile Firestore (blocul barFeedback).</div>`;
+  if(!FB)return `<p class="ev-file">Se încarcă feedbackul…</p>`;
+  try{localStorage.setItem(fbSeenK,FB.length?String(FB[0].at):"")}catch(e){}
+  if(!FB.length)return `<div class="ev-ok">Încă nu a lăsat nimeni feedback. Invitații îl dau din pagina care se deschide când scanează QR-ul de pe bar (secțiunea „Cum ți se pare?”).</div>`;
+  const G={};FB.forEach(x=>{const k=fbGroup(x);(G[k]=G[k]||[]).push(x)});
+  const keys=Object.keys(G).sort().reverse();if(fbEv&&!G[fbEv])fbEv="";
+  const L=fbEv?G[fbEv]:FB,a=avg(L),ck={};L.forEach(x=>{if(x.ck)ck[x.ck]=(ck[x.ck]||0)+1});
+  const top=Object.entries(ck).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const dist=[5,4,3,2,1].map(n=>{const c=L.filter(x=>+x.r===n).length;return `<div class="fb-bar"><span>${n}★</span><i style="--w:${L.length?Math.round(c/L.length*100):0}%"></i><b>${c}</b></div>`}).join("");
+  const lab=k=>{const [d,n]=k.split("|");return `${n} · ${fday(d)}`};
+  let h=`<div class="fb-sum"><div class="fb-avg"><b>${a.toFixed(1)}</b><span class="fb-st">${stars(Math.round(a))}</span><small>${L.length} ${L.length===1?"părere":"păreri"}</small></div><div class="fb-dist">${dist}</div></div>`;
+  if(top.length)h+=`<p class="ev-file">Cocktailul preferat: ${top.map(([n,c])=>`<b>${esc(n)}</b> (${c})`).join(" · ")}</p>`;
+  h+=`<label class="fb-sel">Eveniment<select data-fbev><option value="">Toate (${FB.length})</option>${keys.map(k=>`<option value="${esc(k)}"${k===fbEv?" selected":""}>${esc(lab(k))} · ${G[k].length} · ${avg(G[k]).toFixed(1)}★</option>`).join("")}</select></label>`;
+  h+=`<div class="ev-list">`+L.slice(0,150).map(x=>`<div class="fb-item ${+x.r<=2?"low":""}"><div class="fb-h"><span class="fb-st">${stars(+x.r||0)}</span><small>${esc(x.nm||"anonim")} · ${esc(fbEv?"":(x.evn||"QR general")+" · ")}${esc(fday(ld(x.at)))} ${esc(lt(x.at))}</small></div>${x.ck?`<p class="fb-ck">🍹 ${esc(x.ck)}</p>`:""}${x.msg?`<p class="fb-m">„${esc(x.msg)}”</p>`:""}${F.isAdmin?`<button class="btn fb-del" data-fbdel="${esc(x.id)}">${fbDel===x.id?"Sigur ștergi?":"Șterge"}</button>`:""}</div>`).join("")+`</div>`;
+  return h+`<p class="ev-file">Feedbackul îl văd doar Paul și echipa, în aplicație. Invitații care dau 4–5 stele sunt rugați să lase și o recenzie pe Google.</p>`;
 }
 function teamHTML(){
   const {D,ds}=weekEvents();let h="";
@@ -3740,7 +3777,9 @@ function teamHTML(){
   return h;
 }
 V.addEventListener("click",async e=>{
-  const dv=e.target.closest("[data-dv]");if(dv){view=dv.dataset.dv;render();return}
+  const dv=e.target.closest("[data-dv]");if(dv){view=dv.dataset.dv;if(view==="fb")fbSubscribe();render();return}
+  const fd=e.target.closest("[data-fbdel]");if(fd&&F.isAdmin){const id=fd.dataset.fbdel;if(fbDel!==id){fbDel=id;render();setTimeout(()=>{if(fbDel===id){fbDel=null;render()}},4000);return}
+    fbDel=null;await F.fs.doc("barFeedback/"+id).delete().catch(()=>toast("Nu am putut șterge."));toast("Șters.");return}
   const am=e.target.closest("[data-am]");if(am&&!am.disabled){admM=new Date(admM.getFullYear(),admM.getMonth()+Number(am.dataset.am),1);render();return}
   const dm=e.target.closest("[data-dm]");if(dm&&!dm.disabled){calM=new Date(calM.getFullYear(),calM.getMonth()+Number(dm.dataset.dm),1);render();return}
   const dq=e.target.closest("[data-dq]");if(dq){const y=calM.getFullYear(),mo=calM.getMonth(),n=new Date(y,mo+1,0).getDate(),today=new Date();today.setHours(0,0,0,0);const days={...(my().days||{})};
@@ -3749,7 +3788,8 @@ V.addEventListener("click",async e=>{
   const dd=e.target.closest("[data-dd]");if(dd&&!dd.disabled){const k=dd.dataset.dd,cur=(my().days||{})[k],nx=!cur?"da":cur==="da"?"nu":null;
     const days={...(my().days||{})};if(nx)days[k]=nx;else delete days[k];await saveDays(days);return}
 });
-function start(){if(!started){started=true;V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;view=F.isAdmin?"team":"mine"}subscribe();
+V.addEventListener("change",e=>{const s=e.target.closest("[data-fbev]");if(s){fbEv=s.value;render()}});
+function start(){if(!started){started=true;V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;view=F.isAdmin?"team":"mine"}subscribe();fbSubscribe();
   if(F.isAdmin&&!TEL)F.fs.doc(`${F.base}/privat/echipa`).get().then(d=>{const t=d.exists&&d.data().tel||{};TEL={};Object.entries(t).forEach(([k,v])=>TEL[first(k)]=v);render()}).catch(()=>{TEL={}});
   render()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="echipa")start()}));

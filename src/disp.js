@@ -62,14 +62,42 @@ async function saveDays(days){ALL[F.UID]={...my(),days};render();
 function render(){
   if(!started)return;
   let h=`<div class="st-top"><div><p class="ev-sub">${F.isAdmin?"Echipa":"Salut, "+esc(F.NAME||"")+"!"}</p><p class="ev-file">${F.isAdmin?"Cine poate lucra și cine a confirmat evenimentele.":"Evenimentele la care ești în echipă și zilele în care poți lucra."}</p></div>`;
-  if(F.isAdmin)h+=`<div class="st-acts"><button class="btn${view==="mine"?"":" primary"}" data-dv="team">Echipa</button><button class="btn${view==="mine"?" primary":""}" data-dv="mine">Zilele mele</button></div>`;
+  const vb=(k,t)=>`<button class="btn${view===k?" primary":""}" data-dv="${k}">${t}</button>`,nNew=fbNew();
+  h+=`<div class="st-acts">${F.isAdmin?vb("team","Echipa"):""}${vb("mine","Zilele mele")}${vb("fb","Feedback ⭐"+(nNew?` <span class="fb-n">${nNew}</span>`:""))}</div>`;
   h+=`</div>`;
-  if(F.isAdmin&&view==="team")h+=teamHTML();
+  if(view==="fb")h+=fbHTML();
+  else if(F.isAdmin&&view==="team")h+=teamHTML();
   else{const L=mine().filter(x=>!x.d||x.d>=iso(new Date()));h+=`<h2 class="ev-h2">Evenimentele mele</h2>`;
     if(!L.length)h+=`<div class="ev-ok">Nu ești în echipă la evenimentele din săptămâna încărcată.</div>`;
     else{const c=my().conf||{};h+=`<div class="ev-list">`+L.map(x=>`<div class="disp-r"><span><b>${esc(x.e.name)}</b><small>${x.d?esc(fday(x.d)):""}${x.e.time?" · ora "+esc(x.e.time):""}${x.e.persons?" · "+x.e.persons+" persoane":""} · echipa: ${esc((x.e.team||[]).join(", "))}</small></span><span class="qr-la">${c[x.key]==="da"?`<span class="ct-chip on">✓ confirmat</span>`:c[x.key]==="nu"?`<span class="ct-chip">✕ nu pot</span>`:""}<button class="btn${c[x.key]==="da"?"":" primary"}" data-dc="da" data-k="${esc(x.key)}">Confirm</button><button class="btn" data-dc="nu" data-k="${esc(x.key)}">Nu pot</button></span></div>`).join("")+`</div>`}
     h+=`<h2 class="ev-h2">Când pot lucra</h2>`+calHTML();}
   V.innerHTML=h;
+}
+/* ---------- feedback de la invitați (QR-ul de pe bar) ---------- */
+let FB=null,fbSub=null,fbEv="",fbDel=null;
+function fbSubscribe(){if(fbSub)return;fbSub=F.fs.collection("barFeedback").onSnapshot(s=>{FB=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));render()},()=>{FB="err";render()})}
+const fbSeenK="cp-fb-seen";
+function fbNew(){if(!Array.isArray(FB))return 0;let t="";try{t=localStorage.getItem(fbSeenK)||""}catch(e){}return FB.filter(x=>String(x.at)>t).length}
+const stars=n=>"★".repeat(n)+"☆".repeat(5-n);
+const avg=L=>L.length?(L.reduce((a,x)=>a+(+x.r||0),0)/L.length):0;
+const ld=a=>{const d=new Date(a);return isNaN(d)?String(a||"").slice(0,10):iso(d)},lt=a=>{const d=new Date(a);return isNaN(d)?"":`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`};
+function fbGroup(x){const d=ld(x.at);return `${d}|${x.evn||(x.ev&&x.ev!=="general"?x.ev:"QR general")}`}
+function fbHTML(){
+  if(FB==="err")return `<div class="ev-alert">Feedbackul nu se poate încărca. Dacă ești barman: intră o dată în aplicație cu linkul echipei, apoi reîncarcă. Paul: verifică regulile Firestore (blocul barFeedback).</div>`;
+  if(!FB)return `<p class="ev-file">Se încarcă feedbackul…</p>`;
+  try{localStorage.setItem(fbSeenK,FB.length?String(FB[0].at):"")}catch(e){}
+  if(!FB.length)return `<div class="ev-ok">Încă nu a lăsat nimeni feedback. Invitații îl dau din pagina care se deschide când scanează QR-ul de pe bar (secțiunea „Cum ți se pare?”).</div>`;
+  const G={};FB.forEach(x=>{const k=fbGroup(x);(G[k]=G[k]||[]).push(x)});
+  const keys=Object.keys(G).sort().reverse();if(fbEv&&!G[fbEv])fbEv="";
+  const L=fbEv?G[fbEv]:FB,a=avg(L),ck={};L.forEach(x=>{if(x.ck)ck[x.ck]=(ck[x.ck]||0)+1});
+  const top=Object.entries(ck).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const dist=[5,4,3,2,1].map(n=>{const c=L.filter(x=>+x.r===n).length;return `<div class="fb-bar"><span>${n}★</span><i style="--w:${L.length?Math.round(c/L.length*100):0}%"></i><b>${c}</b></div>`}).join("");
+  const lab=k=>{const [d,n]=k.split("|");return `${n} · ${fday(d)}`};
+  let h=`<div class="fb-sum"><div class="fb-avg"><b>${a.toFixed(1)}</b><span class="fb-st">${stars(Math.round(a))}</span><small>${L.length} ${L.length===1?"părere":"păreri"}</small></div><div class="fb-dist">${dist}</div></div>`;
+  if(top.length)h+=`<p class="ev-file">Cocktailul preferat: ${top.map(([n,c])=>`<b>${esc(n)}</b> (${c})`).join(" · ")}</p>`;
+  h+=`<label class="fb-sel">Eveniment<select data-fbev><option value="">Toate (${FB.length})</option>${keys.map(k=>`<option value="${esc(k)}"${k===fbEv?" selected":""}>${esc(lab(k))} · ${G[k].length} · ${avg(G[k]).toFixed(1)}★</option>`).join("")}</select></label>`;
+  h+=`<div class="ev-list">`+L.slice(0,150).map(x=>`<div class="fb-item ${+x.r<=2?"low":""}"><div class="fb-h"><span class="fb-st">${stars(+x.r||0)}</span><small>${esc(x.nm||"anonim")} · ${esc(fbEv?"":(x.evn||"QR general")+" · ")}${esc(fday(ld(x.at)))} ${esc(lt(x.at))}</small></div>${x.ck?`<p class="fb-ck">🍹 ${esc(x.ck)}</p>`:""}${x.msg?`<p class="fb-m">„${esc(x.msg)}”</p>`:""}${F.isAdmin?`<button class="btn fb-del" data-fbdel="${esc(x.id)}">${fbDel===x.id?"Sigur ștergi?":"Șterge"}</button>`:""}</div>`).join("")+`</div>`;
+  return h+`<p class="ev-file">Feedbackul îl văd doar Paul și echipa, în aplicație. Invitații care dau 4–5 stele sunt rugați să lase și o recenzie pe Google.</p>`;
 }
 function teamHTML(){
   const {D,ds}=weekEvents();let h="";
@@ -92,7 +120,9 @@ function teamHTML(){
   return h;
 }
 V.addEventListener("click",async e=>{
-  const dv=e.target.closest("[data-dv]");if(dv){view=dv.dataset.dv;render();return}
+  const dv=e.target.closest("[data-dv]");if(dv){view=dv.dataset.dv;if(view==="fb")fbSubscribe();render();return}
+  const fd=e.target.closest("[data-fbdel]");if(fd&&F.isAdmin){const id=fd.dataset.fbdel;if(fbDel!==id){fbDel=id;render();setTimeout(()=>{if(fbDel===id){fbDel=null;render()}},4000);return}
+    fbDel=null;await F.fs.doc("barFeedback/"+id).delete().catch(()=>toast("Nu am putut șterge."));toast("Șters.");return}
   const am=e.target.closest("[data-am]");if(am&&!am.disabled){admM=new Date(admM.getFullYear(),admM.getMonth()+Number(am.dataset.am),1);render();return}
   const dm=e.target.closest("[data-dm]");if(dm&&!dm.disabled){calM=new Date(calM.getFullYear(),calM.getMonth()+Number(dm.dataset.dm),1);render();return}
   const dq=e.target.closest("[data-dq]");if(dq){const y=calM.getFullYear(),mo=calM.getMonth(),n=new Date(y,mo+1,0).getDate(),today=new Date();today.setHours(0,0,0,0);const days={...(my().days||{})};
@@ -101,7 +131,8 @@ V.addEventListener("click",async e=>{
   const dd=e.target.closest("[data-dd]");if(dd&&!dd.disabled){const k=dd.dataset.dd,cur=(my().days||{})[k],nx=!cur?"da":cur==="da"?"nu":null;
     const days={...(my().days||{})};if(nx)days[k]=nx;else delete days[k];await saveDays(days);return}
 });
-function start(){if(!started){started=true;V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;view=F.isAdmin?"team":"mine"}subscribe();
+V.addEventListener("change",e=>{const s=e.target.closest("[data-fbev]");if(s){fbEv=s.value;render()}});
+function start(){if(!started){started=true;V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;view=F.isAdmin?"team":"mine"}subscribe();fbSubscribe();
   if(F.isAdmin&&!TEL)F.fs.doc(`${F.base}/privat/echipa`).get().then(d=>{const t=d.exists&&d.data().tel||{};TEL={};Object.entries(t).forEach(([k,v])=>TEL[first(k)]=v);render()}).catch(()=>{TEL={}});
   render()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="echipa")start()}));

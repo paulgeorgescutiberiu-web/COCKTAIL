@@ -9,7 +9,7 @@ rep('<section class="view" id="v-postare" role="tabpanel" hidden=""></section>',
 rep('<button role="tab" aria-selected="false" aria-controls="v-oferte" data-view="oferte">Oferte</button>','<button role="tab" aria-selected="false" aria-controls="v-echipa" data-view="echipa">Echipa</button>\n    <button role="tab" aria-selected="false" aria-controls="v-oferte" data-view="oferte">Oferte</button>')
 rep('<div class="ev-tabs" id="evTabs" aria-label="Evenimente"></div>','<div id="dispBanner"></div>\n    <div class="ev-tabs" id="evTabs" aria-label="Evenimente"></div>')
 rep('function render(){\n  const v=$("#evView");','function render(){\n  const v=$("#evView");if(window.__disp)setTimeout(window.__disp.banner);')
-rep('if(tb==="postare"){','if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="echipa"){h.innerHTML=`Echipa<span class="yr">disponibilitate</span>`;return}if(tb==="postare"){')
+rep('if(tb==="postare"){','if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="echipa"){h.innerHTML=`Echipa<span class="yr">și feedback</span>`;return}if(tb==="postare"){')
 r=open("raport.js",encoding="utf-8").read()+"\n"+open("disp.js",encoding="utf-8").read()
 rep('\n/* After a save reloads the page, reopen what was being edited */',"\n"+r+'\n/* After a save reloads the page, reopen what was being edited */')
 rep("</style>\n</head>",""".rp-kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0}
@@ -27,6 +27,15 @@ rep("</style>\n</head>",""".rp-kpi{display:grid;grid-template-columns:repeat(aut
 .disp-ban{margin:0 0 12px}.disp-r{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line)}.disp-ban .disp-r{padding:8px 0}
 .disp-r small{display:block;color:var(--muted);font-size:.82rem}.ev-list>.disp-r:first-child{border-top:0}
 .disp-cal{border:1.5px solid var(--line);border-radius:14px;padding:10px;background:var(--card)}
+.fb-n{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:#c0392b;color:#fff;font-size:.75rem;line-height:20px;margin-left:4px}
+.fb-sum{display:flex;gap:16px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:14px;padding:14px;background:var(--card);margin:6px 0 10px}
+.fb-avg{display:flex;flex-direction:column;align-items:center;min-width:110px}.fb-avg b{font-size:2.4rem;line-height:1}.fb-avg small{color:var(--muted)}
+.fb-st{color:#e0a100;letter-spacing:1px}.fb-dist{flex:1;min-width:180px;display:flex;flex-direction:column;gap:4px}
+.fb-bar{display:grid;grid-template-columns:30px 1fr 26px;gap:8px;align-items:center;font-size:.85rem}.fb-bar i{display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,#e0a100 var(--w),var(--line) var(--w))}.fb-bar b{text-align:right}
+.fb-sel{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:.85rem;color:var(--muted)}.fb-sel select{font:inherit;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
+.fb-item{padding:12px 14px;border-top:1px solid var(--line);position:relative}.ev-list>.fb-item:first-child{border-top:0}.fb-item.low{background:rgba(192,57,43,.07)}
+.fb-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}.fb-h small{color:var(--muted)}.fb-ck{margin:6px 0 0;font-weight:600}.fb-m{margin:6px 0 0;font-style:italic}
+.fb-del{margin-top:8px;padding:4px 12px;font-size:.8rem}
 .disp-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}.disp-nav b{font-size:1.05rem}.disp-nav .btn{min-width:44px;font-size:1.2rem}.disp-sum{text-align:center;margin:0 0 8px}.disp-quick{margin-top:10px;flex-wrap:wrap}
 .disp-h,.disp-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.disp-h span{text-align:center;font-size:.75rem;font-weight:700;color:var(--muted)}
 .disp-d{position:relative;aspect-ratio:1;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}

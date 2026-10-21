@@ -1,4 +1,5 @@
 rules_version = '2';
+// ATENȚIE: înlocuiește TOKEN_ECHIPA cu codul echipei (din linkul #k=...) înainte de publicare.
 service cloud.firestore {
   match /databases/{database}/documents {
     function logat() { return request.auth != null; }
@@ -62,6 +63,20 @@ service cloud.firestore {
         && request.resource.data.n == 1;
       allow update: if request.resource.data.keys().hasOnly(['n', 'last'])
         && request.resource.data.n == resource.data.n + 1;
+    }
+    match /barFeedback/{id} {
+      // îl văd doar Paul și oamenii din echipă (cei care au intrat în aplicație cu linkul echipei)
+      allow read: if paul() || (logat() && exists(/databases/$(database)/documents/echipe/TOKEN_ECHIPA/oameni/$(request.auth.uid)));
+      allow delete: if paul();
+      allow update: if false;
+      allow create: if request.resource.data.keys().hasOnly(['r', 'ck', 'msg', 'nm', 'ev', 'evn', 'at'])
+        && request.resource.data.r is int && request.resource.data.r >= 1 && request.resource.data.r <= 5
+        && request.resource.data.ck is string && request.resource.data.ck.size() <= 40
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 400
+        && request.resource.data.nm is string && request.resource.data.nm.size() <= 40
+        && request.resource.data.ev is string && request.resource.data.ev.size() <= 40
+        && request.resource.data.evn is string && request.resource.data.evn.size() <= 60
+        && request.resource.data.at is string && request.resource.data.at.size() <= 30;
     }
     match /barLead/{id} {
       allow read, update, delete: if paul();
