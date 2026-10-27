@@ -854,6 +854,12 @@ function thanksHTML(){const L=thanksDue();if(!L.length)return "";
 window.__ctNew=pre=>{const b=document.querySelector('nav.tabs button[data-view="contracte"]');if(b)b.click();f={...BLANK(),...pre};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)};
 window.__ctRefresh=()=>{if(started&&mode==="list"&&!V.hidden)render()};
 window.__ctList=()=>list;window.__ctFirma=()=>firma;
+/* evenimentele din calendar între două zile (pentru „Preia din calendar” la Evenimente) */
+window.__gcal={async range(from,to){
+  const off=d=>{const tz=new Date(d+"T00:00:00").getTimezoneOffset();return (tz>0?"-":"+")+String(Math.abs(tz/60)|0).padStart(2,"0")+":00"};
+  const r=await gf(CAL(`?singleEvents=true&orderBy=startTime&maxResults=250&timeMin=${encodeURIComponent(from+"T00:00:00"+off(from))}&timeMax=${encodeURIComponent(dayISO(to,1)+"T00:00:00"+off(to))}`));
+  return (r.items||[]).filter(e=>e.status!=="cancelled")},
+  ready:()=>!!(G.tok&&Date.now()<G.exp-60000)};
 window.__ct={parseMRZ,parseVisual,cnpOk,contractDoc,FIRMA_DEF};
 /* ---------- backup săptămânal al bazei de date în Google Drive ---------- */
 const BK={busy:false,msg:"",last:null,loaded:false};
@@ -892,7 +898,7 @@ function bkHTML(){
 /* butoanele care lucrează cu Google: cerem conectarea chiar în momentul apăsării, ca fereastra să nu fie blocată */
 document.addEventListener("click",e=>{const t=e.target;if(!t||!t.closest)return;
   if(t.closest("[data-gconn]")){e.stopPropagation();G.tok=null;G.errAt=0;gToken().then(()=>{toast("Google conectat. Acum apasă din nou butonul de Drive.");render()}).catch(x=>toast(x&&x.msg||"Nu s-a conectat."));return}
-  if(!t.closest("[data-gs],[data-gp],[data-bk],[data-porsg]"))return;
+  if(!t.closest("[data-gs],[data-gp],[data-bk],[data-porsg],[data-calgo]"))return;
   const gp=t.closest("[data-gp]");if(gp&&gp.dataset.gp==="__cancel")return;
   if(G.tok&&Date.now()<G.exp-60000)return;gToken().catch(()=>{})},true);
 setTimeout(()=>{gPrep()},2500);document.addEventListener("cp-firma",()=>gPrep());

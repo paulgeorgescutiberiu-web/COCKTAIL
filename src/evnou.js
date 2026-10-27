@@ -293,3 +293,98 @@ function enAvailHTML(d,team){if(!d||!window.__disp)return "";const a=window.__di
   const ok=a.ok.filter(n=>!T.includes(norm(String(n).split(" ")[0])));
   return (ok.length?`<span>Pot lucra: </span>`+ok.map(n=>`<button type="button" class="en-day" data-enact="team" data-n="${esc(String(n).split(" ")[0])}">+ ${esc(n)}</button>`).join(""):"")+(a.no.length?`<span class="ev-file">Nu pot: ${a.no.map(esc).join(", ")}</span>`:"")}
 document.addEventListener("cp-disp",()=>{if(!EN)return;const o=document.getElementById("enAvail");if(o)o.innerHTML=enAvailHTML(EN.data,EN.echipa)});
+
+/* ---------- Preia din calendar: evenimentele din Google Calendar devin fișe estimate ---------- */
+let CI=null;
+const ciISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+function ciWeek(off){const t=new Date();t.setHours(0,0,0,0);const mon=new Date(t);mon.setDate(t.getDate()-((t.getDay()+6)%7)+7*off);const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  return {from:off===0?ciISO(t):ciISO(mon),to:ciISO(sun),label:off===0?"Săptămâna asta":"Săptămâna viitoare"}}
+const ciNum=s=>{const m=String(s||"").replace(/\./g,"").match(/(\d{2,4})/);return m?parseInt(m[1],10):null};
+const ciLine=(d,k)=>{const m=String(d||"").match(new RegExp("^\\s*"+k+"\\s*:\\s*(.+)$","im"));return m?m[1].trim():""};
+function ciParse(ev,contracts,dayN){
+  const date=ev.start&&(ev.start.dateTime||ev.start.date)||"",iso=date.slice(0,10),ora=ev.start&&ev.start.dateTime?ev.start.dateTime.slice(11,16):"";
+  const sum=String(ev.summary||"").trim(),desc=String(ev.description||"").replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g,"");
+  const tail=sum.match(/^(.*?)[\s,·-]+(\d{2,4})\s*(pers(oane)?|p)?\s*$/i);
+  let pers=ciNum(ciLine(desc,"INVITAȚI"))||ciNum(ciLine(desc,"INVITATI"))||(tail?parseInt(tail[2],10):null);
+  let nume=ciLine(desc,"LOCAȚIE")||ciLine(desc,"LOCATIE")||String(ev.location||"").split(",")[0].trim()||(tail?tail[1]:sum);
+  const client=ciLine(desc,"CLIENT").split("·")[0].trim(),pachet=ciLine(desc,"PACHET");
+  /* contractul din aplicație pentru aceeași zi (și, dacă sunt mai multe, aceeași locație) */
+  const sameDay=contracts.filter(c=>c.dataEv===iso),n0=norm(nume+" "+sum);
+  /* întâi contractul legat chiar de acest eveniment din calendar, apoi după locație, apoi singurul contract al unei zile cu un singur eveniment */
+  let c=contracts.find(x=>x.calId&&x.calId===ev.id)||sameDay.find(x=>{const l=norm(x.locatie||"");return l.length>2&&(n0.includes(l)||l.split(" ").filter(w=>w.length>3).some(w=>n0.includes(w)))})||null;
+  if(!c&&sameDay.length===1&&(dayN[iso]||0)===1&&!sameDay[0].calId)c=sameDay[0];
+  if(c){if(c.invitati)pers=ciNum(c.invitati)||pers;if(c.locatie)nume=capL(c.locatie);}
+  const r=c&&c.portalResp||{};
+  const note=[pachet?"Pachet: "+pachet:"",r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):""].filter(Boolean).join(". ");
+  const emoji=/^[^\p{L}\p{N}]/u.test(sum);
+  const looks=!emoji&&!!(c||pers||/CLIENT\s*:/i.test(desc)||ev.location);
+  const inWeek=D&&D.events.some(e=>e.date&&ciISO(e.date)===iso&&(norm(e.name)===norm(nume)||norm(nume).includes(norm(e.name))||norm(e.name).includes(norm(nume))));
+  return {id:ev.id,iso,ora,sum,nume:capL(nume.trim()),pers,client:c?c.nume:client,contract:!!c,menuIds:Array.isArray(r.menuIds)&&r.menuIds.length?r.menuIds:null,note,looks,inWeek,pick:looks&&!inWeek&&iso>=ciISO(new Date())};
+}
+function ciOpen(){CI={wk:0,list:null,msg:"",busy:false,target:null};route="cal";render();}
+async function ciLoad(){
+  if(!window.__gcal){CI.msg="Legătura cu Google Calendar nu e disponibilă acum.";render();return}
+  const W=ciWeek(CI.wk);CI.busy=true;CI.msg="";CI.list=null;render();
+  try{const F=window.CPFS;let contracts=[];try{const s=await F.fs.collection(`${F.base}/contracte`).get();contracts=s.docs.map(d=>d.data())}catch(e){}
+    const evs=await window.__gcal.range(W.from,W.to),dayN={};
+    evs.forEach(e=>{const sum=String(e.summary||"");if(/^[^\p{L}\p{N}]/u.test(sum.trim()))return;const d=(e.start&&(e.start.dateTime||e.start.date)||"").slice(0,10);dayN[d]=(dayN[d]||0)+1});
+    CI.list=evs.map(e=>ciParse(e,contracts,dayN)).filter(x=>x.iso);
+    if(!CI.target){const first=CI.list.find(x=>x.pick);CI.target=first?enGuessTarget(first.iso):"append"}}
+  catch(e){CI.msg=e&&e.msg||"Nu am putut citi calendarul. Încearcă din nou."}
+  CI.busy=false;render();
+}
+function viewCal(){
+  const W=ciWeek(CI.wk),L=CI.list||[],ev=L.filter(x=>x.looks),other=L.filter(x=>!x.looks),ttl=D?D.title.big:"";
+  let h=`<p style="margin:0 0 10px"><button class="btn" type="button" data-ci="back">← Înapoi la evenimente</button></p>
+  <div class="ev-hero"><p class="ev-sub">Preia evenimentele din calendar</p><p class="ev-file">Aleg evenimentele din Google Calendar și fac fișele, cu cantitățile estimate după numărul de persoane. Dacă evenimentul are contract în aplicație, iau de acolo persoanele și meniul ales de client.</p></div>
+  <div class="ci-wk">${[0,1].map(i=>`<button class="en-day${CI.wk===i?" on":""}" data-ci="wk" data-w="${i}">${ciWeek(i).label}</button>`).join("")}<span class="ev-file">${esc(W.from.split("-").reverse().join("."))} – ${esc(W.to.split("-").reverse().join("."))}</span></div>`;
+  if(CI.list===null)return h+(CI.busy?`<p class="ev-file">Citesc calendarul…</p>`:`<p><button class="btn primary" type="button" data-ci="load" data-calgo="1">Citește calendarul</button></p>`)+(CI.msg?`<p class="ev-alert">${esc(CI.msg)}</p>`:"");
+  const row=x=>`<label class="ci-r ${x.inWeek?"in":""}"><input type="checkbox" data-cip="${esc(x.id)}" ${x.pick?"checked":""} ${x.inWeek?"disabled":""}><span><b>${esc(x.nume||x.sum)}</b><small>${esc(x.iso.split("-").reverse().join("."))}${x.ora?" · "+esc(x.ora):""}${x.pers?" · "+x.pers+" persoane":" · <span class='warn'>fără nr. persoane</span>"}${x.client?" · "+esc(x.client):""}</small>
+    <small>${x.contract?"✓ contract în aplicație"+(x.menuIds?" · cu meniul ales":""):"fără contract în aplicație"}${x.inWeek?" · e deja în fișa săptămânii":""}${x.sum&&norm(x.sum)!==norm(x.nume)?" · în calendar: „"+esc(x.sum)+"”":""}</small></span></label>`;
+  h+=ev.length?`<div class="ci-l">${ev.map(row).join("")}</div>`:`<div class="ev-ok">Nu am găsit evenimente de bar în calendar în perioada asta.</div>`;
+  if(other.length)h+=`<details class="ci-o"><summary>Alte ${other.length} intrări din calendar (nu par evenimente de bar)</summary><div class="ci-l">${other.map(row).join("")}</div></details>`;
+  const n=L.filter(x=>x.pick&&!x.inWeek).length,noP=L.filter(x=>x.pick&&!x.pers).length;
+  if(n){
+    if(D)h+=`<div class="en-tg"><label><input type="radio" name="ciT" value="append"${CI.target==="append"?" checked":""}> Adaug la săptămâna încărcată acum (${esc(ttl)})</label>
+      <label><input type="radio" name="ciT" value="new"${CI.target==="new"?" checked":""}> Încep o săptămână nouă cu ele <small>(săptămâna de acum se mută în „Săptămâni anterioare”)</small></label></div>`;
+    if(noP)h+=`<p class="ev-alert">${noP===1?"Un eveniment ales nu are":noP+" evenimente alese nu au"} numărul de persoane, așa că fișa lor rămâne fără cantități. Le completezi după aceea, din „Modifică fișa”.</p>`;
+    h+=`<p class="ev-file">Cantitățile se calculează din ce s-a trimis ${D?"în săptămâna „"+esc(ttl)+"”":""}, raportat la persoane, la fel ca butonul „Completează cantitățile”. Verifică fiecare fișă după aceea.</p>`;
+  }
+  if(CI.msg)h+=`<p class="ev-alert">${esc(CI.msg)}</p>`;
+  h+=`<div class="en-save"><button class="btn" type="button" data-ci="back">Renunță</button><button class="btn primary" type="button" data-ci="make" ${n&&!CI.busy?"":"disabled"}>${CI.busy?"Se salvează…":n?`Fă ${n===1?"fișa":n+" fișe"}`:"Alege evenimentele"}</button></div>`;
+  return h;
+}
+async function ciMake(btn){
+  const L=(CI.list||[]).filter(x=>x.pick&&!x.inWeek).sort((a,b)=>(a.iso+a.ora).localeCompare(b.iso+b.ora));if(!L.length)return;
+  if(CI.target==="new"&&D&&EVD&&!CI.okNew){CI.okNew=true;CI.msg=`Atenție: vei înlocui săptămâna încărcată acum (${D.events.map(x=>x.name).join(", ")}) cu una nouă. Ea rămâne salvată în „Săptămâni anterioare”. Apasă încă o dată ca să confirmi.`;render();return}
+  const R0=enRatios(),saveEVD=EVD,saveD=D;let next=null,n=0;
+  try{
+    L.forEach((x,i)=>{
+      const rows=enTemplateRows(),vals={},R1=enMenuRatios(R0,x.menuIds);
+      if(x.pers)rows.forEach(r=>{const k=R1[r.L];if(k==null)return;let q=k*x.pers;q=q<3?Math.ceil(q*2)/2:Math.ceil(q);if(q>0)vals[r.L]=String(q).replace(".",",")});
+      EN={col:null,nume:x.nume,data:x.iso,ora:x.ora,pers:x.pers?String(x.pers):"",echipa:"",transport:"",note:x.note,rows,vals,target:i===0?(CI.target||"append"):"append",msg:"",del:[],menuIds:x.menuIds};
+      if(!D||!EVD)EN.target="new";
+      next=enBuild();parseAOA(next.aoa,next.fileName);
+      EVD=next;D=parseAOA(next.aoa,next.fileName);n++;
+    });
+  }catch(err){EVD=saveEVD;D=saveD;EN=null;CI.msg="Nu am putut face fișele: "+(err.message||"");render();return}
+  EN=null;EVD=saveEVD;D=saveD;
+  CI.busy=true;render();
+  const a=await artReady,okMsg=`Am făcut ${n===1?"fișa":n+" fișe"} din calendar. Verifică cantitățile la fiecare eveniment.`;
+  const done=()=>{EVD=next;CI=null;loadData();route="ziua";store.set("evroute",route);render()};
+  if(!a||readOnly){store.set("events",next);done();toast("Salvat doar în acest browser.");return}
+  sess.set("open","");sess.set("okmsg",okMsg);
+  try{await a.publish(buildHTML(R,next));done();toast(okMsg);if(window.__stocIesire)window.__stocIesire(next);if(window.__stocRefresh)window.__stocRefresh()}
+  catch(err){sess.set("open",null);sess.set("okmsg",null);CI.busy=false;const code=err&&err.code;CI.msg=code==="not_writer"||code==="not_granted"?"Doar administratorul poate salva evenimente.":"Salvarea nu a reușit. Verifică internetul și încearcă din nou.";render()}
+}
+function ciClick(t){
+  if(!CI)return false;
+  const p=t.closest("[data-cip]");if(p){const x=(CI.list||[]).find(y=>y.id===p.dataset.cip);if(x){x.pick=p.checked;CI.okNew=false;render()}return true}
+  const r=t.closest("input[name=ciT]");if(r){CI.target=r.value;CI.okNew=false;render();return true}
+  const b=t.closest("[data-ci]");if(!b)return false;const a=b.dataset.ci;
+  if(a==="back"){CI=null;route="ziua";store.set("evroute",route);render();return true}
+  if(a==="wk"){CI.wk=+b.dataset.w;CI.list=null;CI.target=null;CI.okNew=false;render();if(window.__gcal&&window.__gcal.ready())ciLoad();return true}
+  if(a==="load"){ciLoad();return true}
+  if(a==="make"){ciMake(b);return true}
+  return true;
+}
