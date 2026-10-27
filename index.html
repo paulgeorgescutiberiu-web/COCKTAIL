@@ -300,6 +300,12 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ev-ret.has .ev-rin{border-color:var(--c)}
 .ev-ret.over .ev-rin{border-color:var(--warn)}
 .ev-ret .cons{text-align:right;line-height:1.05}
+.ev-xrow{grid-template-columns:1fr 1fr 72px 34px;grid-template-areas:"l l l l" "a b c d";row-gap:6px}
+.ev-xrow .lbl{grid-area:l}.ev-xrow .xf{display:flex;flex-direction:column;gap:2px}.ev-xrow .xf small{color:var(--muted);font-size:.72rem}
+.ev-xin{width:100%;font:inherit;font-size:1.05rem;font-weight:700;text-align:center;padding:9px 6px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
+.ev-xin:focus{outline:none;border-color:var(--c)}.ev-xrow.has .ev-xin{border-color:var(--c)}.ev-xrow.over .ev-xin{border-color:var(--warn)}
+.ev-xdel{border:0;background:none;color:var(--muted);font:inherit;font-size:.95rem;cursor:pointer;padding:6px 0;align-self:end}
+.ev-xadd{width:100%;margin-top:10px;font:inherit;padding:12px;border:1.5px dashed var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
 .ev-ret .cons small{display:block;color:var(--muted);font-size:.72rem}
 .ev-ret .cons b{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:1.6rem}
 .ev-rnote{width:100%;font:inherit;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);resize:vertical}
@@ -954,7 +960,7 @@ let SY={ops:{},seq:0,n:0,shown:false,okT:0};
 function syOp(key,op){op.seq=++SY.seq;(SY.ops[key]=SY.ops[key]||[]).push(op);SY.n++;syncUI();return op}
 function syDone(key,op){const L=SY.ops[key];if(!L)return;const i=L.indexOf(op);if(i<0)return;L.splice(i,1);if(!L.length)delete SY.ops[key];SY.n--;syncUI()}
 function syOverlayChecks(next){Object.keys(SY.ops).forEach(k=>{if(k.startsWith("r:"))return;SY.ops[k].forEach(o=>{if(o.t==="reset")next[k]={};else{next[k]=next[k]||{};if(o.val)next[k][o.it]=o.val;else delete next[k][o.it]}})})}
-function syOverlayRet(next){Object.keys(SY.ops).forEach(k=>{if(!k.startsWith("r:"))return;const ev=k.slice(2);SY.ops[k].forEach(o=>{const r=next[ev]=next[ev]||{items:{}};r.items=r.items||{};if(o.t==="ret")r.items[o.k]=o.v;else if(o.t==="note")r.note=o.txt})})}
+function syOverlayRet(next){Object.keys(SY.ops).forEach(k=>{if(!k.startsWith("r:"))return;const ev=k.slice(2);SY.ops[k].forEach(o=>{const r=next[ev]=next[ev]||{items:{}};r.items=r.items||{};if(o.t==="ret")r.items[o.k]=o.v;else if(o.t==="note")r.note=o.txt;else if(o.t==="extra"){r.extra=r.extra||{};r.extra[o.k]=o.obj||null}})})}
 function syncUI(){
   let b=document.getElementById("syncBar");
   if(!b){b=document.createElement("div");b.id="syncBar";b.setAttribute("role","status");b.setAttribute("aria-live","polite");document.body.appendChild(b)}
@@ -1017,7 +1023,7 @@ function subscribe(){
     syOverlayChecks(next);shared=next;sharedDocs=docs;rerender();resolveNames();
   },err=>{unsub=null;DB=null;toast("Bifele comune nu sunt disponibile acum. Se salvează doar pe acest dispozitiv.");rerender()});
 }
-function rerender(){if(!D)return;const a=document.activeElement;if(a&&a.matches&&a.matches("#evView .ev-rin, #evView .ev-rnote")){pendingRender=true;return}pendingRender=false;const y=window.scrollY;render();window.scrollTo(0,y)}
+function rerender(){if(!D)return;const a=document.activeElement;if(a&&a.matches&&a.matches("#evView .ev-rin, #evView .ev-rnote, #evView .ev-xin")){pendingRender=true;return}pendingRender=false;const y=window.scrollY;render();window.scrollTo(0,y)}
 function whoText(x){
   if(!x)return"";
   const t=x.at?new Date(x.at):null;
@@ -1042,6 +1048,16 @@ function setReturn(ev,k,v){
     if(returnDocs.has(ev))await ref.update({items:{[k]:v},by:meta.by,at:meta.at});
     else{const items={};Object.entries(r.items).forEach(([a,b])=>{if(typeof b==="number")items[a]=b});await ref.set({items,note:r.note||"",by:meta.by,at:meta.at});returnDocs.add(ev)}},{t:"ret",k,v});
 }
+function retExtra(ev){const x=retFor(ev).extra;const o={};if(x&&typeof x==="object")Object.entries(x).forEach(([k,v])=>{if(v&&typeof v==="object")o[k]=v});return o}
+function setExtra(ev,k,obj){
+  const meta={by:UID||"",at:new Date().toISOString()};
+  if(!DB){const r=retFor(ev);r.extra=r.extra||{};if(obj)r.extra[k]=obj;else delete r.extra[k];Object.assign(r,meta);retSaveLocal(ev,r);return}
+  const r=returns[ev]=returns[ev]||{items:{}};r.extra=r.extra||{};if(obj)r.extra[k]=obj;else delete r.extra[k];Object.assign(r,meta);
+  queueWrite("r:"+ev,async()=>{const ref=retRef().doc(ev);
+    if(returnDocs.has(ev))await ref.update({extra:{[k]:obj||null},by:meta.by,at:meta.at});
+    else{const items={};Object.entries(r.items||{}).forEach(([a,b])=>{if(typeof b==="number")items[a]=b});const extra={};Object.entries(r.extra||{}).forEach(([a,b])=>{if(b)extra[a]=b});
+      await ref.set({items,note:r.note||"",extra,by:meta.by,at:meta.at});returnDocs.add(ev)}},{t:"extra",k,obj});
+}
 function setRetNote(ev,txt){
   const meta={by:UID||"",at:new Date().toISOString()};
   if(!DB){const r=retFor(ev);r.note=txt;Object.assign(r,meta);retSaveLocal(ev,r);return}
@@ -1057,7 +1073,7 @@ function subscribeRetur(){
   returns={};returnDocs=new Set();dsSubR=dsKey();
   unsubR=retRef().onSnapshot(snap=>{
     const next={},docs=new Set();
-    snap.docs.forEach(d=>{if(d.exists){docs.add(d.id);const x=d.data()||{};next[d.id]={items:Object.assign({},x.items||{}),note:x.note||"",by:x.by||"",at:x.at||""}}});
+    snap.docs.forEach(d=>{if(d.exists){docs.add(d.id);const x=d.data()||{};next[d.id]={items:Object.assign({},x.items||{}),extra:Object.assign({},x.extra||{}),note:x.note||"",by:x.by||"",at:x.at||""}}});
     syOverlayRet(next);returns=next;returnDocs=docs;rerender();resolveNames();
   },err=>{unsubR=null;toast("Returul comun nu e disponibil acum.")});
 }
@@ -1097,7 +1113,27 @@ function viewRetur(e){
     h+=`</div>`;
   });
   if(!G.length)h+=`<div class="ev-ok">La acest eveniment nu sunt cantități de marfă de returnat.</div>`;
+  h+=extraHTML(e,ro);
   h+=`<h2 class="ev-h2">Observații</h2><textarea class="ev-rnote" id="evRetNote" rows="3" placeholder="Spargeri, lipsuri, sticle deschise, orice altceva" ${ro?"disabled":""}>${esc(r.note||"")}</textarea>`;
+  return h;
+}
+/* Luat în plus: articole fără cantitate trimisă în fișă */
+const XADD={};
+function extraCand(e){return D.items.filter(it=>QTY_CATS.includes(it.cat)&&!(e.values[it.key]&&typeof e.values[it.key].v==="number"&&e.values[it.key].v>0))}
+function extraHTML(e,ro){
+  const C=extraCand(e);if(!C.length)return "";
+  const X=retExtra(e.id),add=XADD[e.id]=XADD[e.id]||[],keys=[...new Set([...Object.keys(X),...add])].filter(k=>C.some(it=>it.key===k));
+  const lab=k=>(C.find(it=>it.key===k)||{}).label||k,nv=v=>typeof v==="number"?num(v):"";
+  let h=`<h2 class="ev-h2">Luat în plus <span class="cnt">fără cantitate în fișă</span></h2>
+    <p class="ev-mode">Dacă ați luat la eveniment ceva ce nu era trecut în fișă, adaugă-l aici: cât s-a luat și cât s-a întors. Consumul = luat minus întors. Intră în Excelul de consum și în stoc.</p>`;
+  if(keys.length)h+=`<div class="ev-list">`+keys.map(k=>{const x=X[k]||{},over=typeof x.luat==="number"&&typeof x.retur==="number"&&x.retur>x.luat;
+    return `<div class="ev-ret ev-xrow ${x.luat!=null?"has":""} ${over?"over":""}" data-xk="${esc(k)}"><div class="lbl">${esc(lab(k))}<small>fără cantitate trimisă</small>${over?`<small class="warn">Întors mai mult decât s-a luat</small>`:""}</div>
+      <label class="xf"><small>luat</small><input class="ev-xin" data-f="luat" type="text" inputmode="decimal" autocomplete="off" value="${nv(x.luat)}" aria-label="Luat ${esc(lab(k))}" ${ro?"disabled":""}></label>
+      <label class="xf"><small>întors</small><input class="ev-xin" data-f="retur" type="text" inputmode="decimal" autocomplete="off" value="${nv(x.retur)}" aria-label="Întors ${esc(lab(k))}" ${ro?"disabled":""}></label>
+      <div class="cons">${typeof x.luat==="number"?consHTML(x.luat,typeof x.retur==="number"?x.retur:0):`<small>Consum</small><b>—</b>`}</div>
+      ${ro?"":`<button class="ev-xdel" data-xdel="${esc(k)}" aria-label="Scoate ${esc(lab(k))}">✕</button>`}</div>`}).join("")+`</div>`;
+  if(!ro){const left=C.filter(it=>!keys.includes(it.key));
+    if(left.length)h+=`<select class="ev-xadd" aria-label="Adaugă articol luat în plus"><option value="">+ Adaugă un articol luat în plus…</option>${CATS.filter(c=>QTY_CATS.includes(c.id)).map(c=>{const L=left.filter(it=>it.cat===c.id);return L.length?`<optgroup label="${esc(c.name)}">${L.map(it=>`<option value="${esc(it.key)}">${esc(it.label)}</option>`).join("")}</optgroup>`:""}).join("")}</select>`}
   return h;
 }
 function pagerHTML(prev,next){
@@ -1114,12 +1150,12 @@ function viewConsum(){
   CATS.filter(c=>QTY_CATS.includes(c.id)).forEach(c=>{
     let rows="";
     D.items.filter(it=>it.cat===c.id).forEach(it=>{
-      const parts=D.events.map(e=>{const x=e.values[it.key];if(!x||typeof x.v!=="number"||!(x.v>0))return null;const rv=retVal(e.id,it.key);return rv==null?null:{e,sent:x.v,cons:x.v-rv}}).filter(Boolean);
+      const parts=D.events.map(e=>{const x=e.values[it.key];if(!x||typeof x.v!=="number"||!(x.v>0)){const xe=retExtra(e.id)[it.key];return xe&&typeof xe.luat==="number"&&xe.luat>0?{e,sent:xe.luat,cons:Math.max(0,xe.luat-(typeof xe.retur==="number"?xe.retur:0)),plus:true}:null}const rv=retVal(e.id,it.key);return rv==null?null:{e,sent:x.v,cons:x.v-rv}}).filter(Boolean);
       if(!parts.length)return;any=true;
       const tot=parts.reduce((s,p)=>s+p.cons,0),sent=parts.reduce((s,p)=>s+p.sent,0),pos=parts.filter(p=>p.cons>0),pt=pos.reduce((s,p)=>s+p.cons,0);
       rows+=`<div class="ev-trow2"><div>${esc(it.label)}<div class="ev-bd">${sent?Math.round(tot/sent*100)+"% din ce s-a trimis":""}</div></div><div class="n">${num(tot)}</div>
         ${pt>0?`<div class="ev-stack">${pos.map(p=>`<span style="--c:var(${p.e.c});width:${p.cons/pt*100}%" title="${esc(p.e.name)}: ${num(p.cons)}"></span>`).join("")}</div>`:""}
-        <div class="ev-bd">${parts.map(p=>`${esc(p.e.name)} ${num(p.cons)} din ${num(p.sent)}`).join(", ")}</div></div>`;
+        <div class="ev-bd">${parts.map(p=>`${esc(p.e.name)} ${num(p.cons)} din ${num(p.sent)}${p.plus?" (luat în plus)":""}`).join(", ")}</div></div>`;
     });
     if(rows)h+=`<h2 class="ev-h2">${c.name}</h2><div class="ev-list">${rows}</div>`;
   });
@@ -1297,6 +1333,11 @@ function eventConsumption(e){
   D.items.forEach(it=>{const x=e.values[it.key];if(!x||typeof x.v!=="number"||!(x.v>0))return;
     const rv=QTY_CATS.includes(it.cat)?retVal(e.id,it.key):null;
     out.push({k:cxKey(it.excelLabel),label:it.label,cat:it.cat,note:x.note||"",sent:x.v,ret:rv,cons:Math.max(0,rv==null?x.v:x.v-rv)})});
+  /* luat în plus (fără cantitate în fișă): consum = luat minus întors */
+  const X=typeof retExtra==="function"?retExtra(e.id):{};
+  D.items.forEach(it=>{const xe=X[it.key];if(!xe||typeof xe.luat!=="number"||!(xe.luat>0))return;const x=e.values[it.key];if(x&&typeof x.v==="number"&&x.v>0)return;
+    const rv=typeof xe.retur==="number"?xe.retur:0;
+    out.push({k:cxKey(it.excelLabel),label:it.label,cat:it.cat,note:"",sent:xe.luat,ret:rv,plus:true,cons:Math.max(0,xe.luat-rv)})});
   return out;
 }
 function buildRows(e,P){
@@ -1417,6 +1458,7 @@ function grabPrices(){
 /* Verificarea returului înainte de Excelul de consum */
 function retIssues(e){const all=retStats(e).all,over=[],miss=[];
   all.forEach(p=>{const rv=retVal(e.id,p.it.key);if(rv==null)miss.push(p.it.label);else if(rv>p.x.v)over.push({l:p.it.label,s:p.x.v,r:rv})});
+  const X=typeof retExtra==="function"?retExtra(e.id):{};Object.entries(X).forEach(([k,v])=>{if(v&&typeof v.luat==="number"&&typeof v.retur==="number"&&v.retur>v.luat){const it=D.items.find(i=>i.key===k);over.push({l:(it?it.label:k)+" (luat în plus)",s:v.luat,r:v.retur})}});
   return {over,miss,any:all.length>miss.length,n:all.length}}
 function retIssuesHTML(e,withDl){const I=retIssues(e);if(!I.over.length&&!(I.any&&I.miss.length)&&I.any)return "";
   let h=`<div class="ev-alert cx-warn"><b>${esc(e.name)}: verifică returul înainte de consum</b><ul>`;
@@ -1763,13 +1805,16 @@ $("#evView").addEventListener("click",ev=>{
     if(DB&&!b.dataset.armed){b.dataset.armed="1";b.textContent="Apasă din nou: debifează pentru toată echipa";setTimeout(()=>{if(document.contains(b)){delete b.dataset.armed;b.textContent="Debifează tot"}},4000);return}
     resetEvent(e.id,groups(e).flatMap(g=>g.rows).map(r=>r.k));rerender()}
 });
+$("#evView").addEventListener("click",ev=>{const x=ev.target.closest("[data-xdel]");if(!x)return;const k=x.dataset.xdel;
+  if(!x.dataset.armed){x.dataset.armed="1";x.textContent="Sigur?";setTimeout(()=>{if(document.contains(x)){delete x.dataset.armed;x.textContent="✕"}},3000);return}
+  if(XADD[route])XADD[route]=XADD[route].filter(y=>y!==k);setExtra(route,k,null);rerender()});
 $("#evView").addEventListener("input",ev=>{
   const t=ev.target;if(!t.matches(".ev-rin"))return;
   const v=parseRet(t.value);updateRetRow(t,Number.isNaN(v)?null:v);
 });
 $("#evView").addEventListener("focusout",ev=>{
   if(!pendingRender)return;
-  const nx=ev.relatedTarget;if(nx&&nx.matches&&nx.matches("#evView .ev-rin, #evView .ev-rnote"))return;
+  const nx=ev.relatedTarget;if(nx&&nx.matches&&nx.matches("#evView .ev-rin, #evView .ev-rnote, #evView .ev-xin"))return;
   setTimeout(()=>{if(pendingRender)rerender()},0);
 });
 $("#evView").addEventListener("change",ev=>{
@@ -1784,6 +1829,14 @@ $("#evView").addEventListener("change",ev=>{
     return;
   }
   if(t.id==="evRetNote"){setRetNote(route,t.value.trim());return}
+  if(t.matches(".ev-xadd")){const k=t.value;if(k){const a=XADD[route]=XADD[route]||[];if(!a.includes(k))a.push(k);rerender();const i=document.querySelector(`[data-xk="${CSS.escape(k)}"] .ev-xin`);if(i)i.focus()}return}
+  if(t.matches(".ev-xin")){const row=t.closest("[data-xk]"),k=row.dataset.xk,ins=row.querySelectorAll(".ev-xin"),vals={};let bad=false;
+    ins.forEach(i=>{const v=parseRet(i.value);if(Number.isNaN(v)){bad=true;i.value=""}else{vals[i.dataset.f]=v;i.value=v==null?"":num(v)}});
+    if(bad)toast("Scrie un număr, de exemplu 2 sau 0,5.");
+    if(vals.luat==null&&vals.retur!=null)toast("Scrie și cât s-a luat, altfel nu se poate calcula consumul.");
+    setExtra(route,k,vals.luat==null&&vals.retur==null?null:{luat:vals.luat,retur:vals.retur});
+    const l=vals.luat,r=vals.retur;row.querySelector(".cons").innerHTML=typeof l==="number"?consHTML(l,typeof r==="number"?r:0):`<small>Consum</small><b>—</b>`;
+    row.classList.toggle("has",l!=null);row.classList.toggle("over",typeof l==="number"&&typeof r==="number"&&r>l);return}
   const cb=t;if(!cb.matches("input[type=checkbox][data-k]"))return;
   setChecked(route,cb.dataset.k,cb.checked);rerender();
 });
@@ -1998,7 +2051,14 @@ function catalog(){
 }
 function retFor(d){
   const r=rets[d.ds]||{},m=d.map||{},out={};
-  Object.values(r).forEach(items=>Object.entries(items||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&typeof v==="number")out[k]=(out[k]||0)+v}));
+  Object.values(r).forEach(x=>{Object.entries(x.items||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&typeof v==="number")out[k]=(out[k]||0)+v});
+    Object.entries(x.extra||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&v&&typeof v.retur==="number")out[k]=(out[k]||0)+v.retur})});
+  return out;
+}
+/* ce s-a luat în plus la evenimente (fără cantitate în fișă) iese și el din depozit */
+function extraOut(d){
+  const r=rets[d.ds]||{},m=d.map||{},out={};
+  Object.values(r).forEach(x=>Object.entries(x.extra||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&v&&typeof v.luat==="number")out[k]=(out[k]||0)+v.luat}));
   return out;
 }
 const isoToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
@@ -2012,7 +2072,7 @@ function totals(skipDs){
     else if(d.tip==="corectie")Object.entries(it).forEach(([k,v])=>g(k).adj+=v);
     else if(d.tip==="iesire"){if(skipDs&&d.ds===skipDs)return;
       if(isPlanned(d))Object.entries(it).forEach(([k,v])=>g(k).plan+=v);
-      else{Object.entries(it).forEach(([k,v])=>g(k).out+=v);Object.entries(retFor(d)).forEach(([k,v])=>g(k).ret+=v)}}
+      else{Object.entries(it).forEach(([k,v])=>g(k).out+=v);Object.entries(extraOut(d)).forEach(([k,v])=>g(k).out+=v);Object.entries(retFor(d)).forEach(([k,v])=>g(k).ret+=v)}}
   });
   Object.values(t).forEach(x=>{x.stoc=x.in+x.adj-x.out+x.ret;x.disp=x.stoc-x.plan});
   return t;
@@ -2048,7 +2108,7 @@ function subscribe(){
     const next={};snap.docs.forEach(d=>next[d.id]=d.data());docs=next;loaded=true;
     Object.values(docs).filter(d=>d.tip==="iesire"&&d.ds&&!retSubs[d.ds]).forEach(d=>{
       retSubs[d.ds]=F.fs.collection(`${F.base}/retur/${d.ds}/events`).onSnapshot(s=>{
-        const r={};s.docs.forEach(x=>r[x.id]=(x.data()||{}).items||{});rets[d.ds]=r;if(mode==="list")render();
+        const r={};s.docs.forEach(x=>{const y=x.data()||{};r[x.id]={items:y.items||{},extra:y.extra||{}}});rets[d.ds]=r;if(mode==="list")render();
       },()=>{});
     });
     if(mode==="list")render();

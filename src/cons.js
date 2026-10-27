@@ -65,6 +65,11 @@ function eventConsumption(e){
   D.items.forEach(it=>{const x=e.values[it.key];if(!x||typeof x.v!=="number"||!(x.v>0))return;
     const rv=QTY_CATS.includes(it.cat)?retVal(e.id,it.key):null;
     out.push({k:cxKey(it.excelLabel),label:it.label,cat:it.cat,note:x.note||"",sent:x.v,ret:rv,cons:Math.max(0,rv==null?x.v:x.v-rv)})});
+  /* luat în plus (fără cantitate în fișă): consum = luat minus întors */
+  const X=typeof retExtra==="function"?retExtra(e.id):{};
+  D.items.forEach(it=>{const xe=X[it.key];if(!xe||typeof xe.luat!=="number"||!(xe.luat>0))return;const x=e.values[it.key];if(x&&typeof x.v==="number"&&x.v>0)return;
+    const rv=typeof xe.retur==="number"?xe.retur:0;
+    out.push({k:cxKey(it.excelLabel),label:it.label,cat:it.cat,note:"",sent:xe.luat,ret:rv,plus:true,cons:Math.max(0,xe.luat-rv)})});
   return out;
 }
 function buildRows(e,P){
@@ -185,6 +190,7 @@ function grabPrices(){
 /* Verificarea returului înainte de Excelul de consum */
 function retIssues(e){const all=retStats(e).all,over=[],miss=[];
   all.forEach(p=>{const rv=retVal(e.id,p.it.key);if(rv==null)miss.push(p.it.label);else if(rv>p.x.v)over.push({l:p.it.label,s:p.x.v,r:rv})});
+  const X=typeof retExtra==="function"?retExtra(e.id):{};Object.entries(X).forEach(([k,v])=>{if(v&&typeof v.luat==="number"&&typeof v.retur==="number"&&v.retur>v.luat){const it=D.items.find(i=>i.key===k);over.push({l:(it?it.label:k)+" (luat în plus)",s:v.luat,r:v.retur})}});
   return {over,miss,any:all.length>miss.length,n:all.length}}
 function retIssuesHTML(e,withDl){const I=retIssues(e);if(!I.over.length&&!(I.any&&I.miss.length)&&I.any)return "";
   let h=`<div class="ev-alert cx-warn"><b>${esc(e.name)}: verifică returul înainte de consum</b><ul>`;

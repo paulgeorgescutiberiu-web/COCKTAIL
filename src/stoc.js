@@ -159,7 +159,14 @@ function catalog(){
 }
 function retFor(d){
   const r=rets[d.ds]||{},m=d.map||{},out={};
-  Object.values(r).forEach(items=>Object.entries(items||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&typeof v==="number")out[k]=(out[k]||0)+v}));
+  Object.values(r).forEach(x=>{Object.entries(x.items||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&typeof v==="number")out[k]=(out[k]||0)+v});
+    Object.entries(x.extra||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&v&&typeof v.retur==="number")out[k]=(out[k]||0)+v.retur})});
+  return out;
+}
+/* ce s-a luat în plus la evenimente (fără cantitate în fișă) iese și el din depozit */
+function extraOut(d){
+  const r=rets[d.ds]||{},m=d.map||{},out={};
+  Object.values(r).forEach(x=>Object.entries(x.extra||{}).forEach(([ik,v])=>{const k=m[ik];if(k&&v&&typeof v.luat==="number")out[k]=(out[k]||0)+v.luat}));
   return out;
 }
 const isoToday=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
@@ -173,7 +180,7 @@ function totals(skipDs){
     else if(d.tip==="corectie")Object.entries(it).forEach(([k,v])=>g(k).adj+=v);
     else if(d.tip==="iesire"){if(skipDs&&d.ds===skipDs)return;
       if(isPlanned(d))Object.entries(it).forEach(([k,v])=>g(k).plan+=v);
-      else{Object.entries(it).forEach(([k,v])=>g(k).out+=v);Object.entries(retFor(d)).forEach(([k,v])=>g(k).ret+=v)}}
+      else{Object.entries(it).forEach(([k,v])=>g(k).out+=v);Object.entries(extraOut(d)).forEach(([k,v])=>g(k).out+=v);Object.entries(retFor(d)).forEach(([k,v])=>g(k).ret+=v)}}
   });
   Object.values(t).forEach(x=>{x.stoc=x.in+x.adj-x.out+x.ret;x.disp=x.stoc-x.plan});
   return t;
@@ -209,7 +216,7 @@ function subscribe(){
     const next={};snap.docs.forEach(d=>next[d.id]=d.data());docs=next;loaded=true;
     Object.values(docs).filter(d=>d.tip==="iesire"&&d.ds&&!retSubs[d.ds]).forEach(d=>{
       retSubs[d.ds]=F.fs.collection(`${F.base}/retur/${d.ds}/events`).onSnapshot(s=>{
-        const r={};s.docs.forEach(x=>r[x.id]=(x.data()||{}).items||{});rets[d.ds]=r;if(mode==="list")render();
+        const r={};s.docs.forEach(x=>{const y=x.data()||{};r[x.id]={items:y.items||{},extra:y.extra||{}}});rets[d.ds]=r;if(mode==="list")render();
       },()=>{});
     });
     if(mode==="list")render();
