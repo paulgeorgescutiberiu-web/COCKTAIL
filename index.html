@@ -1240,7 +1240,7 @@ function viewEvent(e){
     <div class="ev-fact"><div class="k">Echipa</div>${e.team.length?`<div class="ev-team">${e.team.map(n=>`<span class="ev-chip">${esc(n)}</span>`).join("")}</div>`:`<div class="v missing">Lipsește</div>`}</div></div>
     ${e.notes.length?`<div class="ev-note"><div class="k">Mențiuni speciale</div>${e.notes.map(n=>`<p>${esc(n)}</p>`).join("")}${noteRecs.map(r=>`<button class="ev-rec" data-rec="${esc(r.id)}">Rețetă ${esc(r.name)}</button> `).join("")}</div>`:""}
     ${noMasa?`<div class="ev-note"><div class="k">Atenție</div><p>Fără masă</p></div>`:""}</section>`;
-  h+=segHTML();
+  h+=enEditBtn(e)+segHTML();
   if(evMode==="retur"){h+=viewRetur(e)+(cxAdmin()?`<p style="margin:18px 0 0"><button class="btn primary" data-cx="${e.id}">Descarcă Excel consumație</button></p>`:"")+pagerHTML(prev,next)+"</div>";return h}
   h+=`<div class="ev-progress"><div class="ev-pbar"><i style="width:${all.length?done/all.length*100:0}%"></i></div><span class="ev-ptext">${done} din ${all.length} bifate</span>${DB&&canWrite===false?"":`<button class="ev-link" id="evReset">Debifează tot</button>`}</div>
     <p class="ev-mode">${DB?(canWrite===false?"Vezi bifele echipei, dar nu poți bifa.":"Bifele se văd la toată echipa, în timp real."):"Bifele se salvează doar pe acest dispozitiv."}</p>`;
@@ -1252,7 +1252,6 @@ function viewEvent(e){
         ${r.rec?`<button class="ev-rec" data-rec="${esc(r.rec.id)}">Rețetă</button>`:""}<span class="qv ${r.txt?"txt":""}">${esc(r.q)}</span></div>`});
     h+=`</div>`;
   });
-  h+=enEditBtn(e);
   h+=`<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>Anterior</small><b>${esc(prev.name)}</b></button>`:"<span></span>"}${next?`<button data-r="${next.id}"><small>Următor</small><b>${esc(next.name)}</b></button>`:"<span></span>"}</div></div>`;
   return h;
 }
@@ -1650,7 +1649,7 @@ function enClick(t){
   if(a==="save"){enSave(b);return true}
   return true;
 }
-function enEditBtn(e){return `<p style="margin:14px 0 0;display:flex;gap:8px;flex-wrap:wrap" class="edit-only"><button class="btn" type="button" data-enedit="${e.col}">Modifică fișa</button><button class="btn" type="button" data-qrev="${e.col}">QR pentru bar</button></p>`}
+function enEditBtn(e){return `<p style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap" class="edit-only"><button class="btn" type="button" data-enedit="${e.col}">Modifică fișa</button><button class="btn" type="button" data-qrev="${e.col}">QR pentru bar</button></p>`}
 function enFromEvent(col){
   const e=D.events.find(x=>x.col===+col);if(!e)return;
   enStart({col:e.col,nume:e.name,data:enISO(e.date),ora:e.time&&/^\d\d:\d\d$/.test(e.time)?e.time:"",pers:e.persons!=null?String(e.persons):"",echipa:e.team.join(" "),transport:e.transport||"",note:(e.notesRaw||[]).join(" ")});

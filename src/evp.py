@@ -8,10 +8,10 @@ rep('<div class="edit-only"><button class="btn primary" type="button" id="evUplo
 rep('$("#evUpload").onclick=()=>$("#evInput").click();','$("#evUpload").onclick=()=>$("#evInput").click();\n$("#evNou").onclick=()=>enStart({});\n$("#evArh").onclick=()=>arhOpen();')
 rep('''  h+=`<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>Anterior</small><b>${esc(prev.name)}</b></button>`:"<span></span>"}${next?`<button data-r="${next.id}"><small>Următor</small><b>${esc(next.name)}</b></button>`:"<span></span>"}</div></div>`;
   return h;
-}''','''  h+=enEditBtn(e);
-  h+=`<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>Anterior</small><b>${esc(prev.name)}</b></button>`:"<span></span>"}${next?`<button data-r="${next.id}"><small>Următor</small><b>${esc(next.name)}</b></button>`:"<span></span>"}</div></div>`;
+}''','''  h+=`<div class="ev-pager">${prev?`<button data-r="${prev.id}"><small>Anterior</small><b>${esc(prev.name)}</b></button>`:"<span></span>"}${next?`<button data-r="${next.id}"><small>Următor</small><b>${esc(next.name)}</b></button>`:"<span></span>"}</div></div>`;
   return h;
 }''')
+rep('  h+=segHTML();\n  if(evMode==="retur")','  h+=enEditBtn(e)+segHTML();\n  if(evMode==="retur")')
 rep('$("#evView").addEventListener("click",ev=>{\n  if(cxClick(ev.target))return;','$("#evView").addEventListener("click",ev=>{\n  if(enClick(ev.target))return;\n  if(arhClick(ev.target))return;\n  if(ev.target.closest("[data-prep]")){prepClick(ev.target);return}\n  const ed=ev.target.closest("[data-enedit]");if(ed){enFromEvent(ed.dataset.enedit);return}\n  if(cxClick(ev.target))return;')
 rep("</style>\n</head>",""".ev-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .en-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
