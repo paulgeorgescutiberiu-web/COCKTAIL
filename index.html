@@ -397,7 +397,7 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ct-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
 .ct-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .ct-rt{display:table!important;width:100%!important;border-collapse:collapse;margin:4px 0 12px}.ct-rt td{padding:7px 4px;border-bottom:1px solid var(--line)}.ct-rt td:last-child{text-align:right;font-variant-numeric:tabular-nums}.ct-rt .tot td{font-weight:800;font-size:1.1rem;border-bottom:0}
-.ct-note{margin:8px 0 0;line-height:1.45}.ct-sg{align-items:center}.ct-sg a.ct-chip{text-decoration:none}.ct-up{cursor:pointer}.soc-cv{display:block;width:100%;max-width:420px;height:auto;border-radius:12px;margin:12px 0;background:#000}.soc-r{margin-top:12px}.ct-up.busy{opacity:.6;pointer-events:none}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
+.ct-note{margin:8px 0 0;line-height:1.45}.ct-sg{align-items:center}.ct-sg a.ct-chip{text-decoration:none}.ct-up{cursor:pointer}.soc-m{margin-bottom:12px}.vid-pv{display:block;width:100%;max-width:320px;max-height:60vh;border-radius:14px;background:#000;margin:10px 0}.vid-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:8px 0}.vid-bar i{display:block;height:100%;background:var(--accent,#f08a24)}.vid-opt{display:flex;flex-wrap:wrap;gap:8px 16px;margin:10px 0}.vid-opt label{display:flex;align-items:center;gap:6px;font-size:.92rem}.vid-h li{margin:4px 0}.soc-cv{display:block;width:100%;max-width:420px;height:auto;border-radius:12px;margin:12px 0;background:#000}.soc-r{margin-top:12px}.ct-up.busy{opacity:.6;pointer-events:none}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
 .ct-bk-due{border-color:var(--accent,#c9822b)!important}
 .ct-h span,.ct-m{color:var(--muted);font-size:.9rem}
 .ct-b{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
@@ -1180,7 +1180,7 @@ function parseRet(s){s=String(s).trim().replace(",",".");if(s==="")return null;c
 
 function heading(){
   const h=document.querySelector("h1");if(!h)return;
-  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="echipa"){h.innerHTML=`Echipa<span class="yr">și feedback</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram + Facebook</span>`;return}
+  const tb=store.get("tab","evenimente");if(tb==="stoc"){h.innerHTML=`Stoc<span class="yr">depozit</span>`;return}if(tb==="oferte"){h.innerHTML=`Oferte<span class="yr">și meniu</span>`;return}if(tb==="contracte"){h.innerHTML=`Contracte<span class="yr">clienți</span>`;return}if(tb==="raport"){h.innerHTML=`Raport<span class="yr">lunar</span>`;return}if(tb==="echipa"){h.innerHTML=`Echipa<span class="yr">și feedback</span>`;return}if(tb==="postare"){h.innerHTML=`Postează<span class="yr">Instagram · Facebook · TikTok</span>`;return}
   h.innerHTML=tb==="evenimente"&&D?`Evenimente<span class="yr">${esc(D.title.big)}</span>`:`Rețetar<span class="yr">2026</span>`;
 }
 function loadData(){
@@ -2620,6 +2620,8 @@ function viewFirma(){
     <div class="st-meta">${row("gClient","Google Client ID (OAuth, aplicație web)")}<label>Calendarul evenimentelor<input data-fi="gCal" value="${esc(x.gCal||"cocktailphilosophy@gmail.com")}"></label></div>
     <h2 class="ev-h2">Instagram și Facebook</h2><p class="ev-file">Pentru butonul „Postează pe Instagram”. E adresa webhook-ului din Make (scenariul „Postare Instagram + Facebook”). Se păstrează doar în zona ta privată.</p>
     <div class="st-meta">${row("socialHook","Adresa webhook Make (https://hook.eu1.make.com/…)")}</div>
+    <h2 class="ev-h2">TikTok (clipuri video)</h2><p class="ev-file">Pentru „Postare → Video”. Clipul se urcă în Drive, în „TikTok Cocktail Philosophy / De postat”, apoi aplicația îl trimite la webhook-ul din Make (scenariul „Postare TikTok”), care îl pune în coada din Upload-Post. Cheia Upload-Post stă doar în Make.</p>
+    <div class="st-meta">${row("ttHook","Adresa webhook Make pentru TikTok")}${row("ttLimit","Postări pe lună în planul Upload-Post (ex: 10)")}</div>
     <h2 class="ev-h2">Plata avansului cu cardul (Revolut)</h2><p class="ev-file">Pentru butonul „Link de plată avans”. E adresa webhook-ului din Make (scenariul „Avans Revolut”), care creează linkul în Revolut Business. Cheia Revolut stă doar în Make, nu în aplicație.</p>
     <div class="st-meta">${row("payHook","Adresa webhook Make pentru plăți")}</div>
     <h2 class="ev-h2">Facturare SmartBill</h2><p class="ev-file">Pentru butoanele „Factură avans” și „Factură finală” de la contracte. E adresa webhook-ului din Make (scenariul „Factură SmartBill”). Cheia SmartBill stă doar în Make, nu în aplicație.</p>
@@ -2881,7 +2883,8 @@ async function payCheck(c,quiet){
 function payAuto(){if(!(firma&&firma.payHook))return;let n=0;list.forEach(c=>{if(n<6&&c.payOrder&&c.payOrder.id&&!c.avansPlatit&&!PAY.checked[c.id]){PAY.checked[c.id]=1;n++;payCheck(c,true)}})}
 
 /* ---------- Postare Instagram + Facebook ---------- */
-const SOC={img:null,name:"",ratio:"45",pos:0.5,caption:"",busy:false,arm:false,msg:"",ai:false,aiMsg:"",ctx:""};
+const SOC={mode:"foto",img:null,name:"",ratio:"45",pos:0.5,caption:"",busy:false,arm:false,msg:"",ai:false,aiMsg:"",ctx:""};
+const socModes=()=>`<div class="ct-b soc-m">${[["foto","📷 Poză · Instagram + Facebook"],["video","🎬 Video · TikTok"]].map(([k,l])=>`<button class="ct-chip ${SOC.mode===k?"on":""}" data-sm="${k}">${l}</button>`).join("")}</div>`;
 const SOC_TPL=()=>{const t=today(),ev=list.filter(c=>c.dataEv&&c.dataEv<=t).sort((a,b)=>String(b.dataEv).localeCompare(a.dataEv))[0];
   const loc=ev&&ev.locatie?tcase(ev.locatie):"";
   return `${loc?`Seară frumoasă la ${loc}! `:""}Barul gata, garniturile la locul lor, zâmbetul la fel. 🍊
@@ -2896,8 +2899,9 @@ function socDims(){const im=SOC.img;if(!im)return null;const r=SOC_R[SOC.ratio],
   let cw=W,ch=Math.round(W/r);if(ch>H){ch=H;cw=Math.round(H*r)}
   const sx=Math.round((W-cw)*(cw<W?SOC.pos:0.5)),sy=Math.round((H-ch)*(ch<H?SOC.pos:0.5));return {sx,sy,cw,ch}}
 function viewSocial(){
+  if(SOC.mode==="video")return socModes()+viewVid();
   const hook=(firma&&firma.socialHook||"").trim();
-  let h=`<div class="st-top"><div><p class="ev-sub">Postează pe Instagram + Facebook</p><p class="ev-file">Alegi poza, verifici textul, apeși Postează. Apare pe Instagram și pe pagina de Facebook în 1–2 minute.</p></div></div>`;
+  let h=socModes()+`<div class="st-top"><div><p class="ev-sub">Postează pe Instagram + Facebook</p><p class="ev-file">Alegi poza, verifici textul, apeși Postează. Apare pe Instagram și pe pagina de Facebook în 1–2 minute.</p></div></div>`;
   if(!hook)h+=`<div class="ev-alert">Lipsește adresa webhook-ului din Make. Pune-o la <b>Datele firmei → Instagram și Facebook</b>.</div>`;
   h+=`<div class="st-ai"><label class="btn primary ct-up">${SOC.img?"Altă poză":"Alege poza (galerie sau cameră)"}<input type="file" accept="image/*" id="socFile" hidden></label>`;
   if(SOC.img){const d=socDims(),canMove=d&&(d.cw<SOC.img.naturalWidth||d.ch<SOC.img.naturalHeight);
@@ -2956,36 +2960,165 @@ async function socAI(again){
   const cur=(($("#socTxt")||{}).value||"").trim();
   if(!again&&cur&&cur!==SOC_TPL().trim()&&SOC.caption&&SOC.caption.trim()!==SOC_TPL().trim())return;
   SOC.ai=true;SOC.aiMsg="";SOC.arm=false;socRender();
-  try{
-    const src=SOC.img,s=Math.min(1,1280/Math.max(src.naturalWidth,src.naturalHeight)),cv=document.createElement("canvas");cv.width=Math.round(src.naturalWidth*s);cv.height=Math.round(src.naturalHeight*s);cv.getContext("2d").drawImage(src,0,0,cv.width,cv.height);
-    const part={inlineData:{data:cv.toDataURL("image/jpeg",0.85).split(",")[1],mimeType:"image/jpeg"}};
-    const {aiM,ai}=await X.loadAI();let res,last;
-    for(const m of X.models){try{const model=aiM.getGenerativeModel(ai,{model:m,generationConfig:{responseMimeType:"application/json",temperature:again?1:0.8}});res=await model.generateContent([socPrompt(),part]);break}
-      catch(e){last=e;if(!/not.?found|404|unsupported|is not available|invalid.*model/i.test(String(e&&e.message)))throw e}}
-    if(!res)throw last;
-    let t=res.response.text();try{const j=JSON.parse(t.replace(/^```(json)?|```$/g,"").trim());t=j.text||t}catch(e){}
-    t=String(t).replace(/\\n/g,"\n").trim();if(!t)throw new Error("gol");
-    SOC.caption=t;SOC.aiMsg="";
-  }catch(e){console.warn(e);const raw=String(e&&(e.message||e.code)||e).replace(/https?:\/\/\S+/g,"…").replace(/^AI: Error fetching from …:?\s*/,"").replace(/\s+/g," ").slice(0,220);
-    const why=X.err?X.err(e).replace("Citirea facturii nu a reușit. Încearcă din nou sau completează manual.","Textul automat nu a mers."):"";
-    SOC.aiMsg=`Nu am putut scrie textul după poză. ${why} Poți folosi textul gata scris. (detaliu: ${raw})`}
+  try{SOC.caption=await aiCaption(SOC.img,socPrompt(),again);SOC.aiMsg=""}
+  catch(e){SOC.aiMsg=aiErrMsg(e,"poză")}
   finally{SOC.ai=false;socRender()}
+}
+async function aiCaption(src,prompt,again){
+  const X=window.__cpAI,s=Math.min(1,1280/Math.max(src.naturalWidth||src.width,src.naturalHeight||src.height)),cv=document.createElement("canvas");
+  cv.width=Math.round((src.naturalWidth||src.width)*s);cv.height=Math.round((src.naturalHeight||src.height)*s);cv.getContext("2d").drawImage(src,0,0,cv.width,cv.height);
+  const part={inlineData:{data:cv.toDataURL("image/jpeg",0.85).split(",")[1],mimeType:"image/jpeg"}};
+  const {aiM,ai}=await X.loadAI();let res,last;
+  for(const m of X.models){try{const model=aiM.getGenerativeModel(ai,{model:m,generationConfig:{responseMimeType:"application/json",temperature:again?1:0.8}});res=await model.generateContent([prompt,part]);break}
+    catch(e){last=e;if(!/not.?found|404|unsupported|is not available|invalid.*model/i.test(String(e&&e.message)))throw e}}
+  if(!res)throw last;
+  let t=res.response.text();try{const j=JSON.parse(t.replace(/^```(json)?|```$/g,"").trim());t=j.text||t}catch(e){}
+  t=String(t).replace(/\\n/g,"\n").trim();if(!t)throw new Error("gol");return t}
+function aiErrMsg(e,what){console.warn(e);const X=window.__cpAI||{},raw=String(e&&(e.message||e.code)||e).replace(/https?:\/\/\S+/g,"…").replace(/^AI: Error fetching from …:?\s*/,"").replace(/\s+/g," ").slice(0,220);
+  const why=X.err?X.err(e).replace("Citirea facturii nu a reușit. Încearcă din nou sau completează manual.","Textul automat nu a mers."):"";
+  return `Nu am putut scrie textul după ${what}. ${why} Poți folosi textul gata scris. (detaliu: ${raw})`}
+
+/* ---------- Postare video (TikTok, opțional și Reel pe Instagram) ----------
+   Clipul se urcă în Drive („TikTok Cocktail Philosophy / De postat”), apoi aplicația trimite la webhook-ul Make
+   doar linkul și textul. Make îl pune în coada Upload-Post (sloturi fixe) sau îl publică imediat. */
+const VID={file:null,url:"",frame:null,dur:0,w:0,h:0,caption:"",ctx:"",reel:false,when:"queue",busy:false,arm:false,pct:0,msg:"",ai:false,aiMsg:"",hist:null};
+const VID_TPL=()=>`Așa arată o seară cu barul nostru 🍸
+Tu te distrezi, noi ne ocupăm de bar.
+
+Ai un eveniment în plan? Scrie-ne pe WhatsApp: 0743 785 655
+
+#cocktailphilosophy #barmobil #sibiu #evenimentesibiu #cocktails`;
+const vidMB=b=>(b/1048576).toFixed(b<1048576*10?1:0).replace(".",",")+" MB";
+const vidMonth=()=>today().slice(0,7);
+function vidUsed(){return (VID.hist||[]).filter(x=>String(x.at||"").slice(0,7)===vidMonth()).length}
+function vidLimit(){const n=parseInt((firma&&firma.ttLimit)||"",10);return n>0?n:0}
+function vidHistLoad(){if(VID.hist)return;VID.hist=[];F.fs.doc(`${F.base}/privat/tiktok`).get().then(d=>{VID.hist=d.exists&&Array.isArray(d.data().items)?d.data().items:[];if(SOC.mode==="video")socRender()}).catch(()=>{})}
+function vidPrompt(){
+  const ev=socEvent(),loc=ev&&ev.locatie?tcase(ev.locatie):"";
+  return `Ești social media managerul Cocktail Philosophy, un bar mobil de cocktailuri pentru evenimente din Sibiu (nunți, petreceri private, evenimente corporate).
+Primești un cadru dintr-un clip video scurt, vertical, care se postează pe TikTok${VID.reel?" și ca Reel pe Instagram":""}. Scrie descrierea clipului, în limba română, potrivită cu ce se vede (cocktailuri, barul, barmanii, atmosfera).
+
+Stilul TikTok: scurt și viu. Primul rând e un cârlig care te face să privești clipul până la capăt. Apoi cel mult o propoziție. 1–2 emoji.
+Reguli:
+- Nu inventa nume de oameni și nu spune cine sunt persoanele. Nu da prețuri.
+- Nu pomeni flori comestibile. Siropurile sunt „făcute în casă”.
+- Încheie cu un rând separat: „Ai un eveniment în plan? Scrie-ne pe WhatsApp: 0743 785 655”
+- Apoi un rând cu 4–6 hashtag-uri, mereu cu #cocktailphilosophy și #sibiu.
+${loc?`Context: evenimentul cel mai recent a fost la ${loc}. Pomenește locația doar dacă se potrivește.`:""}
+${VID.ctx?`Detalii de la Paul despre clip: ${VID.ctx}`:""}
+Răspunde DOAR cu JSON: {"text":"textul complet, cu rânduri noi ca \\n"}`;
+}
+function vidBtnTxt(){return VID.busy?(VID.pct<100?`Se urcă clipul… ${VID.pct}%`:"Se trimite…"):VID.arm?"Sigur? Apasă din nou":VID.when==="now"?"Postează acum pe TikTok":"Pune la coadă pe TikTok"}
+function viewVid(){
+  vidHistLoad();
+  const hook=(firma&&firma.ttHook||"").trim(),lim=vidLimit(),used=vidUsed();
+  let h=`<div class="st-top"><div><p class="ev-sub">Postează un clip pe TikTok</p><p class="ev-file">Alegi clipul, verifici textul și apeși „Pune la coadă”. Clipul apare singur la următorul loc liber din programul setat în Upload-Post.${lim?` Luna asta: <b>${used} din ${lim}</b> postări.`:""}</p></div></div>`;
+  if(!hook)h+=`<div class="ev-alert">Lipsește adresa webhook-ului pentru TikTok. Pune-o la <b>Datele firmei → TikTok</b>.</div>`;
+  if(lim&&used>=lim)h+=`<div class="ev-alert">Ai folosit toate cele ${lim} postări din luna asta. Clipurile trimise acum pot fi refuzate de Upload-Post până luna viitoare.</div>`;
+  h+=gConnHTML();
+  h+=`<div class="st-ai"><label class="btn primary ct-up">${VID.file?"Alt clip":"Alege clipul (galerie sau cameră)"}<input type="file" accept="video/*" id="vidFile" hidden></label>`;
+  if(VID.file){
+    h+=`<video id="vidPv" class="vid-pv" controls playsinline muted></video>
+      <p class="ev-file">${esc(VID.file.name)} · ${vidMB(VID.file.size)}${VID.dur?` · ${Math.round(VID.dur)} s`:""}${VID.w&&VID.w>VID.h?" · <b>clipul e orizontal</b>, pe TikTok arată mai bine vertical":""}</p>
+      <div class="ct-b"><button class="btn" data-c="vidclear">Renunță la clip</button></div>`}
+  h+=`</div>`;
+  if(VID.file)h+=`<label class="ct-full">Ceva anume despre clip? (opțional: evenimentul, locația, cocktailul)<input id="vidCtx" value="${esc(VID.ctx)}" placeholder="ex: montajul barului la Montana, cocktailul Pornstar Cuban"></label>`;
+  h+=`<label class="ct-full">Textul clipului${VID.ai?" · scriu textul după clip…":""}<textarea id="vidTxt" rows="7"${VID.ai?" disabled":""}>${esc(VID.caption||VID_TPL())}</textarea></label>
+    ${VID.aiMsg?`<p class="ev-alert ct-msg">${esc(VID.aiMsg)}</p>`:""}
+    <div class="ct-b">${VID.file?`<button class="btn primary" data-c="vidai"${VID.ai||!VID.frame?" disabled":""}>✨ ${VID.caption&&VID.caption!==VID_TPL()?"Alt text după clip":"Scrie textul după clip"}</button>`:""}<button class="btn" data-c="vidtpl">Pune textul gata scris</button></div>
+    <div class="vid-opt"><label><input type="radio" name="vidWhen" value="queue"${VID.when!=="now"?" checked":""}> La coadă (următorul loc liber)</label><label><input type="radio" name="vidWhen" value="now"${VID.when==="now"?" checked":""}> Acum</label><label><input type="checkbox" id="vidReel"${VID.reel?" checked":""}> Și ca Reel pe Instagram</label></div>
+    ${VID.busy?`<div class="vid-bar"><i style="width:${VID.pct}%"></i></div>`:""}
+    ${VID.msg?`<p class="ev-alert ct-msg">${esc(VID.msg)}</p>`:""}
+    <div class="st-save"><button class="btn primary" data-c="vidpost" data-ttg="1"${!VID.file||!hook||VID.busy||VID.ai?" disabled":""}>${vidBtnTxt()}</button></div>`;
+  const hs=(VID.hist||[]).slice(0,6);
+  if(hs.length)h+=`<h2 class="ev-h2">Trimise recent</h2><ul class="vid-h ev-file">${hs.map(x=>`<li>${esc(shortDate(String(x.at).slice(0,10)))} · ${x.when==="now"?"postat acum":"la coadă"}${x.reel?" · și Reel":""} · <a href="https://drive.google.com/file/d/${esc(x.fileId)}/view" target="_blank" rel="noopener">clipul</a> · ${esc(String(x.caption||"").split("\n")[0].slice(0,60))}</li>`).join("")}</ul>`;
+  return h;
+}
+function vidAttach(){const v=$("#vidPv");if(v&&VID.url&&v.src!==VID.url)v.src=VID.url}
+function vidReset(){if(VID.url)URL.revokeObjectURL(VID.url);Object.assign(VID,{file:null,url:"",frame:null,dur:0,w:0,h:0,arm:false,msg:"",pct:0,aiMsg:""})}
+function vidLoad(fl){
+  if(!/^video\//.test(fl.type||"")&&!/\.(mp4|mov|m4v|webm)$/i.test(fl.name)){toast("Alege un fișier video (MP4 sau MOV).");return}
+  if(fl.size>1024*1048576){toast("Clipul are peste 1 GB. Scurtează-l sau exportă-l la o calitate mai mică.");return}
+  vidReset();VID.file=fl;VID.url=URL.createObjectURL(fl);VID.caption="";socRender();
+  const v=document.createElement("video");v.muted=true;v.playsInline=true;v.preload="auto";v.src=VID.url;
+  v.onloadedmetadata=()=>{VID.dur=v.duration||0;VID.w=v.videoWidth;VID.h=v.videoHeight;try{v.currentTime=Math.min(1.2,(v.duration||2)/3)}catch(e){}};
+  v.onseeked=()=>{try{const cv=document.createElement("canvas");cv.width=v.videoWidth;cv.height=v.videoHeight;cv.getContext("2d").drawImage(v,0,0);VID.frame=cv}catch(e){VID.frame=null}
+    socRender();if(VID.frame)vidAI(false)};
+  v.onerror=()=>{VID.frame=null;socRender()};
+}
+async function vidAI(again){
+  const X=window.__cpAI;if(!VID.frame)return;
+  if(!X||!X.ready()){VID.aiMsg="Textul automat nu e disponibil acum. Folosește textul gata scris.";socRender();return}
+  if(!again&&VID.caption&&VID.caption.trim()!==VID_TPL().trim())return;
+  VID.ai=true;VID.aiMsg="";VID.arm=false;socRender();
+  try{VID.caption=await aiCaption(VID.frame,vidPrompt(),again);VID.aiMsg=""}
+  catch(e){VID.aiMsg=aiErrMsg(e,"clip")}
+  finally{VID.ai=false;socRender()}
+}
+async function ttFolder(){
+  const fq=(n,p)=>`name='${n}' and mimeType='application/vnd.google-apps.folder' and trashed=false and '${p||"root"}' in parents`;
+  const mk=(n,p)=>gf("https://www.googleapis.com/drive/v3/files?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:n,mimeType:"application/vnd.google-apps.folder",...(p?{parents:[p]}:{})})});
+  let r=(await DQ(fq("TikTok Cocktail Philosophy"))).files[0];if(!r)r=await mk("TikTok Cocktail Philosophy");
+  let d=(await DQ(fq("De postat",r.id))).files[0];if(!d)d=await mk("De postat",r.id);return d.id}
+/* încărcare „resumable”: merge și pentru clipuri mari, cu bară de progres */
+async function ttUpload(file,name,parent){
+  const tok=await gToken(),type=file.type||"video/mp4";
+  const r=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,size",{method:"POST",
+    headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json; charset=UTF-8","X-Upload-Content-Type":type},body:JSON.stringify({name,mimeType:type,parents:[parent]})});
+  if(r.status===401){G.tok=null;throw {msg:"Sesiunea Google a expirat. Apasă din nou."}}
+  const loc=r.ok&&r.headers.get("Location");if(!loc)throw {msg:`Google nu a pornit încărcarea (${r.status}).`};
+  return new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open("PUT",loc);x.setRequestHeader("Content-Type",type);
+    x.upload.onprogress=e=>{if(e.lengthComputable){const p=Math.min(99,Math.floor(e.loaded/e.total*100));if(p!==VID.pct){VID.pct=p;const b=PV.querySelector('[data-c="vidpost"]'),bar=PV.querySelector(".vid-bar i");if(b)b.textContent=vidBtnTxt();if(bar)bar.style.width=p+"%"}}};
+    x.onload=()=>{if(x.status>=200&&x.status<300){try{res(JSON.parse(x.responseText))}catch(e){rej({msg:"Răspuns neașteptat de la Google Drive."})}}else rej({msg:`Încărcarea în Drive nu a reușit (${x.status}).`})};
+    x.onerror=()=>rej({msg:"Încărcarea s-a întrerupt. Verifică internetul și încearcă din nou."});x.send(file)})}
+async function vidPost(){
+  const hook=(firma&&firma.ttHook||"").trim(),txt=(($("#vidTxt")||{}).value||"").trim();VID.caption=txt;
+  if(!/^https:\/\/hook\.[a-z0-9]+\.make\.com\//.test(hook)){toast("Adresa webhook-ului pentru TikTok nu pare corectă.");return}
+  if(!txt){toast("Scrie un text pentru clip.");return}
+  if(!VID.arm){VID.arm=true;socRender();return}
+  VID.busy=true;VID.arm=false;VID.pct=0;VID.msg="";socRender();
+  try{
+    const ext=(VID.file.name.match(/\.(\w+)$/)||[,"mp4"])[1].toLowerCase(),id=today()+"_"+Date.now().toString(36),name=`${id}.${ext}`;
+    const up=await ttUpload(VID.file,name,await ttFolder());
+    await gf(`https://www.googleapis.com/drive/v3/files/${up.id}/permissions?fields=id`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({role:"reader",type:"anyone"})});
+    VID.pct=100;socRender();
+    const first=txt.split("\n").find(l=>l.trim())||"Cocktail Philosophy";
+    const fd=new FormData();
+    [["id",id],["fileId",up.id],["fileName",name],["videoUrl",`https://drive.google.com/uc?export=download&id=${up.id}`],["viewUrl",`https://drive.google.com/file/d/${up.id}/view`],
+     ["caption",txt],["title",first.slice(0,90)],["platforms",VID.reel?"tiktok,instagram":"tiktok"],["mode",VID.when==="now"?"now":"queue"],["size",String(VID.file.size)]].forEach(([k,v])=>fd.append(k,v));
+    const r=await fetch(hook,{method:"POST",body:fd});if(!r.ok)throw {msg:`Make nu a primit clipul (${r.status}). Verifică dacă scenariul „Postare TikTok” e pornit. Clipul e deja în Drive.`};
+    const item={at:new Date().toISOString(),fileId:up.id,name,caption:txt,when:VID.when,reel:VID.reel};
+    VID.hist=[item,...(VID.hist||[])].slice(0,40);
+    F.fs.doc(`${F.base}/privat/tiktok`).set({items:VID.hist}).catch(e=>console.warn(e));
+    const now=VID.when==="now";vidReset();VID.caption="";VID.busy=false;socRender();
+    toast(now?"Trimis! Apare pe TikTok în câteva minute.":"Pus la coadă! Apare singur la următorul loc liber.");
+  }catch(e){console.warn(e);VID.busy=false;VID.msg=(e&&e.msg)||"Nu am putut trimite clipul. Verifică internetul și încearcă din nou.";socRender()}
 }
 
 function socRender(){if(!PV)return;if(!F.isAdmin){PV.innerHTML=`<div class="ev-ok">Postările le face doar administratorul.</div>`;return}
-  const y=window.scrollY;PV.innerHTML=viewSocial();drawSoc();window.scrollTo(0,y)}
+  const y=window.scrollY;PV.innerHTML=viewSocial();if(SOC.mode==="video")vidAttach();else drawSoc();window.scrollTo(0,y)}
 if(PV){
-  PV.addEventListener("change",e=>{if(e.target.id==="socFile"){const fl=e.target.files&&e.target.files[0];if(fl)socLoad(fl)}});
+  PV.addEventListener("change",e=>{const t=e.target;if(t.id==="socFile"){const fl=t.files&&t.files[0];if(fl)socLoad(fl)}
+    if(t.id==="vidFile"){const fl=t.files&&t.files[0];if(fl)vidLoad(fl)}
+    if(t.id==="vidReel"){VID.reel=t.checked;VID.arm=false;socRender()}
+    if(t.name==="vidWhen"){VID.when=t.value;VID.arm=false;socRender()}});
   PV.addEventListener("input",e=>{const t=e.target;
     if(t.id==="socPos"){SOC.pos=t.value/100;drawSoc();return}
     if(t.id==="socCtx"){SOC.ctx=t.value;return}
+    if(t.id==="vidCtx"){VID.ctx=t.value;return}
+    if(t.id==="vidTxt"){VID.caption=t.value;if(VID.arm){VID.arm=false;const b=PV.querySelector('[data-c="vidpost"]');if(b)b.textContent=vidBtnTxt()}return}
     if(t.id==="socTxt"){SOC.caption=t.value;if(SOC.arm){SOC.arm=false;const b=PV.querySelector('[data-c="socpost"]');if(b)b.textContent="Postează pe Instagram + Facebook"}}});
   PV.addEventListener("click",e=>{const t=e.target;
+    const sm=t.closest("[data-sm]");if(sm){if(SOC.mode==="video"){const x=$("#vidTxt");if(x)VID.caption=x.value}else{const x=$("#socTxt");if(x)SOC.caption=x.value}SOC.mode=sm.dataset.sm;socRender();return}
     const sr=t.closest("[data-sr]");if(sr){SOC.ratio=sr.dataset.sr;SOC.pos=0.5;SOC.arm=false;SOC.caption=($("#socTxt")||{}).value||SOC.caption;socRender();return}
     const b=t.closest("[data-c]");if(!b)return;const a=b.dataset.c;
     if(a==="soctpl"){SOC.caption=SOC_TPL();SOC.arm=false;socRender();return}
     if(a==="socai"){const cx=$("#socCtx");if(cx)SOC.ctx=cx.value.trim();socAI(true);return}
-    if(a==="socpost"){socPost(b);return}});
+    if(a==="socpost"){socPost(b);return}
+    if(a==="vidtpl"){VID.caption=VID_TPL();VID.arm=false;socRender();return}
+    if(a==="vidai"){const cx=$("#vidCtx");if(cx)VID.ctx=cx.value.trim();vidAI(true);return}
+    if(a==="vidclear"){vidReset();socRender();return}
+    if(a==="vidpost"){vidPost();return}});
 }
 
 /* ---------- Rentabilitate pe eveniment ---------- */
@@ -3335,7 +3468,7 @@ function bkHTML(){
 /* butoanele care lucrează cu Google: cerem conectarea chiar în momentul apăsării, ca fereastra să nu fie blocată */
 document.addEventListener("click",e=>{const t=e.target;if(!t||!t.closest)return;
   if(t.closest("[data-gconn]")){e.stopPropagation();G.tok=null;G.errAt=0;gToken().then(()=>{toast("Google conectat. Acum apasă din nou butonul de Drive.");render()}).catch(x=>toast(x&&x.msg||"Nu s-a conectat."));return}
-  if(!t.closest("[data-gs],[data-gp],[data-bk],[data-porsg],[data-calgo]"))return;
+  if(!t.closest("[data-gs],[data-gp],[data-bk],[data-porsg],[data-calgo],[data-ttg]"))return;
   const gp=t.closest("[data-gp]");if(gp&&gp.dataset.gp==="__cancel")return;
   if(G.tok&&Date.now()<G.exp-60000)return;gToken().catch(()=>{})},true);
 setTimeout(()=>{gPrep()},2500);document.addEventListener("cp-firma",()=>gPrep());
