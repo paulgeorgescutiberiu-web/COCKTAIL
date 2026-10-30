@@ -286,3 +286,10 @@ p{margin:0}
 .rev b{font-family:var(--display);font-weight:400;font-size:28px;line-height:1;color:var(--gold);white-space:nowrap}
 .rev b span{font-size:18px;letter-spacing:2px}
 .rev>span{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--green-dark)}
+
+/* două variante de preț pe paginile de eveniment */
+.opt{background:var(--cream);border-top:8px solid var(--gold);padding:28px;display:flex;flex-direction:column;gap:18px}
+.opt-green{border-top-color:var(--green)}
+.opt-h{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.opt-h h3{font-size:clamp(26px,3vw,34px)}
+.opt .n-ex div,.opt .bprices div{background:var(--white)}
