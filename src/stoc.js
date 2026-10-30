@@ -207,6 +207,9 @@ async function writeIesire(evd){
 }
 window.__cpAI={loadAI,models:AI_MODELS,ready:aiReady,err:aiErr};
 window.__stocAvail=(label,skipDs)=>{const t=totals(skipDs),x=t[K(label)];const any=Object.values(docs).some(d=>d.tip==="factura"||d.tip==="corectie");return any?{stoc:x?x.stoc:0,disp:x?x.disp:0}:null};
+/* Pentru asistentul vocal: tot stocul, după ce s-au citit mișcările din depozit */
+window.__stocAll=async()=>{if(!sub)subscribe();for(let i=0;i<40&&!Object.keys(docs).length;i++)await new Promise(r=>setTimeout(r,100));
+  const t=totals(),c=catalog();return Object.entries(c).map(([k,x])=>({articol:x.label,categorie:x.cat,stoc:t[k]?Math.round(t[k].stoc*100)/100:0,disponibil:t[k]?Math.round(t[k].disp*100)/100:0}))};
 window.__stocDs=evd=>evd&&evd.fileName?dsKey(evd.fileName):"";
 window.__stocIesire=async evd=>{if(await writeIesire(evd))toast(`Marfa pentru ${parseAOA(evd.aoa,evd.fileName).title.big} a fost scăzută din stoc.`)};
 
