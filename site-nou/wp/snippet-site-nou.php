@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) { return; }
 
 define('CP_SN_PREFIX', 'nou');
 define('CP_SN_LIVE', false);
-define('CP_SN_SRC', 'https://raw.githubusercontent.com/paulgeorgescutiberiu-web/COCKTAIL/main/site-nou/');
+define('CP_SN_SRC', 'https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/');
 define('CP_SN_ASSETS', 'https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/');
 define('CP_SN_GA', 'G-ZZMFYTMEMF');
 
@@ -39,8 +39,8 @@ function cp_sn_fetch($file) {
 	if ($html !== false) { return $html; }
 	$res = wp_remote_get(CP_SN_SRC . $file, array('timeout' => 8));
 	$code = is_wp_error($res) ? 0 : wp_remote_retrieve_response_code($res);
-	if ($code === 200) {
-		$html = wp_remote_retrieve_body($res);
+	$html = $code === 200 ? wp_remote_retrieve_body($res) : '';
+	if ($html !== '' && strpos($html, '</html>') !== false && strpos($html, 'class="proba"') !== false) {
 		set_transient($key, $html, 10 * MINUTE_IN_SECONDS);
 		update_option($key . '_backup', $html, false);
 		return $html;
