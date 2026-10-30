@@ -264,3 +264,17 @@ p{margin:0}
 .fa-prices span{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--cream)}
 .fa-prices b{font-family:var(--display);font-weight:400;font-size:32px;line-height:1.05;color:var(--gold-light)}
 @media (max-width:560px){.fa-prices{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* mesajul de sub formular (cerere trimisă / eroare) */
+.form-msg{grid-column:1/-1;margin:0;font-family:var(--cond);font-weight:700;font-size:18px;line-height:1.35;color:var(--green-dark);background:var(--white);border-left:0;padding:12px 14px;outline:2px solid var(--gold)}
+.form-msg a{color:var(--green-dark)}
+
+/* „Vorbești cu oameni, nu cu un program” */
+.oameni{display:flex;flex-wrap:wrap;gap:48px;align-items:stretch}
+.oameni-text{flex:1 1 560px;min-width:0;display:flex;flex-direction:column;gap:22px}
+.oameni-foto{flex:1 1 340px;min-width:0;object-fit:cover;max-height:620px;width:100%}
+.oameni-pts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
+.oameni-pts div{border-top:2px solid var(--gold);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.oameni-pts h3{font-size:22px;color:var(--gold-light)}
+.oameni-pts p{font-family:var(--cond);font-weight:600;font-size:17px;line-height:1.35;color:var(--cream)}
+.uman{font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-light)}

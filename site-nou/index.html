@@ -9,7 +9,7 @@
 <link rel="icon" href="img/monograma-cp.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonturi.css">
-<link rel="stylesheet" href="stil.css?v=20261030d">
+<link rel="stylesheet" href="stil.css?v=20261030e">
 </head>
 <body>
 
@@ -113,7 +113,7 @@
 <div class="despre-foto">
 <img src="img/barman-palarie-cocktail.webp" alt="Barman Cocktail Philosophy cu pălărie, la bar" loading="lazy">
 <div style="display:grid;gap:12px">
-<img src="img/siropuri-cocktail-philosophy.webp" alt="Siropurile făcute în casă: Passiflora, Harmony, Erasmus, Whiskey Sour, Platon" loading="lazy" style="aspect-ratio:1">
+<img src="img/barman-turnare-shoturi.webp" alt="Barman Cocktail Philosophy turnând shoturi la bar" loading="lazy" style="aspect-ratio:1">
 <img src="img/barman-cocktail-philosophy.webp" alt="Barman agitând shakerul" loading="lazy" style="aspect-ratio:1">
 </div>
 </div>
@@ -212,6 +212,26 @@
 </div>
 </section>
 
+<section class="sec sec-ink" id="oameni">
+<div class="wrap oameni">
+<div class="oameni-text">
+<p class="kicker" style="color:var(--gold-light)">Fără chatbot. Fără roboți.</p>
+<h2 class="h2">Vorbești cu oameni, <span style="color:var(--gold-light)">nu cu un program.</span></h2>
+<p class="lead" style="color:var(--cream)">Pentru noi, fiecare client contează. De aceea nu te lăsăm pe mâna unui chatbot: îți răspundem noi, direct, la telefon sau pe WhatsApp. Te ascultăm, îți punem întrebările potrivite și facem oferta pe evenimentul tău, nu pe un șablon.</p>
+<div class="oameni-pts">
+<div><h3>Un om îți răspunde</h3><p>La fiecare mesaj și la fiecare apel. Fără meniuri automate, fără „apăsați tasta 1”.</p></div>
+<div><h3>Ofertă discutată, nu generată</h3><p>Vorbim despre invitați, locație și ce vă place. Abia apoi vine prețul.</p></div>
+<div><h3>Pe mâna noastră</h3><p>De la primul mesaj până la ultimul pahar ai cu cine vorbi. Ne ocupăm noi.</p></div>
+</div>
+<div class="btns">
+<a class="btn btn-gold" href="tel:+40743785655">Sună-ne: 0743 785 655</a>
+<a class="btn btn-ghost" href="https://wa.me/40743785655?text=Bun%C4%83%21%20A%C8%99%20dori%20o%20ofert%C4%83%20pentru%20evenimentul%20meu.%0AData%3A%20%0ALoca%C8%9Bia%3A%20%0ANum%C4%83r%20invita%C8%9Bi%3A%20">Scrie-ne pe WhatsApp</a>
+</div>
+</div>
+<img class="oameni-foto" src="https://cocktailphilosophy.ro/wp-content/uploads/2026/03/seba-1536x1024.jpg" alt="Barman din echipa Cocktail Philosophy, zâmbind, cu shakerul în mână" loading="lazy" style="object-position:62% center">
+</div>
+</section>
+
 <section class="sec sec-white">
 <div class="wrap stack">
 <h2 class="h2">Ce zic oamenii după petrecere</h2>
@@ -260,17 +280,18 @@
 <div class="contact-text">
 <h2>Hai să vorbim!</h2>
 <p>Ai un eveniment în plan, vrei un cocktail special sau doar ai o idee care nu-ți dă pace? Trimite-ne data și locația, verificăm disponibilitatea și îți trimitem oferta.</p>
+<p class="uman">Îți răspunde un om din echipă, nu un robot.</p>
 <a class="btn btn-cream" style="align-self:flex-start" href="https://wa.me/40743785655?text=Bun%C4%83%21%20A%C8%99%20dori%20o%20ofert%C4%83%20pentru%20evenimentul%20meu.%0AData%3A%20%0ALoca%C8%9Bia%3A%20%0ANum%C4%83r%20invita%C8%9Bi%3A%20">Scrie-ne pe WhatsApp</a>
 <a class="tel" href="tel:+40743785655">0743 785 655</a>
 </div>
-<form class="form" id="cerere">
-<label class="w">Numele tău<input name="nume" autocomplete="name" required></label>
+<form class="form" id="cerere" data-lead="acasa" data-evn="Site: prima pagină" data-intro="Aș dori o ofertă pentru evenimentul meu." novalidate>
+<label class="w">Numele tău *<input name="nume" autocomplete="name" required></label>
 <label>Data evenimentului<input name="data" type="date"></label>
 <label>Nr. invitați<input name="inv" type="number" min="1" inputmode="numeric"></label>
 <label>Locația<input name="loc" placeholder="ex: Sibiu, Hotel ..."></label>
-<label>Telefon<input name="tel" type="tel" autocomplete="tel"></label>
+<label>Telefon *<input name="tel" type="tel" autocomplete="tel" inputmode="tel" required></label>
 <label class="w">Ce eveniment ai?<textarea name="msg" rows="3" placeholder="ex: nuntă, vrem și cocktailuri fără alcool"></textarea></label>
-<button class="btn btn-gold" type="submit">Trimite pe WhatsApp</button>
+<button class="btn btn-gold" type="submit">Trimite cererea</button>
 </form>
 </div>
 </section>
@@ -291,17 +312,8 @@
 
 <nav class="mbar" aria-label="Contact rapid"><a href="tel:+40743785655">Sună</a><a href="https://wa.me/40743785655?text=Bun%C4%83%21%20A%C8%99%20dori%20o%20ofert%C4%83%20pentru%20evenimentul%20meu.%0AData%3A%20%0ALoca%C8%9Bia%3A%20%0ANum%C4%83r%20invita%C8%9Bi%3A%20">WhatsApp</a></nav>
 
+<script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/cerere.js?v=1" defer></script>
 <script>
-document.getElementById('cerere').addEventListener('submit',function(e){
-  e.preventDefault();var f=e.target,v=function(n){return (f.elements[n].value||'').trim()};
-  var t='Bună! Sunt '+v('nume')+'. Aș dori o ofertă pentru evenimentul meu.';
-  if(v('data'))t+='\nData: '+v('data').split('-').reverse().join('.');
-  if(v('loc'))t+='\nLocația: '+v('loc');
-  if(v('inv'))t+='\nNumăr invitați: '+v('inv');
-  if(v('tel'))t+='\nTelefon: '+v('tel');
-  if(v('msg'))t+='\n'+v('msg');
-  window.open('https://wa.me/40743785655?text='+encodeURIComponent(t),'_blank');
-});
 document.querySelectorAll('.burger nav a').forEach(function(a){a.addEventListener('click',function(){a.closest('details').removeAttribute('open')})});
 </script>
 </body>
