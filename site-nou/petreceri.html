@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Bar de cocktailuri pentru botezuri, aniversări și majorate în Sibiu | Cocktail Philosophy</title>
-<meta name="description" content="Bar mobil de cocktailuri pentru botezuri, aniversări, majorate și petreceri acasă, în Sibiu. Băutură nelimitată cu preț fix pe invitat sau pachet barmani de la 350 €.">
+<meta name="description" content="Bar mobil de cocktailuri pentru botezuri, aniversări, majorate și petreceri acasă, în Sibiu. Băutură nelimitată cu preț fix pe invitat sau pachet barmani cu băutura după consum.">
 <link rel="icon" href="img/monograma-cp.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonturi.css">
@@ -100,10 +100,10 @@
 <p class="lead">Preț fix pe invitat, băutură nelimitată din meniul ales. Staff-ul și copiii nu se numără.</p>
 </div>
 <div class="n-ex">
-<div><span>30 de invitați</span><b>558 €</b><small>18,6 € / invitat</small></div>
-<div><span>50 de invitați</span><b>870 €</b><small>17,4 € / invitat</small></div>
-<div><span>70 de invitați</span><b>1.134 €</b><small>16,2 € / invitat</small></div>
-<div><span>100 de invitați</span><b>1.440 €</b><small>14,4 € / invitat</small></div>
+<div><span>30 de invitați</span><b data-p="ai-tot" data-inv="30">558 €</b><small><span data-p="ai-inv" data-inv="30">18,6 €</span> / invitat</small></div>
+<div><span>50 de invitați</span><b data-p="ai-tot" data-inv="50">870 €</b><small><span data-p="ai-inv" data-inv="50">17,4 €</span> / invitat</small></div>
+<div><span>70 de invitați</span><b data-p="ai-tot" data-inv="70">1.134 €</b><small><span data-p="ai-inv" data-inv="70">16,2 €</span> / invitat</small></div>
+<div><span>100 de invitați</span><b data-p="ai-tot" data-inv="100">1.440 €</b><small><span data-p="ai-inv" data-inv="100">14,4 €</span> / invitat</small></div>
 </div>
 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
 <a class="btn btn-gold" href="oferte.html#all-inclusive">Calculează pentru numărul tău</a>
@@ -116,7 +116,7 @@
 <div class="wrap" style="display:flex;flex-wrap:wrap;gap:48px;align-items:center">
 <div style="flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:18px">
 <p class="kicker">Sau varianta cu băutura pe consum</p>
-<h2 class="h2">Pachet barmani, <span class="gold">de la 350 €</span></h2>
+<h2 class="h2">Pachet barmani, <span class="gold">de la <span data-p="barmani-min">350 €</span></span></h2>
 <p class="lead">Potrivit pentru petrecerile unde crezi că nu se va consuma foarte mult. Plătești echipa la preț fix, iar băutura după cât se consumă, la prețurile BetaPlus, cu 8% reducere la bazele alcoolice.</p>
 <ul class="list"><li>Barmanii și toate sculele de bar</li><li>Taxa de vase a locației</li><li>Toate cheltuielile de logistică</li></ul>
 <a class="btn btn-line" style="align-self:flex-start" href="oferte.html#pachet-barmani">Vezi detaliile pachetului</a>
@@ -148,7 +148,7 @@
 <details><summary>Cine se numără la invitați?</summary><p>Doar invitații adulți. Staff-ul și copiii nu intră în calcul.</p></details>
 <details><summary>De cât spațiu are nevoie barul?</summary><p>De aproximativ 2,5 × 2,5 metri. Restul îl aducem noi.</p></details>
 <details><summary>Veniți și în afara Sibiului?</summary><p>Da, venim oriunde, fără restricții.</p></details>
-<details><summary>Cum se plătește?</summary><p>Avans 100 € la rezervare, iar restul după petrecere.</p></details>
+<details><summary>Cum se plătește?</summary><p>Avans <span data-p="avans">100 €</span> la rezervare, iar restul după petrecere.</p></details>
 </div>
 </div>
 </section>
@@ -190,6 +190,8 @@
 <nav class="mbar" aria-label="Contact rapid"><a href="tel:+40743785655">Sună</a><a href="https://wa.me/40743785655?text=Bun%C4%83%21%20A%C8%99%20dori%20o%20ofert%C4%83%20pentru%20o%20petrecere.%0AData%3A%20%0ALoca%C8%9Bia%3A%20%0ANum%C4%83r%20invita%C8%9Bi%3A%20">WhatsApp</a></nav>
 
 <script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/cerere.js?v=1" defer></script>
+<script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/preturi.js?v=2"></script>
+<script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/preturi-pagina.js?v=1"></script>
 <script>
 document.querySelectorAll('.burger nav a').forEach(function(a){a.addEventListener('click',function(){a.closest('details').removeAttribute('open')})});
 </script>

@@ -6,5 +6,7 @@ window.CP_PRETURI={
   allInclusive:[[0,50,18.9],[50,100,15.9],[100,150,12.9],[150,200,10.9],[200,250,9.9],[250,300,8.9],[300,350,7.9],[350,null,6.9]],
   /* Pachet barmani: număr de barmani -> € */
   barmani:{1:350,2:520,3:690,4:860},
+  /* Pachet Final de An (firme, 1 nov – 31 dec): [de la, până la, € pe invitat + TVA] */
+  finalDeAn:[[0,50,19.9],[50,100,16.9],[100,150,13.9],[150,200,11.9],[200,250,10.9],[250,null,9.9]],
   avans:100
 };

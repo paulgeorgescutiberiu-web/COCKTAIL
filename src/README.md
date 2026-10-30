@@ -38,3 +38,4 @@ Pagini separate, în rădăcină: `portal.html` (portalul clientului) și `bar.h
 - **Prețurile**: `site-nou/preturi.js`. Îl citesc pagina Oferte, calculatorul vechi de pe WordPress și aplicația (pus în `index.html` la construire).
 - **Aspectul**: paleta și fonturile site-ului (crem, auriu, verde; Anton + Barlow) în aplicație, `portal.html` și `bar.html`.
 - **Portalul pe domeniu**: `site-nou/wp/snippet-portal.php` (WPCode) îl afișează la `cocktailphilosophy.ro/portal/`.
+- Paginile site-ului (prima pagină, Nunți, Oferte, Corporate, Petreceri) afișează prețurile prin `site-nou/preturi-pagina.js`, care citește `site-nou/preturi.js`: exemplele de preț, Pachet barmani, Pachet Final de An (`finalDeAn`) și avansul. Un preț schimbat în `preturi.js` se schimbă peste tot (pe site în maxim ~10 minute).
