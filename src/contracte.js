@@ -985,6 +985,34 @@ function thanksHTML(){const L=thanksDue();if(!L.length)return "";
     L.map(c=>`<div class="qr-lead"><div><b>${esc(tcase(c.nume))}</b> · ${esc(tcase(c.locatie||""))}<small>eveniment pe ${esc(shortDate(c.dataEv))}${c.tel?" · "+esc(c.tel):" · fără telefon în contract"}</small></div>
       <div class="qr-la">${c.tel?`<a class="btn primary" data-thx="${c.id}" href="https://wa.me/${telWa(c.tel)}?text=${encodeURIComponent(thanksTxt(c))}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button class="btn" data-thxskip="${c.id}">Nu trimit</button></div></div>`).join("")+`</div>`}
 window.__ctNew=pre=>{const b=document.querySelector('nav.tabs button[data-view="contracte"]');if(b)b.click();f={...BLANK(),...pre};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)};
+/* Pentru asistentul vocal (Sofia): contract nou salvat direct, calendar Google, PDF în Drive */
+async function ctReady(){start();for(let i=0;i<50&&!firma;i++)await new Promise(r=>setTimeout(r,100))}
+window.__ctAPI={
+  prep:()=>ctReady().then(()=>gPrep()),
+  google:()=>!!(G.tok&&Date.now()<G.exp-60000),
+  connect:()=>gToken(),   // doar din apăsarea unui buton: Google deschide o fereastră
+  get:id=>list.find(x=>x.id===id),
+  missing:c=>check({...BLANK(),...c}).map(e=>e.m.replace(/^Lipsește: /,"")),
+  async create(pre){await ctReady();const c={...BLANK(),...pre,id:null};const data=clean(c);const r=await F.fs.collection(`${F.base}/contracte`).add(data);return {...data,id:r.id}},
+  async update(id,patch){await F.fs.doc(`${F.base}/contracte/${id}`).set(patch,{merge:true});const c=list.find(x=>x.id===id);return c?{...c,...patch}:{id,...patch}},
+  async addNote(id,t){const c=list.find(x=>x.id===id);const arr=[...((c&&c.notes)||[]),{d:today(),t,at:new Date().toISOString()}];await F.fs.doc(`${F.base}/contracte/${id}`).set({notes:arr},{merge:true})},
+  dayEvents:d=>dayEvents(d).then(L=>L.map(e=>({id:e.id,titlu:e.summary||"Fără titlu",ora:e.start&&e.start.dateTime?e.start.dateTime.slice(11,16):"toată ziua",locatie:e.location||""}))),
+  async calendar(c,targetId){   // eveniment în calendar fără PDF; „Drive + calendar” îl completează apoi cu contractul
+    c={...BLANK(),...c};await ctReady();let ev;
+    if(targetId){const ex=await gf(CAL("/"+encodeURIComponent(targetId))),old=String(ex.description||"").trim(),keep=old&&!old.includes(MARK)?"\n\n— Note anterioare —\n"+old:"";
+      const body={description:evDesc(c).replace(/\n\nContract atașat mai jos[^\n]*$/,"\n\nContract în pregătire · "+MARK+".")+keep,location:ex.location||tcase(c.locatie)};if(c.oraEv)Object.assign(body,evTimes(c));
+      ev=await gf(CAL("/"+encodeURIComponent(targetId)+"?sendUpdates=none"),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})}
+    else{const sum=[tcase(c.locatie),String(c.invitati||"").trim(),surname(c.nume)].filter(Boolean).join(" ");
+      ev=await gf(CAL("?sendUpdates=none"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({summary:sum,location:tcase(c.locatie),description:evDesc(c).replace(/\n\nContract atașat mai jos[^\n]*$/,"\n\nContract în pregătire · "+MARK+"."),...evTimes(c)})})}
+    if(c.id)await F.fs.doc(`${F.base}/contracte/${c.id}`).set({calId:ev.id},{merge:true});
+    return ev.htmlLink||"";
+  },
+  async drive(c){c={...BLANK(),...c};await ctReady();const file=await uploadPdf(c,await pdfBlob(c)),ev=await writeEvent(c,file,c.calId||null);
+    await F.fs.doc(`${F.base}/contracte/${c.id}`).set({driveId:file.id,calId:ev.id},{merge:true});return file.name},
+  open(id,c0){const c=list.find(x=>x.id===id)||c0;const b=document.querySelector('nav.tabs button[data-view="contracte"]');if(b)b.click();
+    if(c){f={...BLANK(),...c,ocr:{}};errs=check(f);ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)}},
+  pdf(id){const c=list.find(x=>x.id===id);if(c)return downloadPDF(c,null)}
+};
 window.__ctRefresh=()=>{if(started&&mode==="list"&&!V.hidden)render()};
 window.__ctList=()=>list;window.__ctFirma=()=>firma;
 /* evenimentele din calendar între două zile (pentru „Preia din calendar” la Evenimente) */

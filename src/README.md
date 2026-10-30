@@ -8,7 +8,7 @@ Aplicația publicată (`/index.html`) e un singur fișier, construit din sursele
 bash src/build.sh
 ```
 
-Pașii, în ordine: `build2` → `dates` → `consp` → `evp` → `ctrp` → `ofp` → `tabp` → `qrp` → `retp` → `rapp` → `build`.
+Pașii, în ordine: `build2` → `dates` → `consp` → `evp` → `ctrp` → `ofp` → `tabp` → `qrp` → `retp` → `rapp` → `syncp` → `extrap` → `calp` → `vocep` → `build`.
 Fiecare pas citește `base2.html`, inserează o parte a aplicației și îl scrie la loc; `build.py` adaugă
 Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina repo-ului.
 
@@ -26,6 +26,7 @@ Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina r
 | `raport.js` | Raportul lunar și plata barmanilor |
 | `disp.js` | Echipa: disponibilitatea barmanilor și confirmarea evenimentelor |
 | `qr.js` | QR-ul de la bar, cererile de ofertă, pagina publică `bar.html` |
+| `voce.js` | Sofia, asistentul vocal în română: ascultă, întreabă Gemini (cu funcții pentru rețete, evenimente, stoc, contracte, încasări, disponibilitate; „adaugă un eveniment” salvează contractul, îl pune în calendarul Google și PDF-ul în Drive) și răspunde cu voce |
 | `reguli-firestore.txt` | Regulile de securitate Firebase (se pun manual în consolă) |
 
 Pagini separate, în rădăcină: `portal.html` (portalul clientului) și `bar.html` (pagina invitaților de la bar).

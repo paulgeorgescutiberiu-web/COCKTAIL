@@ -132,6 +132,9 @@ V.addEventListener("click",async e=>{
     const days={...(my().days||{})};if(nx)days[k]=nx;else delete days[k];await saveDays(days);return}
 });
 V.addEventListener("change",e=>{const s=e.target.closest("[data-fbev]");if(s){fbEv=s.value;render()}});
+/* Pentru asistentul vocal: cine e disponibil într-o zi (AAAA-LL-ZZ) */
+window.__dispFor=async d=>{let got=false;const h=()=>got=true;document.addEventListener("cp-disp",h,{once:true});subscribe();
+  for(let i=0;i<40&&!got&&!Object.keys(ALL).length;i++)await new Promise(r=>setTimeout(r,100));return availFor(d)};
 function start(){if(!started){started=true;V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;view=F.isAdmin?"team":"mine"}subscribe();fbSubscribe();
   if(F.isAdmin&&!TEL)F.fs.doc(`${F.base}/privat/echipa`).get().then(d=>{const t=d.exists&&d.data().tel||{};TEL={};Object.entries(t).forEach(([k,v])=>TEL[first(k)]=v);render()}).catch(()=>{TEL={}});
   render()}
