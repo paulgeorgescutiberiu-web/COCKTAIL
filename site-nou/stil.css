@@ -1,0 +1,232 @@
+/* Cocktail Philosophy — site nou (versiune de probă). Culori și fonturi din design system. */
+:root{
+  --cream:#FFFEF1; --white:#FFFFFF; --ink:#1A1A18; --gold:#C2862D; --gold-light:#E3B25C;
+  --green:#467460; --green-dark:#2F5242; --sand:#EFE7CF;
+  --display:"Anton",Impact,sans-serif; --cond:"Barlow Condensed","Arial Narrow",sans-serif; --sans:"Barlow",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:var(--green)}a:hover{color:var(--green-dark)}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-transform:uppercase;margin:0}
+p{margin:0}
+.kicker{font-family:var(--cond);font-weight:700;font-size:15px;letter-spacing:.22em;text-transform:uppercase;color:var(--green-dark)}
+.lead{font-family:var(--cond);font-weight:600;font-size:21px;line-height:1.3;color:var(--green)}
+.gold{color:var(--gold)}
+.h2{font-size:clamp(36px,5vw,56px);line-height:1.02}
+.todo{background:#FFF3C4;outline:2px dashed var(--gold);outline-offset:2px;padding:0 4px}
+
+/* bandă probă */
+.proba{background:var(--gold);color:var(--ink);text-align:center;font-family:var(--cond);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px}
+
+/* butoane */
+.btn{display:inline-block;font-family:var(--cond);font-weight:700;font-size:18px;letter-spacing:.05em;text-transform:uppercase;padding:15px 24px;text-decoration:none;border:2px solid transparent;cursor:pointer;line-height:1.1;min-height:44px}
+.btn-gold{background:var(--gold);color:var(--ink)}.btn-gold:hover{background:var(--gold-light);color:var(--ink)}
+.btn-line{border-color:var(--ink);color:var(--ink);background:transparent}.btn-line:hover{background:var(--ink);color:var(--cream)}
+.btn-cream{background:var(--cream);color:var(--ink)}.btn-cream:hover{background:var(--white);color:var(--ink)}
+.btn-ghost{border-color:var(--cream);color:var(--white)}.btn-ghost:hover{background:var(--cream);color:var(--ink)}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+
+/* header */
+.top{border-bottom:2px solid var(--gold);background:var(--cream);position:sticky;top:0;z-index:20}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:14px;padding-bottom:14px}
+.logo img{height:42px;width:auto}
+.nav{display:flex;gap:26px;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase}
+.nav a{color:var(--ink);text-decoration:none;padding:6px 0}.nav a:hover{color:var(--green-dark)}
+.nav a[aria-current=page]{color:var(--green-dark);border-bottom:2px solid var(--gold)}
+.top .btn{padding:12px 20px;font-size:16px}
+.burger{display:none}
+@media (max-width:900px){
+  .nav,.top .btn-gold{display:none}
+  .burger{display:block;position:relative}
+  .burger summary{list-style:none;cursor:pointer;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.08em;text-transform:uppercase;border:2px solid var(--ink);padding:10px 14px;min-height:44px}
+  .burger summary::-webkit-details-marker{display:none}
+  .burger nav{position:absolute;right:0;top:calc(100% + 10px);background:var(--cream);border:2px solid var(--ink);display:flex;flex-direction:column;min-width:220px}
+  .burger nav a{padding:14px 18px;border-bottom:1px solid var(--sand);color:var(--ink);text-decoration:none;font-family:var(--cond);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.06em}
+  .logo img{height:34px}
+}
+
+/* hero */
+.hero .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:48px;padding-top:56px;padding-bottom:64px}
+.hero-text{flex:1 1 520px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.hero h1{font-size:clamp(46px,7vw,92px);line-height:1.04}
+.hero-art{flex:1 1 420px;min-width:0;display:flex;justify-content:center}
+.sun{position:relative;width:100%;max-width:560px}
+.sun::before{content:"";position:absolute;left:10%;top:4%;width:80%;aspect-ratio:1;border-radius:50%;background:var(--gold-light)}
+.sun img{position:relative;width:100%;height:auto}
+.note{font-family:var(--cond);font-weight:600;font-size:17px;color:var(--green-dark)}
+
+/* cifre */
+.cifre{background:var(--ink);color:var(--white)}
+.cifre .wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px;text-align:center;padding-top:44px;padding-bottom:44px}
+.cifre b{display:block;font-family:var(--display);font-weight:400;font-size:60px;line-height:1;color:var(--gold-light)}
+.cifre span{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.18em;text-transform:uppercase}
+
+/* secțiuni */
+.sec{padding:88px 0}
+.sec-white{background:var(--white);border-top:2px solid var(--gold);border-bottom:2px solid var(--gold)}
+.sec-ink{background:var(--ink);color:var(--white)}
+.sec-green{background:var(--green);color:var(--white)}
+.stack{display:flex;flex-direction:column;gap:36px}
+.head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px}
+.head .lead{max-width:440px}
+
+/* argumente */
+.args{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:36px 40px}
+.arg{border-top:2px solid var(--gold);padding-top:16px;display:flex;flex-direction:column;gap:8px}
+.arg h3{font-size:26px;color:var(--gold)}
+.arg p{font-family:var(--cond);font-weight:600;font-size:19px;line-height:1.3;color:var(--green)}
+
+/* despre */
+.despre{display:flex;flex-wrap:wrap;gap:48px;align-items:center}
+.despre-text{flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:20px}
+.despre-text p{font-family:var(--cond);font-weight:600;font-size:21px;line-height:1.4;color:var(--green)}
+.despre-foto{flex:1 1 440px;min-width:0;display:grid;grid-template-columns:1.2fr 1fr;gap:12px}
+.despre-foto img{width:100%;height:100%;object-fit:cover;aspect-ratio:3/4}
+.despre-foto img:first-child{aspect-ratio:auto;grid-row:span 1}
+
+/* carduri evenimente */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.card{display:flex;flex-direction:column;background:var(--cream);color:var(--ink);text-decoration:none}
+.card img{aspect-ratio:4/3;object-fit:cover;width:100%}
+.card div{padding:20px;display:flex;flex-direction:column;gap:8px}
+.card h3{font-size:28px}
+.card p{font-family:var(--cond);font-weight:600;font-size:18px;color:var(--green)}
+.card .go{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--green-dark)}
+.card:hover .go{color:var(--ink)}
+
+/* benzi meniu (din pliant) */
+.band-row{display:flex;background:var(--white)}
+.band{width:72px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:24px 0}
+.band span{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--display);font-size:26px;letter-spacing:.04em;white-space:nowrap}
+.band-sig{background:var(--gold);color:var(--ink)}.band-cls{background:var(--ink);color:var(--white)}.band-zero{background:var(--green);color:var(--white)}
+.band-body{flex:1;min-width:0;padding:28px 28px 32px;display:flex;flex-direction:column;gap:22px}
+.tag-numa{display:inline-block;transform:rotate(-4deg);background:var(--green);color:var(--white);font-family:var(--cond);font-weight:700;font-size:20px;padding:6px 14px}
+@media (max-width:560px){.band{width:52px}.band span{font-size:20px}.band-body{padding:20px 16px 24px}}
+
+/* cocktailuri */
+.drinks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:24px 32px}
+.drink{border-top:2px solid var(--gold);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.drink h3{font-size:30px;line-height:1.05;color:var(--gold)}
+.drink .gust{font-family:var(--cond);font-weight:700;font-size:15px;letter-spacing:.16em;text-transform:uppercase}
+.drink .ing{font-family:var(--cond);font-weight:600;font-size:19px;line-height:1.25;color:var(--green)}
+.drink .desc{font-style:italic;font-weight:500;font-size:16px;line-height:1.35;color:var(--green-dark)}
+.mini-drinks{display:flex;flex-wrap:wrap;gap:6px 22px}
+.mini-drinks span{font-family:var(--display);font-size:26px;color:var(--gold);text-transform:uppercase}
+.mini-list{font-family:var(--cond);font-weight:600;font-size:19px;color:var(--green-dark)}
+
+/* filtre meniu */
+.filters{position:sticky;top:72px;z-index:10;background:var(--cream);border-top:2px solid var(--gold);border-bottom:2px solid var(--gold)}
+.filters .wrap{display:flex;flex-wrap:wrap;gap:10px;padding-top:14px;padding-bottom:14px}
+.filters button{font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.08em;text-transform:uppercase;padding:10px 18px;min-height:44px;border:2px solid var(--ink);background:var(--cream);color:var(--ink);cursor:pointer}
+.filters button[aria-pressed=true]{background:var(--ink);color:var(--cream)}
+@media (max-width:900px){.filters{top:64px}}
+
+/* oferte */
+.offer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px}
+.offer{background:var(--cream);color:var(--ink);padding:32px;display:flex;flex-direction:column;gap:18px;border-top:8px solid var(--gold)}
+.offer.green{border-top-color:var(--green)}
+.offer h3{font-size:36px}
+.offer .price{font-family:var(--display);font-size:30px;color:var(--gold)}
+.offer ul,.list{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-family:var(--cond);font-weight:600;font-size:19px;color:var(--green)}
+.pill{align-self:flex-start;background:var(--green);color:var(--white);font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.12em;text-transform:uppercase;padding:6px 10px}
+.pill-gold{background:var(--gold);color:var(--ink)}
+
+/* calculator */
+.calc{display:flex;flex-wrap:wrap;background:var(--white);border-top:8px solid var(--gold)}
+.calc-main{flex:1 1 520px;min-width:0;padding:40px;display:flex;flex-direction:column;gap:22px}
+.calc-box{display:flex;flex-direction:column;gap:14px;background:var(--cream);padding:24px}
+.calc-box label{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.12em;text-transform:uppercase}
+.calc-box label small{font-weight:600;letter-spacing:0;text-transform:none;color:var(--green-dark);font-size:16px}
+.calc-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.calc-in input[type=range]{flex:1 1 240px;min-width:0;accent-color:var(--gold);height:28px}
+.calc-in input[type=number]{width:110px;font:600 22px var(--sans);padding:10px 12px;border:2px solid var(--ink);background:var(--white)}
+.calc-out{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;border-top:2px solid var(--gold);padding-top:16px}
+.calc-out span{display:block;font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--green-dark)}
+.calc-out b{display:block;font-family:var(--display);font-weight:400;font-size:clamp(34px,4vw,48px);line-height:1.05}
+.calc-side{flex:1 1 380px;min-width:0;padding:40px;background:var(--ink);color:var(--white);display:flex;flex-direction:column;gap:16px}
+.calc-side h3{font-size:28px;color:var(--gold-light)}
+.tiers div{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #3A3A36}
+.tiers span{font-family:var(--cond);font-weight:700;font-size:19px}
+.tiers strong{font-family:var(--display);font-weight:400;font-size:22px}
+.tiers .on{background:var(--gold);color:var(--ink)}
+.bprices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-content:start}
+.bprices div{background:var(--cream);padding:24px}
+.bprices span{display:block;font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.14em;text-transform:uppercase}
+.bprices b{display:block;font-family:var(--display);font-weight:400;font-size:44px;line-height:1.05;color:var(--gold)}
+.tbl{overflow-x:auto}
+.tbl table{width:100%;min-width:640px;border-collapse:collapse;font-family:var(--cond);font-size:19px}
+.tbl thead tr{background:var(--ink);color:var(--white)}
+.tbl th,.tbl td{text-align:left;padding:14px 18px}
+.tbl thead th{font-family:var(--display);font-weight:400;font-size:24px;text-transform:uppercase}
+.tbl tbody tr{border-bottom:2px solid var(--gold)}
+.tbl tbody th{font-weight:700}
+.tbl tbody td{font-weight:600;color:var(--green-dark)}
+
+/* pași */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:32px}
+.step b{display:block;font-family:var(--display);font-weight:400;font-size:64px;line-height:1;color:var(--gold)}
+.step h3{font-family:var(--cond);font-weight:700;font-size:22px;letter-spacing:.04em;margin:8px 0}
+.step p{font-family:var(--cond);font-weight:600;font-size:18px;color:var(--green)}
+
+/* testimoniale */
+.quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.quote{margin:0;background:var(--cream);padding:28px;display:flex;flex-direction:column;gap:16px}
+.quote::before{content:"“";font-family:var(--display);font-size:64px;line-height:.6;color:var(--gold)}
+.quote blockquote{margin:0;font-family:var(--cond);font-weight:600;font-size:20px;line-height:1.35;color:var(--green-dark);flex:1}
+.quote figcaption{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.1em;text-transform:uppercase}
+.quote figcaption small{display:block;font-weight:600;letter-spacing:.04em;text-transform:none;color:var(--green-dark);font-size:15px}
+
+/* galerie */
+.gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.gallery img{width:100%;aspect-ratio:1;object-fit:cover}
+.gallery img.tall{grid-row:span 2;aspect-ratio:auto;height:100%}
+@media (max-width:800px){.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* faq */
+.faq{display:flex;flex-wrap:wrap;gap:40px}
+.faq h2{flex:1 1 300px}
+.faq-list{flex:2 1 520px;min-width:0}
+.faq details{border-top:2px solid var(--gold);padding:18px 0}
+.faq details:last-child{border-bottom:2px solid var(--gold)}
+.faq summary{display:flex;justify-content:space-between;gap:16px;font-family:var(--cond);font-weight:700;font-size:22px;list-style:none;cursor:pointer}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:var(--display);font-size:30px;line-height:1;color:var(--gold);transition:transform .2s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{margin-top:12px;font-family:var(--cond);font-weight:600;font-size:19px;color:var(--green)}
+
+/* contact */
+.contact{display:flex;flex-wrap:wrap;gap:48px}
+.contact-text{flex:1 1 380px;min-width:0;display:flex;flex-direction:column;gap:20px}
+.contact-text h2{font-size:clamp(44px,6vw,72px);line-height:1}
+.contact-text p{font-family:var(--cond);font-weight:600;font-size:21px;line-height:1.3}
+.tel{color:var(--white);font-family:var(--display);font-size:40px;text-decoration:none}.tel:hover{color:var(--gold-light)}
+.form{flex:1 1 460px;min-width:0;background:var(--cream);color:var(--ink);padding:32px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.form label{display:flex;flex-direction:column;gap:6px;font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.form .w{grid-column:span 2}
+.form input,.form textarea{font:600 18px var(--sans);padding:12px;border:2px solid var(--ink);background:var(--white);color:var(--ink)}
+.form button{grid-column:span 2;justify-self:start;border:0}
+@media (max-width:560px){.form{grid-template-columns:1fr;padding:22px}.form .w,.form button{grid-column:auto}}
+
+/* footer */
+.foot{background:var(--ink);color:var(--white)}
+.foot .wrap{padding-top:56px;padding-bottom:40px;display:flex;flex-direction:column;gap:36px}
+.foot-cols{display:flex;flex-wrap:wrap;justify-content:space-between;gap:32px}
+.foot-cols>div{display:flex;flex-direction:column;gap:8px;font-family:var(--cond);font-weight:600;font-size:18px;flex:1 1 220px}
+.foot-cols img{height:48px;width:auto;align-self:flex-start}
+.foot-cols .t{font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-light);font-size:15px}
+.foot a{color:var(--white)}.foot a:hover{color:var(--gold-light)}
+.foot-bot{border-top:2px solid var(--gold);padding-top:20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-family:var(--cond);font-weight:600;font-size:15px;color:var(--cream)}
+
+/* bara de jos pe telefon */
+.mbar{display:none}
+@media (max-width:900px){
+  .foot .wrap{padding-bottom:96px}
+  .mbar{display:grid;grid-template-columns:1fr 1fr;position:fixed;left:0;right:0;bottom:0;z-index:30;border-top:2px solid var(--gold)}
+  .mbar a{text-align:center;padding:15px 8px;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}
+  .mbar a:first-child{background:var(--ink);color:var(--white)}
+  .mbar a:last-child{background:var(--gold);color:var(--ink)}
+}
