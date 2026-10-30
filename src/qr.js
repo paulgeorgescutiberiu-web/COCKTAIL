@@ -134,7 +134,7 @@ function aiPrice(n){n=+n||0;if(n<=PTS[0][0])return PTS[0][1];const last=PTS[PTS.
   for(let i=1;i<PTS.length;i++){const a=PTS[i-1],b=PTS[i];if(n<=b[0])return Math.round((a[1]+(b[1]-a[1])*(n-a[0])/(b[0]-a[0]))*10)/10}}
 const BARMANI=CPP.barmani||{1:350,2:520,3:690,4:860};
 const eur=v=>(Math.round(v*100)/100).toLocaleString("ro-RO",{maximumFractionDigits:2})+" €";
-const MENU_URL="https://cocktailphilosophy.ro/wp-content/uploads/2026/03/MENIU-2026-GOLD.pdf";
+const MENU_URL="https://cocktailphilosophy.ro/meniu/";
 function leadStats(){const m=new Date().toISOString().slice(0,7),M=LEADS.filter(x=>String(x.at||"").slice(0,7)===m);
   const of=M.filter(x=>x.st==="oferta"||x.st==="ct"||x.offer).length,won=M.filter(x=>x.st==="ct").length;
   const src={};LEADS.forEach(x=>{const k=srcOf(x);src[k]=src[k]||{n:0,w:0};src[k].n++;if(x.st==="ct")src[k].w++});
@@ -167,7 +167,7 @@ function offerForm(x){const o=LOFF,pp=o.pachet==="barmani"?null:(o.pp!=null?o.pp
   return `<div class="ld-form ld-off"><label>Pachet<select data-lof="pachet"><option value="ai"${o.pachet!=="barmani"?" selected":""}>All Inclusive (băuturi la discreție)</option><option value="barmani"${o.pachet==="barmani"?" selected":""}>Pachet barmani</option></select></label>
     ${o.pachet==="barmani"?`<label>Barmani<select data-lof="n">${[1,2,3,4].map(n=>`<option value="${n}"${+o.n===n?" selected":""}>${n} · ${BARMANI[n]} €</option>`).join("")}</select></label>`:`<label>Invitați (fără staff și copii)<input data-lof="inv" inputmode="numeric" value="${esc(o.inv||"")}"></label><label>Preț / persoană (€)<input data-lof="pp" inputmode="decimal" value="${esc(String(pp).replace(".",","))}"><small>din tabelul de prețuri: ${String(aiPrice(o.inv)).replace(".",",")} €</small></label>`}
     <label>Valabilă până la<input type="date" data-lof="val" value="${esc(o.val)}"></label><label class="ld-w">Mențiuni în ofertă (opțional)<textarea data-lof="note" rows="2" placeholder="ex: include și 2 cocktailuri fără alcool la alegere">${esc(o.note||"")}</textarea></label>
-    <p class="ld-w ld-tot">Total: <b>${eur(tot)}</b> · avans 100 € pentru rezervarea datei</p>
+    <p class="ld-w ld-tot">Total: <b>${eur(tot)}</b> · avans ${CPP.avans||100} € pentru rezervarea datei</p>
     <div class="qr-la ld-w"><button class="btn primary" data-losend="${esc(x.id)}"${LBUSY?" disabled":""}>${LBUSY==="send"?"Se pregătește PDF-ul…":"Trimite oferta pe WhatsApp"}</button><button class="btn" data-lopdf="${esc(x.id)}"${LBUSY?" disabled":""}>Doar PDF</button><button class="btn" data-lo="">Renunță</button></div>
     <p class="ev-file ld-w">PDF-ul se salvează în Drive („Oferte trimise”), iar mesajul de WhatsApp are linkul lui și linkul meniului.</p></div>`}
 function grabOffer(){const V=document.querySelector("#v-contracte");if(!V||!LOFF)return;V.querySelectorAll("[data-lof]").forEach(i=>{const k=i.dataset.lof;LOFF[k]=k==="pp"?(i.value.trim()===""?null:parseFloat(i.value.replace(",","."))):i.value})}
@@ -229,7 +229,7 @@ async function offerPDF(x){grabOffer();const o=LOFF,pm=await loadPM(),fn=String(
     content:[{svg:LOGO_SVG,width:300,margin:[0,0,0,26]},
       {text:o.pachet==="barmani"?"Ofertă · Pachet barmani":"Ofertă · All Inclusive",fontSize:22,bold:true},
       {text:`pentru ${fn}`,fontSize:13,color:"#555",margin:[0,4,0,18]},
-      {table:{widths:[140,"*"],body:[["Data evenimentului",x.data?fdate(x.data):"de stabilit"],["Locația",x.loc||"de stabilit"],...(o.pachet==="barmani"?[["Barmani",String(o.n)]]:[["Invitați",String(o.inv||"")],["Preț / persoană",eur(pp)]]),[{text:"Total",bold:true},{text:eur(tot),bold:true,fontSize:13}],["Avans","100 € pentru rezervarea datei"],["Valabilă până la",o.val?fdate(o.val):""]].map(r=>r.map(c=>typeof c==="string"?{text:c}:c))},layout:{hLineColor:()=>"#e2ddd5",vLineWidth:()=>0,paddingTop:()=>6,paddingBottom:()=>6}},
+      {table:{widths:[140,"*"],body:[["Data evenimentului",x.data?fdate(x.data):"de stabilit"],["Locația",x.loc||"de stabilit"],...(o.pachet==="barmani"?[["Barmani",String(o.n)]]:[["Invitați",String(o.inv||"")],["Preț / persoană",eur(pp)]]),[{text:"Total",bold:true},{text:eur(tot),bold:true,fontSize:13}],["Avans",(CPP.avans||100)+" € pentru rezervarea datei"],["Valabilă până la",o.val?fdate(o.val):""]].map(r=>r.map(c=>typeof c==="string"?{text:c}:c))},layout:{hLineColor:()=>"#e2ddd5",vLineWidth:()=>0,paddingTop:()=>6,paddingBottom:()=>6}},
       {text:"Ce include",fontSize:13,bold:true,margin:[0,22,0,8],color:A},{ul:inc,margin:[0,0,0,6]},
       ...(o.note?[{text:"Mențiuni",fontSize:13,bold:true,margin:[0,16,0,6],color:A},{text:o.note}]:[]),
       {text:"Meniul de cocktailuri",fontSize:13,bold:true,margin:[0,18,0,6],color:A},{text:[{text:"Meniul 2026: ",bold:true},{text:MENU_URL,link:MENU_URL,color:A,decoration:"underline"}]},
@@ -245,7 +245,7 @@ async function offerSend(x,wa){if(LBUSY)return;LBUSY=wa?"send":"pdf";let W=null;
     await F.fs.doc(`barLead/${x.id}`).set({offer,st:"oferta"},{merge:true});
     if(wa){const fn=String(x.nume||"").split(" ")[0];const txt=`Bună, ${fn}! Sunt Paul de la Cocktail Philosophy. Vă trimit oferta pentru evenimentul vostru${x.data?" din "+fdate(x.data):""}${x.loc?", "+x.loc:""}:\n\n`+
         (offer.pachet==="barmani"?`Pachet barmani, ${offer.n} ${offer.n===1?"barman":"barmani"}: ${eur(offer.total)}`:`All Inclusive, ${offer.inv} invitați: ${eur(offer.pp)} / persoană, total ${eur(offer.total)}, cu băuturi la discreție`)+
-        `\nAvans 100 € pentru rezervarea datei.${lk?`\n\nOferta completă: ${lk}`:""}\nMeniul nostru: ${MENU_URL}\n\nAștept cu drag orice întrebare!`;
+        `\nAvans ${CPP.avans||100} € pentru rezervarea datei.${lk?`\n\nOferta completă: ${lk}`:""}\nMeniul nostru: ${MENU_URL}\n\nAștept cu drag orice întrebare!`;
       const u=`https://wa.me/${telWa(x.tel)}?text=${encodeURIComponent(txt)}`;if(W)W.location.href=u;else window.open(u,"_blank")}
     LOFF=null;}catch(e){console.warn(e);if(W)try{W.close()}catch(_){};alertMsg("Nu am putut face oferta. "+(e&&e.msg||"Verifică internetul și încearcă din nou."))}
   LBUSY="";refresh()}
