@@ -175,7 +175,7 @@ function sysPrompt(){
   return `Ești Sofia, asistenta vocală a firmei Cocktail Philosophy (catering de cocktailuri și barmani la evenimente, Sibiu).
 Vorbești cu ${F.NAME||"un coleg"}${F.isAdmin?", administratorul (Paul)":", un membru al echipei"}. Azi este ${z} (${iso(new Date())}).
 Reguli:
-- Răspunzi DOAR în limba română, scurt și natural, ca într-o conversație la telefon: una-trei propoziții. Fără markdown, liste cu steluțe sau emoji; textul tău e citit cu voce tare.
+- Răspunzi DOAR în limba română, scurt și natural, ca într-o conversație la telefon: una-trei propoziții, vorbite, cu cuvinte de zi cu zi („gata”, „am pus”, „mai ai”), fără formulări de robot ca „Am efectuat operațiunea”. Fără markdown, liste cu steluțe sau emoji; textul tău e citit cu voce tare.
 - Pentru orice întrebare despre rețete, evenimente, stoc sau contracte chemi funcțiile; nu inventa date. Dacă o funcție dă eroare, spui pe scurt de ce.
 - Când ți se cere o acțiune, o faci direct cu funcția potrivită, apoi confirmi într-o propoziție ce ai făcut.
 - Datele le dai ca „sâmbătă, 14 noiembrie”, nu AAAA-LL-ZZ. Sumele cu moneda.
@@ -233,18 +233,38 @@ function note(name,out){
 }
 
 /* ---------- Voce: ascultare și vorbire ---------- */
+/* Vocea: cea mai naturală voce românească de pe dispozitiv (cele „Natural/Online/Enhanced/Premium” sunt neuronale), viteza aleasă de utilizator */
+const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+VS.rate=+LS.get("cp-voce-rate","1.25")||1.25;
+const vScore=v=>(/natural|neural|online/i.test(v.name)?40:0)+(/premium|enhanced|îmbunătățit/i.test(v.name)?30:0)+(/google/i.test(v.name)?20:0)+(/ioana|alina|emil/i.test(v.name)?10:0)+(v.localService?0:5);
+function roVoices(){return "speechSynthesis" in window?speechSynthesis.getVoices().filter(v=>/^ro/i.test(v.lang)).sort((a,b)=>vScore(b)-vScore(a)):[]}
 function pickVoice(){
-  const V=speechSynthesis.getVoices().filter(v=>/^ro/i.test(v.lang));
-  VS.voice=V.find(v=>/ioana|google|natural|online/i.test(v.name))||V[0]||null;
+  const V=roVoices(),want=LS.get("cp-voce-nume","");
+  VS.voice=V.find(v=>v.name===want)||V[0]||null;paintVoices();
 }
 if("speechSynthesis" in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+/* Textul spus: fără simboluri citite literă cu literă, abrevieri pronunțate ca în vorbire */
+function spoken(t){
+  return String(t)
+    .replace(/(\d+(?:[.,]\d+)?)\s*€/g,"$1 euro").replace(/€\s*(\d+(?:[.,]\d+)?)/g,"$1 euro").replace(/\bEUR(O)?\b/g,"euro").replace(/\bRON\b/g,"lei")
+    .replace(/\bml\b/g,"mililitri").replace(/\bbuc\b\.?/g,"bucăți").replace(/\bnr\.\s*/gi,"numărul ").replace(/\bstr\.\s*/gi,"strada ")
+    .replace(/(\d{1,2}):00\b/g,"$1").replace(/(\d)\.(\d{3})\b/g,"$1$2")
+    .replace(/\s*[–—]\s*/g,", ").replace(/[()"„”«»]/g,"").replace(/\s+/g," ").trim();
+}
 function speak(t){
   return new Promise(res=>{
     if(!VS.talk||!("speechSynthesis" in window)){res();return}
     speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(t);u.lang="ro-RO";if(VS.voice)u.voice=VS.voice;u.rate=1.05;
-    u.onend=u.onerror=()=>res();speechSynthesis.speak(u);
+    const u=new SpeechSynthesisUtterance(spoken(t));u.lang="ro-RO";if(VS.voice)u.voice=VS.voice;u.rate=VS.rate;u.pitch=1.05;
+    let done=false;const fin=()=>{if(done)return;done=true;clearInterval(k);res()};
+    u.onend=u.onerror=fin;speechSynthesis.speak(u);
+    const k=setInterval(()=>{if(!speechSynthesis.speaking&&!speechSynthesis.pending)fin()},400);   // unele telefoane nu trimit „onend”
   });
+}
+function paintVoices(){
+  const sel=document.getElementById("vcVoice");if(!sel)return;
+  const V=roVoices();sel.hidden=V.length<2;
+  sel.innerHTML=V.map(v=>`<option value="${esc(v.name)}" ${VS.voice&&v.name===VS.voice.name?"selected":""}>${esc(v.name.replace(/\s*\(.*?\)\s*/g," ").replace(/Microsoft|Google/,"").trim()||v.name)}</option>`).join("");
 }
 function listen(){
   return new Promise((res,rej)=>{
@@ -307,6 +327,7 @@ function mount(){
   const b=document.createElement("button");b.id="vcBtn";b.type="button";b.setAttribute("aria-label","Asistentul vocal Sofia");b.setAttribute("aria-controls","vcPanel");b.innerHTML="🎙️";
   const p=document.createElement("section");p.id="vcPanel";p.hidden=true;p.setAttribute("aria-label","Asistentul vocal");
   p.innerHTML=`<div class="vc-top"><b>Sofia</b><span>asistenta vocală</span><label class="vc-t"><input type="checkbox" id="vcTalk"> răspunde cu voce</label><button type="button" class="vc-x" id="vcX" aria-label="Închide">✕</button></div>
+    <div class="vc-set"><label>Viteză <input type="range" id="vcRate" min="0.9" max="1.7" step="0.05"> <output id="vcRateV"></output></label><select id="vcVoice" aria-label="Vocea" hidden></select></div>
     <div class="vc-log" id="vcLog" aria-live="polite"></div>
     <div class="vc-ask" id="vcAsk" hidden><button type="button" class="btn" id="vcYes">Da</button><button type="button" class="btn" id="vcNo">Nu</button></div>
     <button type="button" class="btn primary vc-go" id="vcGo" hidden></button>
@@ -321,6 +342,11 @@ function mount(){
   $("#vcGo").onclick=()=>VS.btn&&VS.btn.fn();   // direct din apăsare, altfel fereastra Google e blocată
   $("#vcYes").onclick=()=>VS.ask&&VS.ask.res(true);
   $("#vcNo").onclick=()=>VS.ask&&VS.ask.res(false);
+  const rt=$("#vcRate"),rv=$("#vcRateV"),showR=()=>rv.textContent="×"+VS.rate.toFixed(2).replace(/0$/,"");rt.value=VS.rate;showR();
+  rt.oninput=()=>{VS.rate=+rt.value;showR()};
+  rt.onchange=()=>{LS.set("cp-voce-rate",String(VS.rate));speak("Așa vorbesc acum. E bine?")};
+  $("#vcVoice").onchange=e=>{const v=roVoices().find(x=>x.name===e.target.value);if(v){VS.voice=v;LS.set("cp-voce-nume",v.name);speak("Bună, eu sunt Sofia.")}};
+  paintVoices();
   $("#vcTalk").onchange=e=>{VS.talk=e.target.checked;try{localStorage.setItem("cp-voce-talk",VS.talk?"1":"0")}catch(x){};if(!VS.talk&&"speechSynthesis" in window)speechSynthesis.cancel()};
   $("#vcF").onsubmit=e=>{e.preventDefault();const i=$("#vcIn");const t=i.value;i.value="";stopListen();turn(t)};
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&VS.open)closePanel()});

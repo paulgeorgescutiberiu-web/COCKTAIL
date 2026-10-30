@@ -14,6 +14,8 @@ rep("</style>\n</head>","""#vcBtn{position:fixed;right:16px;bottom:calc(16px + e
 .vc-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.vc-top b{font-family:"Big Shoulders Display",Impact,sans-serif;font-size:1.5rem;color:var(--gold);line-height:1}
 .vc-top span{color:var(--muted);font-size:.85rem}.vc-t{margin-left:auto;font-size:.8rem;color:var(--muted);display:flex;gap:4px;align-items:center}
 .vc-x{background:none;border:0;font-size:1.1rem;color:var(--muted);cursor:pointer;padding:4px 6px}
+.vc-set{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}.vc-set label{display:flex;gap:6px;align-items:center}
+.vc-set input[type=range]{width:120px;accent-color:var(--gold)}.vc-set select{flex:1;min-width:0;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:.82rem}.vc-set select[hidden]{display:none}
 .vc-log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:120px}
 .vc-hint{color:var(--muted);font-size:.9rem;margin:0;line-height:1.6}
 .vc-m{padding:8px 12px;border-radius:14px;max-width:88%;font-size:.95rem;line-height:1.4;white-space:pre-wrap}
