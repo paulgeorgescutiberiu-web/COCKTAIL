@@ -15,7 +15,8 @@ const link=c=>BAR_URL+"?e="+encodeURIComponent(c);
 /* ---------- sincronizarea paginii publice (doar administratorul) ---------- */
 let CT=[],FIRMA={},lastSig="",SCANS={},LEADS=[];
 function menuAll(){let R0=[];try{R0=JSON.parse(document.getElementById("recipes-data").textContent)}catch(e){}
-  return R0.map(r=>({id:r.id,name:r.name,zero:!!r.zero,ing:(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
+  return R0.filter(r=>r.sec!=="").map(r=>({id:r.id,name:r.name,zero:!!r.zero,sec:r.sec||(r.zero?"zero":"cls"),gust:r.gust||"",desc:r.desc||"",
+    ing:r.ingM?r.ingM.split(/\s*,\s*/).filter(Boolean):(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
 const nrm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/[^A-Z0-9 ]+/g," ").split(/\s+/).filter(w=>w.length>2);
 function matchContract(e,D){
   const d=iso(evDate(e,D));if(!d)return null;

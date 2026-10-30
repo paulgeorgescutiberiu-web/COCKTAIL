@@ -312,7 +312,8 @@ const POR={busy:{},seen:{}};
 const porTok=()=>{const a=new Uint8Array(24);crypto.getRandomValues(a);const A="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";return [...a].map(x=>A[x%A.length]).join("")};
 const porLink=c=>`${PORTAL_URL}#t=${c.portalTok}`;
 function porMenuOptions(){let R0=[];try{R0=JSON.parse(document.getElementById("recipes-data").textContent)}catch(e){}
-  return R0.map(r=>({id:r.id,name:r.name,zero:!!r.zero,ing:(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
+  return R0.filter(r=>r.sec!=="").map(r=>({id:r.id,name:r.name,zero:!!r.zero,sec:r.sec||(r.zero?"zero":"cls"),gust:r.gust||"",desc:r.desc||"",
+    ing:r.ingM?r.ingM.split(/\s*,\s*/).filter(Boolean):(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
 const b64=blob=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(",")[1]);fr.onerror=rej;fr.readAsDataURL(blob)});
 function portalRow(c){
   if(POR.busy[c.id])return `<div class="ct-b"><button class="btn" disabled>Se pregătește portalul…</button></div>`;

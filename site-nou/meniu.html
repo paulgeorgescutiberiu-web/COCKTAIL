@@ -158,6 +158,23 @@ bs.forEach(function(b){b.addEventListener('click',function(){
   bs.forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
   ss.forEach(function(s){s.style.display=(f==='all'||s.getAttribute('data-s')===f)?'':'none'});
 })});
+/* Meniul vine din rețetarul aplicației (același ca în portal și la bar); textul de mai sus rămâne dacă nu se poate citi */
+(function(){
+  var U='https://firestore.googleapis.com/v1/projects/cocktail-philosophy-dc34b/databases/(default)/documents/bar/info?key=AIzaSyBdnMe0062NUOsIBlRZ1NqKlPniDwWXebI&mask.fieldPaths=menu';
+  function val(v){if(!v)return null;if('stringValue' in v)return v.stringValue;if('booleanValue' in v)return v.booleanValue;
+    if('integerValue' in v)return +v.integerValue;if('doubleValue' in v)return v.doubleValue;
+    if(v.arrayValue)return (v.arrayValue.values||[]).map(val);if(v.mapValue){var o={},f=v.mapValue.fields||{};for(var k in f)o[k]=val(f[k]);return o}return null}
+  function e(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  fetch(U).then(function(r){return r.ok?r.json():null}).then(function(d){
+    var L=d&&d.fields&&val(d.fields.menu);if(!L||L.length<5||!L.some(function(x){return x.sec}))return;   // doar lista nouă, cu secțiuni
+    document.querySelectorAll('.band-row[data-s]').forEach(function(row){
+      var sec=row.getAttribute('data-s'),box=row.querySelector('.drinks'),M=L.filter(function(x){return (x.sec||(x.zero?'zero':'cls'))===sec});
+      if(!box||!M.length)return;
+      box.innerHTML=M.map(function(x){var g=x.gust||(x.zero?'0% alcool':'');
+        return '<article class="drink"><h3>'+e(x.name)+'</h3>'+(g?'<span class="gust">'+e(g)+'</span>':'')+'<p class="ing">'+e((x.ing||[]).join(', '))+'</p>'+(x.desc?'<p class="desc">'+e(x.desc)+'</p>':'')+'</article>'}).join('');
+    });
+  }).catch(function(){});
+})();
 document.querySelectorAll('.burger nav a').forEach(function(a){a.addEventListener('click',function(){a.closest('details').removeAttribute('open')})});
 </script>
 </body>
