@@ -230,3 +230,30 @@ p{margin:0}
   .mbar a:first-child{background:var(--ink);color:var(--white)}
   .mbar a:last-child{background:var(--gold);color:var(--ink)}
 }
+
+/* meniu pe prima pagină: trei carduri cu poză (varianta A aleasă de Paul) */
+.va-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+@media (max-width:960px){.va-grid{grid-template-columns:1fr}}
+.va-card{display:flex;flex-direction:column;text-decoration:none}
+.va-photo{position:relative}
+.va-photo img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.va-photo span{position:absolute;left:0;bottom:0;font-family:var(--display);font-size:30px;text-transform:uppercase;padding:10px 18px 6px}
+.va-body{flex:1;padding:22px 22px 26px;display:flex;flex-direction:column;gap:14px}
+.va-body .kick{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase}
+.va-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.va-list li{display:flex;flex-direction:column;gap:2px;padding:10px 0;border-top:1px solid currentColor}
+.va-list li:first-child{border-top:0;padding-top:0}
+.va-list b{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.05;text-transform:uppercase}
+.va-list small{font-family:var(--cond);font-weight:600;font-size:16px;line-height:1.25}
+.va-go{margin-top:auto;font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.12em;text-transform:uppercase}
+.va-sig .va-photo span{background:var(--gold);color:var(--ink)}
+.va-sig .va-body{background:var(--gold);color:var(--ink)}
+.va-sig .va-list li{border-color:rgba(26,26,24,.25)}
+.va-cls .va-photo span{background:var(--ink);color:var(--white)}
+.va-cls .va-body{background:var(--ink);color:var(--white)}
+.va-cls .va-list b{color:var(--gold-light)}
+.va-cls .va-list li{border-color:#3A3A36}
+.va-zero .va-photo span{background:var(--green);color:var(--white)}
+.va-zero .va-body{background:var(--green);color:var(--white)}
+.va-zero .va-list li{border-color:rgba(255,255,255,.25)}
+
