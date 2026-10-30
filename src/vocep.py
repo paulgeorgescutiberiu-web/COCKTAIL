@@ -19,6 +19,7 @@ rep("</style>\n</head>","""#vcBtn{position:fixed;right:16px;bottom:calc(16px + e
 .vc-m{padding:8px 12px;border-radius:14px;max-width:88%;font-size:.95rem;line-height:1.4;white-space:pre-wrap}
 .vc-eu{align-self:flex-end;background:var(--leaf);color:var(--on-leaf)}.vc-ai{align-self:flex-start;background:var(--paper);border:1px solid var(--line)}
 .vc-act{align-self:center;font-size:.78rem;color:var(--muted);padding:2px 8px}
+.vc-go{width:100%}.vc-go[hidden]{display:none}
 .vc-ask{display:flex;gap:8px}.vc-ask[hidden]{display:none}.vc-ask .btn{flex:1}
 .vc-mic{border:0;border-radius:14px;padding:14px;font:inherit;font-weight:700;font-size:1.05rem;background:var(--leaf);color:var(--on-leaf);cursor:pointer}.vc-mic.on{background:var(--danger)}
 .vc-f{display:flex;gap:8px}.vc-f input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
