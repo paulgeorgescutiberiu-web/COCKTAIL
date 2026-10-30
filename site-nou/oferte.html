@@ -113,10 +113,10 @@
 </div>
 <div style="flex:1 1 480px;min-width:0;display:flex;flex-direction:column;gap:16px">
 <div class="bprices">
-<div><span>1 barman</span><b>350 €</b></div>
-<div><span>2 barmani</span><b>520 €</b></div>
-<div><span>3 barmani</span><b>690 €</b></div>
-<div><span>4 barmani</span><b>860 €</b></div>
+<div><span>1 barman</span><b data-barmani="1">350 €</b></div>
+<div><span>2 barmani</span><b data-barmani="2">520 €</b></div>
+<div><span>3 barmani</span><b data-barmani="3">690 €</b></div>
+<div><span>4 barmani</span><b data-barmani="4">860 €</b></div>
 </div>
 <img src="img/barman-turnare-shoturi.webp" alt="Barmani la lucru, turnând shoturi" loading="lazy" style="width:100%;aspect-ratio:16/8;object-fit:cover">
 </div>
@@ -197,9 +197,11 @@
 
 <nav class="mbar" aria-label="Contact rapid"><a href="tel:+40743785655">Sună</a><a href="https://wa.me/40743785655?text=Bun%C4%83%21%20A%C8%99%20dori%20o%20ofert%C4%83%20pentru%20evenimentul%20meu.%0AData%3A%20%0ALoca%C8%9Bia%3A%20%0ANum%C4%83r%20invita%C8%9Bi%3A%20">WhatsApp</a></nav>
 
+<script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/preturi.js?v=1"></script>
 <script>
 (function(){
-var TIERS=[[0,50,18.9],[50,100,15.9],[100,150,12.9],[150,200,10.9],[200,250,9.9],[250,300,8.9],[300,350,7.9],[350,null,6.9]];
+var CPP=window.CP_PRETURI||{};   /* prețurile vin din preturi.js; cele de mai jos sunt doar rezervă */
+var TIERS=CPP.allInclusive||[[0,50,18.9],[50,100,15.9],[100,150,12.9],[150,200,10.9],[200,250,9.9],[250,300,8.9],[300,350,7.9],[350,null,6.9]];
 var PTS=TIERS.map(function(t){return [t[1]===null?375:(t[0]+t[1])/2,t[2]]});
 function price(n){
   if(n<=PTS[0][0])return PTS[0][1];
@@ -221,6 +223,7 @@ function update(v){
 r.addEventListener('input',function(){n.value=r.value;update(r.value)});
 n.addEventListener('input',function(){var v=update(n.value);r.value=Math.min(500,v)});
 update(120);
+if(CPP.barmani)document.querySelectorAll('[data-barmani]').forEach(function(b){var v=CPP.barmani[b.getAttribute('data-barmani')];if(v)b.textContent=v.toLocaleString('ro-RO')+' €'});
 })();
 document.querySelectorAll('.burger nav a').forEach(function(a){a.addEventListener('click',function(){a.closest('details').removeAttribute('open')})});
 </script>

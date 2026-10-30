@@ -127,11 +127,12 @@ const SRC=[["whatsapp","WhatsApp"],["telefon","Telefon"],["instagram","Instagram
 const srcOf=x=>String(x.ev||"").startsWith("sursa-")?(x.evn||"Altă sursă"):"QR la bar";
 const LOST=["Prețul","Data e ocupată","Nu a mai răspuns","A ales pe altcineva","Și-a anulat evenimentul","Alt motiv"];
 let LF="open",LOFF=null,LADD=false,LLOST=null,LBUSY="";
-const TIERS=[[0,50,18.9],[50,100,15.9],[100,150,12.9],[150,200,10.9],[200,250,9.9],[250,300,8.9],[300,350,7.9],[350,null,6.9]];
+const CPP=window.CP_PRETURI||{};   // din site-nou/preturi.js, pus în aplicație la construire
+const TIERS=CPP.allInclusive||[[0,50,18.9],[50,100,15.9],[100,150,12.9],[150,200,10.9],[200,250,9.9],[250,300,8.9],[300,350,7.9],[350,null,6.9]];
 const PTS=TIERS.map(t=>[t[1]===null?375:(t[0]+t[1])/2,t[2]]);
 function aiPrice(n){n=+n||0;if(n<=PTS[0][0])return PTS[0][1];const last=PTS[PTS.length-1];if(n>=last[0])return last[1];
   for(let i=1;i<PTS.length;i++){const a=PTS[i-1],b=PTS[i];if(n<=b[0])return Math.round((a[1]+(b[1]-a[1])*(n-a[0])/(b[0]-a[0]))*10)/10}}
-const BARMANI={1:350,2:520,3:690,4:860};
+const BARMANI=CPP.barmani||{1:350,2:520,3:690,4:860};
 const eur=v=>(Math.round(v*100)/100).toLocaleString("ro-RO",{maximumFractionDigits:2})+" €";
 const MENU_URL="https://cocktailphilosophy.ro/wp-content/uploads/2026/03/MENIU-2026-GOLD.pdf";
 function leadStats(){const m=new Date().toISOString().slice(0,7),M=LEADS.filter(x=>String(x.at||"").slice(0,7)===m);
