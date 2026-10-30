@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Variante secțiune meniu | Cocktail Philosophy</title>
+<link rel="icon" href="img/monograma-cp.svg" type="image/svg+xml">
+<link rel="stylesheet" href="fonturi.css">
+<link rel="stylesheet" href="stil.css">
+<style>
+.vlabel{background:var(--ink);color:var(--gold-light);font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.14em;text-transform:uppercase;padding:14px 0}
+.vlabel b{color:var(--white)}
+
+/* ===== VARIANTA A: trei carduri cu poză, fiecare în culoarea lui ===== */
+.va-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+@media (max-width:960px){.va-grid{grid-template-columns:1fr}}
+.va-card{display:flex;flex-direction:column;text-decoration:none}
+.va-photo{position:relative}
+.va-photo img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.va-photo span{position:absolute;left:0;bottom:0;font-family:var(--display);font-size:30px;text-transform:uppercase;padding:10px 18px 6px}
+.va-body{flex:1;padding:22px 22px 26px;display:flex;flex-direction:column;gap:14px}
+.va-body .kick{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase}
+.va-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.va-list li{display:flex;flex-direction:column;gap:2px;padding:10px 0;border-top:1px solid currentColor}
+.va-list li:first-child{border-top:0;padding-top:0}
+.va-list b{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.05;text-transform:uppercase}
+.va-list small{font-family:var(--cond);font-weight:600;font-size:16px;line-height:1.25}
+.va-go{margin-top:auto;font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.12em;text-transform:uppercase}
+.va-sig .va-photo span{background:var(--gold);color:var(--ink)}
+.va-sig .va-body{background:var(--gold);color:var(--ink)}
+.va-sig .va-list li{border-color:rgba(26,26,24,.25)}
+.va-cls .va-photo span{background:var(--ink);color:var(--white)}
+.va-cls .va-body{background:var(--ink);color:var(--white)}
+.va-cls .va-list b{color:var(--gold-light)}
+.va-cls .va-list li{border-color:#3A3A36}
+.va-zero .va-photo span{background:var(--green);color:var(--white)}
+.va-zero .va-body{background:var(--green);color:var(--white)}
+.va-zero .va-list li{border-color:rgba(255,255,255,.25)}
+
+/* ===== VARIANTA B: cocktailurile ca „cărți de joc”, glisezi printre ele ===== */
+.vb-tabs{display:flex;flex-wrap:wrap;gap:10px}
+.vb-tabs button{font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.08em;text-transform:uppercase;padding:10px 18px;min-height:44px;border:2px solid var(--ink);background:var(--cream);color:var(--ink);cursor:pointer}
+.vb-tabs button[aria-pressed=true]{background:var(--ink);color:var(--cream)}
+.vb-row{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 24px 18px;margin:0 -24px;scrollbar-width:thin}
+.vb-card{flex:0 0 280px;scroll-snap-align:start;min-height:380px;padding:24px 22px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+.vb-card .cat{font-family:var(--cond);font-weight:700;font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+.vb-card h3{font-size:40px;line-height:1}
+.vb-card .gust{font-family:var(--cond);font-weight:700;font-size:15px;letter-spacing:.14em;text-transform:uppercase}
+.vb-card .ing{font-family:var(--cond);font-weight:600;font-size:18px;line-height:1.3}
+.vb-card .desc{margin-top:auto;font-style:italic;font-weight:500;font-size:17px;line-height:1.35;border-top:2px solid currentColor;padding-top:12px}
+.vb-card .nr{position:absolute;right:14px;top:6px;font-family:var(--display);font-size:72px;line-height:1;opacity:.18}
+.vb-sig{background:var(--gold);color:var(--ink)}
+.vb-cls{background:var(--ink);color:var(--white)}.vb-cls h3{color:var(--gold-light)}
+.vb-zero{background:var(--green);color:var(--white)}
+.vb-photo{flex:0 0 280px;scroll-snap-align:start;min-height:380px;position:relative}
+.vb-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vb-hint{font-family:var(--cond);font-weight:600;font-size:16px;color:var(--green-dark)}
+</style>
+</head>
+<body>
+
+<div class="proba">Pagină de comparat: două variante pentru secțiunea „Meniu” de pe prima pagină</div>
+
+<!-- ================= VARIANTA A ================= -->
+<div class="vlabel"><div class="wrap"><b>Varianta A</b> · trei carduri cu poză, fiecare grup în culoarea lui</div></div>
+<section class="sec sec-white">
+<div class="wrap stack">
+<div class="head">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:640px">
+<p class="kicker">Meniul 2026</p>
+<h2 class="h2">Un meniu pe gustul <span class="gold">evenimentului tău</span></h2>
+</div>
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span class="tag-numa">numa’ zic</span><a class="btn btn-gold" href="meniu.html">Vezi meniul complet</a></div>
+</div>
+<div class="va-grid">
+<a class="va-card va-sig" href="meniu.html">
+<div class="va-photo"><img src="img/siropuri-cocktail-philosophy.webp" alt="Siropurile signature făcute în casă"><span>Signature</span></div>
+<div class="va-body">
+<p class="kick">Creațiile casei · siropuri făcute de noi</p>
+<ul class="va-list">
+<li><b>Platon</b><small>herbal · citric — gin, aloe vera, grapefruit, cimbrișor</small></li>
+<li><b>Erasmus</b><small>proaspăt · picant — vodka, ghimbir, pere</small></li>
+<li><b>Harmony</b><small>floral · fructat — gin, lychee, soc</small></li>
+<li><b>Whiskey Sour</b><small>catifelat · acrișor — whiskey, migdale, portocală</small></li>
+<li><b>Pornstar Cuban</b><small>tropical — rom, fructul pasiunii</small></li>
+</ul>
+<span class="va-go">Toate detaliile →</span>
+</div>
+</a>
+<a class="va-card va-cls" href="meniu.html">
+<div class="va-photo"><img src="img/margarita-turnare-pocale.webp" alt="Cocktailuri clasice turnate în pocale"><span>Classics</span></div>
+<div class="va-body">
+<p class="kick">Verificate de generații</p>
+<ul class="va-list">
+<li><b>Hugo</b><small>prosecco, soc, lime</small></li>
+<li><b>Aperol Spritz</b><small>Aperol, prosecco</small></li>
+<li><b>Paloma</b><small>tequila, grapefruit, Tajín</small></li>
+<li><b>Negroni</b><small>gin, Campari, vermut</small></li>
+<li><b>Botanical G&amp;T</b><small>gin, tonic, ierburi &amp; citrice</small></li>
+<li><b>Cuba Libre · Amaretto Sour</b><small>și încă două clasice</small></li>
+</ul>
+<span class="va-go">Toate detaliile →</span>
+</div>
+</a>
+<a class="va-card va-zero" href="meniu.html">
+<div class="va-photo"><img src="img/garnituri-flori-comestibile.webp" alt="Garnituri cu flori comestibile"><span>Fără alcool</span></div>
+<div class="va-body">
+<p class="kick">Zero alcool, zero compromis</p>
+<ul class="va-list">
+<li><b>Socrate</b><small>aloe vera, grapefruit, lămâie</small></li>
+<li><b>Tesla</b><small>ghimbir, pere, lămâie, spumos</small></li>
+<li><b>Villalobos</b><small>lychee, cranberry, lămâie</small></li>
+<li><b>Special Green Apple</b><small>mere verzi, scorțișoară, migdale</small></li>
+</ul>
+<span class="va-go">Toate detaliile →</span>
+</div>
+</a>
+</div>
+</div>
+</section>
+
+<!-- ================= VARIANTA B ================= -->
+<div class="vlabel"><div class="wrap"><b>Varianta B</b> · fiecare cocktail are cartea lui, glisezi printre ele</div></div>
+<section class="sec">
+<div class="wrap stack" style="gap:24px">
+<div class="head">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:640px">
+<p class="kicker">Meniul 2026</p>
+<h2 class="h2">Alege-ți <span class="gold">filozofia</span></h2>
+</div>
+<a class="btn btn-gold" href="meniu.html">Vezi meniul complet</a>
+</div>
+<div class="vb-tabs" role="group" aria-label="Alege grupul">
+<button type="button" data-f="all" aria-pressed="true">Toate</button>
+<button type="button" data-f="sig" aria-pressed="false">Signature</button>
+<button type="button" data-f="cls" aria-pressed="false">Classics</button>
+<button type="button" data-f="zero" aria-pressed="false">Fără alcool</button>
+</div>
+<div class="vb-row" id="vbRow">
+<article class="vb-card vb-sig" data-g="sig"><span class="nr">01</span><span class="cat">Signature</span><h3>Platon</h3><span class="gust">herbal · citric</span><p class="ing">gin, lămâie, aloe vera, grapefruit, cimbrișor</p><p class="desc">Limpede, amărui, cu un gând de cimbrișor.</p></article>
+<article class="vb-card vb-sig" data-g="sig"><span class="nr">02</span><span class="cat">Signature</span><h3>Erasmus</h3><span class="gust">proaspăt · picant</span><p class="ing">vodka, ghimbir, pere, lime</p><p class="desc">Ghimbirul încălzește, para îmblânzește.</p></article>
+<div class="vb-photo" data-g="sig"><img src="img/siropuri-cocktail-philosophy.webp" alt="Siropurile signature făcute în casă"></div>
+<article class="vb-card vb-sig" data-g="sig"><span class="nr">03</span><span class="cat">Signature</span><h3>Harmony</h3><span class="gust">floral · fructat</span><p class="ing">gin, lychee, lămâie, merișoare, sirop de soc</p><p class="desc">Flori de soc și lychee, ușor acrișor.</p></article>
+<article class="vb-card vb-sig" data-g="sig"><span class="nr">04</span><span class="cat">Signature</span><h3>Whiskey Sour</h3><span class="gust">catifelat · acrișor</span><p class="ing">whiskey, migdale, portocală, lămâie, bitter</p><p class="desc">Clasicul, rescris cu migdale și portocală.</p></article>
+<article class="vb-card vb-sig" data-g="sig"><span class="nr">05</span><span class="cat">Signature</span><h3>Pornstar Cuban</h3><span class="gust">tropical · dulce-acrișor</span><p class="ing">rom, fructul pasiunii, lămâie</p><p class="desc">Soare în pahar, pe ritm cubanez.</p></article>
+<article class="vb-card vb-zero" data-g="zero"><span class="nr">06</span><span class="cat">Fără alcool</span><h3>Socrate</h3><span class="gust">0% alcool</span><p class="ing">aloe vera, grapefruit, lămâie</p><p class="desc">Răcoritor, cu un final amărui.</p></article>
+<article class="vb-card vb-zero" data-g="zero"><span class="nr">07</span><span class="cat">Fără alcool</span><h3>Tesla</h3><span class="gust">0% alcool</span><p class="ing">sirop de ghimbir, pere, lămâie, apă minerală</p><p class="desc">Spumos, cu scânteie de ghimbir.</p></article>
+<div class="vb-photo" data-g="zero"><img src="img/garnituri-flori-comestibile.webp" alt="Garnituri cu flori comestibile"></div>
+<article class="vb-card vb-zero" data-g="zero"><span class="nr">08</span><span class="cat">Fără alcool</span><h3>Villalobos</h3><span class="gust">0% alcool</span><p class="ing">lychee, cranberry, lămâie</p><p class="desc">Roz, fructat, ușor acrișor.</p></article>
+<article class="vb-card vb-zero" data-g="zero"><span class="nr">09</span><span class="cat">Fără alcool</span><h3>Special Green Apple</h3><span class="gust">0% alcool</span><p class="ing">mere verzi, scorțișoară &amp; migdale, lămâie</p><p class="desc">Ca o plăcintă cu mere, dar rece.</p></article>
+<article class="vb-card vb-cls" data-g="cls"><span class="nr">10</span><span class="cat">Classics</span><h3>Hugo</h3><p class="ing">prosecco, soc, lime, apă minerală</p></article>
+<article class="vb-card vb-cls" data-g="cls"><span class="nr">11</span><span class="cat">Classics</span><h3>Aperol Spritz</h3><p class="ing">Aperol, prosecco, apă minerală</p></article>
+<div class="vb-photo" data-g="cls"><img src="img/margarita-turnare-pocale.webp" alt="Cocktailuri clasice turnate în pocale"></div>
+<article class="vb-card vb-cls" data-g="cls"><span class="nr">12</span><span class="cat">Classics</span><h3>Paloma</h3><p class="ing">tequila, grapefruit, lime, Tajín</p></article>
+<article class="vb-card vb-cls" data-g="cls"><span class="nr">13</span><span class="cat">Classics</span><h3>Negroni</h3><p class="ing">gin, Campari, vermut</p></article>
+<article class="vb-card vb-cls" data-g="cls"><span class="nr">14</span><span class="cat">Classics</span><h3>Botanical G&amp;T</h3><p class="ing">gin, apă tonică, ierburi &amp; citrice</p></article>
+<article class="vb-card vb-cls" data-g="cls"><span class="nr">15</span><span class="cat">Classics</span><h3>Cuba Libre</h3><p class="ing">rom, lime, Coca-Cola</p></article>
+<article class="vb-card vb-cls" data-g="cls"><span class="nr">16</span><span class="cat">Classics</span><h3>Amaretto Sour</h3><p class="ing">Disaronno, portocală, lămâie</p></article>
+</div>
+<p class="vb-hint">← Glisează ca să vezi toate cele 16 cocktailuri →</p>
+</div>
+</section>
+
+<script>
+var tb=document.querySelectorAll('.vb-tabs button'),it=document.querySelectorAll('#vbRow [data-g]');
+tb.forEach(function(b){b.addEventListener('click',function(){
+  var f=b.getAttribute('data-f');
+  tb.forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+  it.forEach(function(c){c.style.display=(f==='all'||c.getAttribute('data-g')===f)?'':'none'});
+  document.getElementById('vbRow').scrollLeft=0;
+})});
+</script>
+</body>
+</html>
