@@ -4421,7 +4421,7 @@ function note(name,out){
 /* ---------- Voce: ascultare și vorbire ---------- */
 /* Vocea: cea mai naturală voce românească de pe dispozitiv (cele „Natural/Online/Enhanced/Premium” sunt neuronale), viteza aleasă de utilizator */
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
-VS.rate=+LS.get("cp-voce-rate","1.25")||1.25;
+VS.rate=+LS.get("cp-voce-viteza","1.5")||1.5;
 const vScore=v=>(/natural|neural|online/i.test(v.name)?40:0)+(/premium|enhanced|îmbunătățit/i.test(v.name)?30:0)+(/google/i.test(v.name)?20:0)+(/ioana|alina|emil/i.test(v.name)?10:0)+(v.localService?0:5);
 function roVoices(){return "speechSynthesis" in window?speechSynthesis.getVoices().filter(v=>/^ro/i.test(v.lang)).sort((a,b)=>vScore(b)-vScore(a)):[]}
 function pickVoice(){
@@ -4530,7 +4530,7 @@ function mount(){
   $("#vcNo").onclick=()=>VS.ask&&VS.ask.res(false);
   const rt=$("#vcRate"),rv=$("#vcRateV"),showR=()=>rv.textContent="×"+VS.rate.toFixed(2).replace(/0$/,"");rt.value=VS.rate;showR();
   rt.oninput=()=>{VS.rate=+rt.value;showR()};
-  rt.onchange=()=>{LS.set("cp-voce-rate",String(VS.rate));speak("Așa vorbesc acum. E bine?")};
+  rt.onchange=()=>{LS.set("cp-voce-viteza",String(VS.rate));speak("Așa vorbesc acum. E bine?")};
   $("#vcVoice").onchange=e=>{const v=roVoices().find(x=>x.name===e.target.value);if(v){VS.voice=v;LS.set("cp-voce-nume",v.name);speak("Bună, eu sunt Sofia.")}};
   paintVoices();
   $("#vcTalk").onchange=e=>{VS.talk=e.target.checked;try{localStorage.setItem("cp-voce-talk",VS.talk?"1":"0")}catch(x){};if(!VS.talk&&"speechSynthesis" in window)speechSynthesis.cancel()};
