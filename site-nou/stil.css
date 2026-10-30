@@ -278,3 +278,11 @@ p{margin:0}
 .oameni-pts h3{font-size:22px;color:var(--gold-light)}
 .oameni-pts p{font-family:var(--cond);font-weight:600;font-size:17px;line-height:1.35;color:var(--cream)}
 .uman{font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-light)}
+
+/* note de pe Google și Facebook */
+.rev-strip{display:flex;flex-wrap:wrap;gap:12px}
+.rev{display:flex;align-items:center;gap:12px;padding:12px 18px;border:2px solid var(--gold);background:var(--cream);color:var(--ink);text-decoration:none;min-height:44px}
+.rev:hover{background:var(--white);color:var(--ink)}
+.rev b{font-family:var(--display);font-weight:400;font-size:28px;line-height:1;color:var(--gold);white-space:nowrap}
+.rev b span{font-size:18px;letter-spacing:2px}
+.rev>span{font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--green-dark)}
