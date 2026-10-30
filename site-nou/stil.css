@@ -257,3 +257,10 @@ p{margin:0}
 .va-zero .va-body{background:var(--green);color:var(--white)}
 .va-zero .va-list li{border-color:rgba(255,255,255,.25)}
 
+
+/* Pachet Final de An: prețuri pe trepte */
+.fa-prices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fa-prices div{border:2px solid var(--gold);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.fa-prices span{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--cream)}
+.fa-prices b{font-family:var(--display);font-weight:400;font-size:32px;line-height:1.05;color:var(--gold-light)}
+@media (max-width:560px){.fa-prices{grid-template-columns:repeat(2,minmax(0,1fr))}}
