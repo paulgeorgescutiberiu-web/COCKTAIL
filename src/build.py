@@ -5,9 +5,9 @@ fbv="10.12.5"
 sdk="".join(f'<script src="https://www.gstatic.com/firebasejs/{fbv}/firebase-{m}-compat.js"></script>\n' for m in ["app","auth","firestore"])
 h=h.replace('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>\n','<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>\n'+sdk,1)
 css="""
-#fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Figtree,system-ui,sans-serif}
+#fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Barlow,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
-#fbScreen h2{font-family:"Big Shoulders Display",system-ui,sans-serif;font-size:34px;margin:0 0 8px}
+#fbScreen h2{font-family:Anton,system-ui,sans-serif;font-size:34px;margin:0 0 8px}
 #fbScreen p{margin:0 0 18px;line-height:1.45}
 #fbScreen form{display:flex;flex-direction:column;gap:10px}
 #fbScreen input{font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:1.5px solid currentColor;background:transparent;color:inherit}

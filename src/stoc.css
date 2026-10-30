@@ -4,7 +4,7 @@
 .st-pend{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .st-row{display:flex;justify-content:space-between;align-items:center;width:100%;gap:12px;padding:12px 16px;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer}
 .ev-list>.st-row:first-child{border-top:0}
-.st-n{font-family:"Big Shoulders Display",Impact,sans-serif;font-size:1.6rem;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.st-n{font-family:Anton,Impact,sans-serif;font-size:1.6rem;font-weight:400;line-height:1;font-variant-numeric:tabular-nums}
 .st-n.neg{color:var(--danger)}.st-n.zero{color:var(--muted)}
 .st-det{display:flex;flex-wrap:wrap;gap:6px 18px;padding:0 16px 12px;font-size:.9rem;color:var(--muted)}
 .st-det b{color:var(--ink)}

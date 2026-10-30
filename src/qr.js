@@ -61,22 +61,22 @@ function qrSVG(m,size){
   const b=Math.round(n*0.26)|1,b0=Math.floor((n-b)/2);
   for(let r=0;r<n;r++)for(let c=0;c<n;c++){if(!m[r][c])continue;if(r>=b0-1&&r<b0+b+1&&c>=b0-1&&c<b0+b+1)continue;p+=`M${(c+qz)*u},${(r+qz)*u}h${u}v${u}h-${u}z`}
   const cx=size/2,bw=b*u;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="${size}" height="${size}" fill="#fff"/><path d="${p}" fill="#0d0c0b"/>
-  <rect x="${cx-bw/2}" y="${cx-bw/2}" width="${bw}" height="${bw}" rx="${bw*0.22}" fill="#0d0c0b"/>
-  <text x="${cx}" y="${cx+bw*0.17}" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,Arial,sans-serif" font-weight="800" font-size="${bw*0.5}" fill="#ff8a1f" letter-spacing="1">CP</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="${size}" height="${size}" fill="#fff"/><path d="${p}" fill="#2F5242"/>
+  <rect x="${cx-bw/2}" y="${cx-bw/2}" width="${bw}" height="${bw}" rx="${bw*0.22}" fill="#2F5242"/>
+  <text x="${cx}" y="${cx+bw*0.17}" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,Arial,sans-serif" font-weight="800" font-size="${bw*0.5}" fill="#E3B25C" letter-spacing="1">CP</text></svg>`;
 }
 async function cardPNG(svg,name,dateTxt){
   const W=1240,H=1748,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
   try{await document.fonts.load("800 80px 'Barlow Condensed'")}catch(e){}
-  x.fillStyle="#0d0c0b";x.fillRect(0,0,W,H);
-  x.fillStyle="#a59e95";x.font="500 44px 'Barlow Condensed',Arial";x.textAlign="center";x.fillText("COCKTAIL PHILOSOPHY®",W/2,130);
-  x.fillStyle="#f4f1ec";x.font="800 112px 'Barlow Condensed',Arial";x.fillText("SCANEAZĂ",W/2,270);
-  x.fillStyle="#ff8a1f";x.fillText("MENIUL SERII",W/2,385);
+  x.fillStyle="#2F5242";x.fillRect(0,0,W,H);
+  x.fillStyle="#EFE7CF";x.font="500 44px 'Barlow Condensed',Arial";x.textAlign="center";x.fillText("COCKTAIL PHILOSOPHY®",W/2,130);
+  x.fillStyle="#FFFEF1";x.font="800 112px 'Barlow Condensed',Arial";x.fillText("SCANEAZĂ",W/2,270);
+  x.fillStyle="#E3B25C";x.fillText("MENIUL SERII",W/2,385);
   const img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)});
   const s=880;x.fillStyle="#fff";x.beginPath();x.roundRect((W-s)/2-20,450,s+40,s+40,36);x.fill();x.drawImage(img,(W-s)/2,470,s,s);
-  x.fillStyle="#f4f1ec";x.font="700 64px 'Barlow Condensed',Arial";x.fillText(name?name.toUpperCase():"BAR MOBIL DE COCKTAILURI",W/2,1490);
-  x.fillStyle="#a59e95";x.font="500 46px 'Barlow Condensed',Arial";x.fillText(dateTxt||"Îți place barul? Îl aducem la evenimentul tău.",W/2,1565);
-  x.fillStyle="#ff8a1f";x.font="700 50px 'Barlow Condensed',Arial";x.fillText("cocktailphilosophy.ro/bar",W/2,1660);
+  x.fillStyle="#FFFEF1";x.font="700 64px 'Barlow Condensed',Arial";x.fillText(name?name.toUpperCase():"BAR MOBIL DE COCKTAILURI",W/2,1490);
+  x.fillStyle="#EFE7CF";x.font="500 46px 'Barlow Condensed',Arial";x.fillText(dateTxt||"Îți place barul? Îl aducem la evenimentul tău.",W/2,1565);
+  x.fillStyle="#E3B25C";x.font="700 50px 'Barlow Condensed',Arial";x.fillText("cocktailphilosophy.ro/bar",W/2,1660);
   return new Promise(r=>c.toBlob(r,"image/png"));
 }
 
@@ -222,7 +222,7 @@ async function offerPDF(x){grabOffer();const o=LOFF,pm=await loadPM(),fn=String(
   const pp=o.pachet==="barmani"?null:(o.pp!=null?o.pp:aiPrice(o.inv)),tot=o.pachet==="barmani"?(BARMANI[o.n]||0):Math.round((pp||0)*(+o.inv||0));
   const inc=o.pachet==="barmani"?["Barmani profesioniști pe toată durata evenimentului","Barul mobil și toate instrumentele de bar","Meniu de cocktailuri gândit pentru evenimentul vostru","Materiile prime se achită separat, la prețul furnizorului, cu 8% discount la bazele alcoolice"]
     :["Bar mobil, instrumente și personal, de la început până la final","Toate băuturile: baze Jameson, Beefeater, Havana, Absolut, prosecco, siropuri făcute în casă, sucuri, gheață, fructe și garnituri","Pahare de sticlă și meniuri pe mese","Transportul, taxa de vase și paharele sparte","Consumație nelimitată: prețul final nu poate crește față de ofertă"];
-  const C="#1d1b19",A="#c9822b";
+  const C="#1A1A18",A="#C2862D";
   const doc={pageSize:"A4",pageMargins:[48,48,48,56],defaultStyle:{fontSize:10.5,color:C,lineHeight:1.25},
     footer:(p,n)=>({margin:[48,10,48,0],columns:[{text:"Cocktail Philosophy · 0743 785 655 · cocktailphilosophy.ro",fontSize:8,color:"#777"},{text:`${p}/${n}`,alignment:"right",fontSize:8,color:"#777"}]}),
     content:[{svg:LOGO_SVG,width:300,margin:[0,0,0,26]},
