@@ -75,6 +75,12 @@ textarea{resize:vertical}
   <div id="hero"><h1>Bun venit <em>la bar</em></h1><p class="lead">Se încarcă meniul…</p></div>
   <section id="menuS" class="hide"><div class="menu" id="menu"></div></section>
 
+  <section class="card hide" id="revCard">
+    <h2>Îți place la bar?</h2>
+    <p class="mut">Spune-le și altora. O recenzie pe Google durează un minut și ne ajută enorm.</p>
+    <a class="btn" id="revTop" target="_blank" rel="noopener">⭐ Lasă-ne o recenzie pe Google</a>
+  </section>
+
   <section class="card" id="fbk">
     <h2>Cum ți se pare?</h2>
     <p class="mut">Spune-ne sincer. Feedbackul ajunge doar la noi și la echipa de la bar, nu e public.</p>
@@ -123,7 +129,7 @@ textarea{resize:vertical}
       <a class="btn sec" id="ig" href="https://www.instagram.com/cocktailphilosophy/" target="_blank" rel="noopener">Instagram</a>
       <a class="btn sec" id="fb" href="https://www.facebook.com/cocktailphilosophy/" target="_blank" rel="noopener">Facebook</a>
     </div>
-    <a class="btn hide" id="rev" target="_blank" rel="noopener">⭐ Lasă-ne o recenzie</a>
+    <a class="btn hide" id="rev" target="_blank" rel="noopener">⭐ Lasă-ne o recenzie pe Google</a>
   </section>
 
   <p class="foot"><a href="https://cocktailphilosophy.ro/">cocktailphilosophy.ro</a> · <a href="https://cocktailphilosophy.ro/oferte/">Calculează prețul</a> · 0743 785 655</p>
@@ -185,7 +191,7 @@ function show(){
     $("#menu").innerHTML=h}
   const L=(info&&info.links)||{};
   if(L.ig)$("#ig").href=L.ig;if(L.fb)$("#fb").href=L.fb;
-  if(L.review){const r=$("#rev");r.href=L.review;r.classList.remove("hide")}
+  if(L.review){const r=$("#rev");r.href=L.review;r.classList.remove("hide");$("#revTop").href=L.review;$("#revCard").classList.remove("hide")}
 }
 async function countScan(){
   try{if(sessionStorage.getItem("cp-scan-"+code))return;sessionStorage.setItem("cp-scan-"+code,"1")}catch(e){}
@@ -236,12 +242,12 @@ $("#fbBtn").addEventListener("click",async()=>{
     ga("feedback",{rating:fbR});
     $("#fbForm").classList.add("hide");$("#fbDone").classList.remove("hide");
     $("#fbThx").textContent=fbR>=4?"Mulțumim mult! Ne bucurăm că îți place. 🧡":"Mulțumim că ne-ai spus! Ne uităm imediat la asta.";
-    const rv=info&&info.links&&info.links.review;if(fbR>=4&&rv){const r=$("#rev2");r.href=rv;r.classList.remove("hide")}
+    const rv=info&&info.links&&info.links.review;if(rv){const r=$("#rev2");r.href=rv;r.classList.remove("hide")}
   }catch(x){b.disabled=false;b.textContent="Trimite feedback";$("#fbErr").textContent="Nu am putut trimite acum. Verifică internetul și încearcă din nou.";$("#fbErr").classList.remove("hide")}
 });
 document.addEventListener("click",e=>{const a=e.target.closest("a");if(!a)return;const h=a.href||"";
   if(h.includes("wa.me"))ga("whatsapp_click");else if(a.id==="ig")ga("social_click",{network:"instagram"});else if(a.id==="fb")ga("social_click",{network:"facebook"});
-  else if(a.id==="rev"||a.id==="rev2")ga("review_click",{from:a.id});else if(a.classList.contains("cta"))ga("offer_cta_click");else if(h.includes("/calculator"))ga("calculator_click")});
+  else if(a.id==="rev"||a.id==="rev2"||a.id==="revTop")ga("review_click",{from:a.id});else if(a.classList.contains("cta"))ga("offer_cta_click");else if(h.includes("/calculator"))ga("calculator_click")});
 init();
 })();
 </script>

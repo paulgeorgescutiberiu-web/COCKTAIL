@@ -97,7 +97,7 @@ function fbHTML(){
   if(top.length)h+=`<p class="ev-file">Cocktailul preferat: ${top.map(([n,c])=>`<b>${esc(n)}</b> (${c})`).join(" · ")}</p>`;
   h+=`<label class="fb-sel">Eveniment<select data-fbev><option value="">Toate (${FB.length})</option>${keys.map(k=>`<option value="${esc(k)}"${k===fbEv?" selected":""}>${esc(lab(k))} · ${G[k].length} · ${avg(G[k]).toFixed(1)}★</option>`).join("")}</select></label>`;
   h+=`<div class="ev-list">`+L.slice(0,150).map(x=>`<div class="fb-item ${+x.r<=2?"low":""}"><div class="fb-h"><span class="fb-st">${stars(+x.r||0)}</span><small>${esc(x.nm||"anonim")} · ${esc(fbEv?"":(x.evn||"QR general")+" · ")}${esc(fday(ld(x.at)))} ${esc(lt(x.at))}</small></div>${x.ck?`<p class="fb-ck">🍹 ${esc(x.ck)}</p>`:""}${x.msg?`<p class="fb-m">„${esc(x.msg)}”</p>`:""}${F.isAdmin?`<button class="btn fb-del" data-fbdel="${esc(x.id)}">${fbDel===x.id?"Sigur ștergi?":"Șterge"}</button>`:""}</div>`).join("")+`</div>`;
-  return h+`<p class="ev-file">Feedbackul îl văd doar Paul și echipa, în aplicație. Invitații care dau 4–5 stele sunt rugați să lase și o recenzie pe Google.</p>`;
+  return h+`<p class="ev-file">Feedbackul îl văd doar Paul și echipa, în aplicație. Pe pagina de la bar, toți invitații văd butonul de recenzie Google: sus, sub meniu, și după feedback.</p>`;
 }
 function teamHTML(){
   const {D,ds}=weekEvents();let h="";
