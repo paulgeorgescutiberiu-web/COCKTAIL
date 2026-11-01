@@ -221,14 +221,26 @@ p{margin:0}
 .foot a{color:var(--white)}.foot a:hover{color:var(--gold-light)}
 .foot-bot{border-top:2px solid var(--gold);padding-top:20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;font-family:var(--cond);font-weight:600;font-size:15px;color:var(--cream)}
 
-/* bara de jos pe telefon */
-.mbar{display:none}
+/* butoanele de contact care plutesc peste pagină (ca pe site-ul vechi) */
+.mbar{position:fixed;z-index:30;display:flex;gap:10px}
+.mbar a{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-family:var(--cond);font-weight:700;letter-spacing:.04em;box-shadow:0 6px 20px rgba(0,0,0,.28);transition:transform .15s}
+.mbar a:hover{transform:translateY(-2px)}
+.mbar svg{width:24px;height:24px;fill:currentColor;flex:0 0 24px}
+.mbar .mb-call{background:var(--gold);color:var(--ink)}
+.mbar .mb-wa{background:#25D366;color:#04310F}
+/* calculator: două butoane rotunde în colțul din dreapta jos */
+@media (min-width:901px){
+  .mbar{right:24px;bottom:24px;flex-direction:column}
+  .mbar a{width:60px;height:60px;border-radius:50%}
+  .mbar a span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .mbar a svg{width:28px;height:28px}
+}
+/* telefon: două pastile jos, peste pagină */
 @media (max-width:900px){
-  .foot .wrap{padding-bottom:96px}
-  .mbar{display:grid;grid-template-columns:1fr 1fr;position:fixed;left:0;right:0;bottom:0;z-index:30;border-top:2px solid var(--gold)}
-  .mbar a{text-align:center;padding:15px 8px;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}
-  .mbar a:first-child{background:var(--ink);color:var(--white)}
-  .mbar a:last-child{background:var(--gold);color:var(--ink)}
+  .mbar{left:0;right:0;bottom:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(26,26,24,.94);box-shadow:0 -4px 18px rgba(0,0,0,.35)}
+  .mbar a{flex:1;min-height:52px;border-radius:999px;font-size:18px;text-transform:uppercase}
+  body{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+  .foot .wrap{padding-bottom:40px}
 }
 
 /* meniu pe prima pagină: trei carduri cu poză (varianta A aleasă de Paul) */
