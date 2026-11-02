@@ -506,7 +506,11 @@ a.btn.primary{color:var(--on-leaf)}
 .vc-mic{border:0;border-radius:14px;padding:14px;font:inherit;font-weight:700;font-size:1.05rem;background:var(--leaf);color:var(--on-leaf);cursor:pointer}.vc-mic.on{background:var(--danger)}
 .vc-f{display:flex;gap:8px}.vc-f input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
 @media print{#vcBtn,#vcPanel{display:none!important}}
-.nc-r{grid-template-columns:1fr 96px}.nc-r .lbl{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}.nc-r .lbl small{width:100%;padding-left:26px}.nc-r.off{opacity:.5}
+.nc-r{grid-template-columns:1fr 96px}.nc-r.off{opacity:.5}
+.nc-r .lbl{display:grid;grid-template-columns:22px 1fr;gap:4px 8px;align-items:center}.nc-r .lbl small{grid-column:2;padding:0}
+.nc-n{width:100%;font:inherit;font-weight:600;padding:6px 8px;border:1.5px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink)}.nc-n:hover,.nc-n:focus{border-color:var(--line);background:var(--paper);outline:none}
+.nc-add{grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1.2fr) auto}
+.nc-del{border:0;background:none;color:#c0392b;font:inherit;font-size:.78rem;text-decoration:underline;cursor:pointer;padding:0}
 .nc-q{width:100%;font:inherit;font-size:1.05rem;font-weight:700;text-align:center;padding:9px 6px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Barlow,system-ui,sans-serif}
@@ -1933,12 +1937,12 @@ const NC_CATS=["alcool","soft","premix","garnish","altele"];
 function ncNorms(){
   const saved=NC&&NC.saved||{},R=enRatios(),out={},src={};
   Object.keys(R).forEach(L=>{if(R[L]>0){out[L]=R[L];src[L]="sapt"}});
-  Object.keys(saved).forEach(L=>{if(typeof saved[L]==="number"){out[L]=saved[L];src[L]="norma"}});
+  Object.keys(saved).forEach(L=>{if(typeof saved[L]==="number"&&!L.startsWith("X:")){out[L]=saved[L];src[L]="norma"}});
   return {N:out,src};
 }
 function ncInfo(L){const k=KNOWN[L];const it=D&&D.items.find(i=>i.excelLabel===L);return {label:k?k[0]:it?it.label:capL(L),cat:k?k[1]:it?it.cat:"altele"}}
 function ncOpen(){NC={client:"",data:"",pers:"",menu:[],cats:["alcool","soft","premix","garnish"],rows:null,note:"",saved:null,msg:"",busy:false};route="nec";render();
-  try{const F=window.CPFS;F.fs.doc(`${F.base}/config/norme`).get().then(d=>{if(!NC)return;NC.saved=d.exists&&d.data().map||{};NC.savedAt=d.exists&&d.data().at||"";if(route==="nec")render()}).catch(()=>{NC.saved={}})}catch(e){NC.saved={}}}
+  try{const F=window.CPFS;F.fs.doc(`${F.base}/config/norme`).get().then(d=>{if(!NC)return;const x=d.exists?d.data():{};NC.saved=x.map||{};NC.savedNames=x.names||{};NC.savedCustom=x.custom||{};NC.savedAt=x.at||"";if(route==="nec")render()}).catch(()=>{NC.saved={}})}catch(e){NC.saved={}}}
 function ncCalc(){
   const p=parseFloat(String(NC.pers).replace(",","."));if(!(p>0)){NC.msg="Scrie numărul de persoane.";NC.rows=null;return}
   const {N,src}=ncNorms();const E0=EN;EN={rows:enTemplateRows()};let M;try{M=enMenuRatios(N,NC.menu.length?NC.menu:null)}finally{EN=E0}
@@ -1946,11 +1950,21 @@ function ncCalc(){
   NC.rows=Object.keys(M).map(L=>{const i=ncInfo(L);let u=enUnit(L,i.cat),f=1,label=i.label;
     if(i.cat==="alcool"&&/1\s?L/i.test(u)&&!/PROSECCO/.test(L)){f=1/0.7;u="sticle 700 ml";label=label.replace(/\s*1\s?L$/i,"")}else if(i.cat==="premix"&&u==="sticle")u="sticle 700 ml";
     let q=M[L]*p*f;q=q<=0?0:(["alcool","soft","premix"].includes(i.cat)||q>=3)?Math.ceil(q-1e-3):Math.ceil(q*2)/2;return {L,label,cat:i.cat,q,f,unit:u,on:q>0,src:src[L]||"sapt",per:N[L]||0}})
-    .filter(r=>QTY_CATS.includes(r.cat)).sort((a,b)=>NC_CATS.indexOf(a.cat)-NC_CATS.indexOf(b.cat)||a.label.localeCompare(b.label,"ro"));
+    .filter(r=>QTY_CATS.includes(r.cat));
+  const prev={};(NC.rows0||[]).forEach(r=>prev[r.L]=r);
+  NC.rows.forEach(r=>{const sn=(NC.savedNames||{})[r.L];if(prev[r.L]&&prev[r.L].label)r.label=prev[r.L].label;else if(sn)r.label=sn});
+  /* articolele adăugate de mână: cele salvate în norme (cu cantitate pe persoană) și cele adăugate acum */
+  const SC=NC.savedCustom||{};Object.keys(SC).forEach(L=>{if(NC.rows.some(r=>r.L===L))return;const c=SC[L],per=(NC.saved||{})[L]||0;let q=per*p;q=q<=0?0:Math.ceil(q-1e-3);
+    NC.rows.push({L,label:prev[L]?prev[L].label:c.label,cat:c.cat,q:prev[L]&&prev[L].custom&&prev[L].manual?prev[L].q:q,f:1,unit:c.unit||"buc",on:q>0,src:"norma",per,custom:true})});
+  (NC.rows0||[]).filter(r=>r.custom&&!NC.rows.some(x=>x.L===r.L)).forEach(r=>NC.rows.push(r));
+  NC.rows.sort((a,b)=>NC_CATS.indexOf(a.cat)-NC_CATS.indexOf(b.cat)||(a.custom?1:0)-(b.custom?1:0)||a.label.localeCompare(b.label,"ro"));
+  NC.rows0=NC.rows;
   NC.msg=NC.rows.length?"":"Nu am date de consum: încarcă o săptămână cu evenimente sau salvează normele o dată.";
 }
+function ncDefLabel(r){const i=ncInfo(r.L);let l=i.label;if(r.f&&r.f!==1)l=l.replace(/\s*1\s?L$/i,"");return l}
 function ncGrab(){const V=$("#evView");if(!V||!NC)return;
   V.querySelectorAll("[data-nc]").forEach(i=>NC[i.dataset.nc]=i.value.trim());
+  V.querySelectorAll("[data-ncn]").forEach(i=>{const r=NC.rows&&NC.rows.find(x=>x.L===i.dataset.ncn);if(r&&i.value.trim())r.label=i.value.trim()});
   V.querySelectorAll("[data-ncq]").forEach(i=>{const r=NC.rows&&NC.rows.find(x=>x.L===i.dataset.ncq);if(r){const v=parseFloat(i.value.replace(",","."));r.q=isFinite(v)?v:0}});
   V.querySelectorAll("[data-nco]").forEach(i=>{const r=NC.rows&&NC.rows.find(x=>x.L===i.dataset.nco);if(r)r.on=i.checked});}
 function viewNec(){
@@ -1969,8 +1983,10 @@ function viewNec(){
   if(NC.rows){
     const nN=NC.rows.filter(r=>r.src==="norma").length;
     h+=`<p class="ev-file">${nN?`Calculat după normele tale salvate${NC.savedAt?" ("+esc(String(NC.savedAt).slice(0,10).split("-").reverse().join("."))+")":""}`:`Calculat după ce s-a trimis pe persoană în săptămâna „${esc(D?D.title.big:"")}”`}. Modifică ce vrei; debifează ce nu trimiți.</p>`;
-    NC_CATS.filter(c=>NC.cats.includes(c)).forEach(c=>{const L=NC.rows.filter(r=>r.cat===c);if(!L.length)return;
-      h+=`<h2 class="ev-h2">${esc(CATS.find(x=>x.id===c).name)}</h2><div class="ev-list">`+L.map(r=>`<div class="ev-ret nc-r ${r.on?"":"off"}"><label class="lbl"><input type="checkbox" data-nco="${esc(r.L)}" ${r.on?"checked":""}> ${esc(r.label)}<small>${esc(r.unit)}</small></label><input class="nc-q" data-ncq="${esc(r.L)}" inputmode="decimal" value="${r.q?num(r.q):""}" aria-label="Cantitate ${esc(r.label)}"></div>`).join("")+`</div>`});
+    NC_CATS.filter(c=>NC.cats.includes(c)).forEach(c=>{const L=NC.rows.filter(r=>r.cat===c);
+      h+=`<h2 class="ev-h2">${esc(CATS.find(x=>x.id===c).name)}</h2>`;
+      if(L.length)h+=`<div class="ev-list">`+L.map(r=>`<div class="ev-ret nc-r ${r.on?"":"off"}"><div class="lbl"><input type="checkbox" data-nco="${esc(r.L)}" ${r.on?"checked":""} aria-label="Include ${esc(r.label)}"><input class="nc-n" data-ncn="${esc(r.L)}" value="${esc(r.label)}" aria-label="Nume articol"><small>${esc(r.unit)}${r.custom?` · adăugat de tine <button type="button" class="nc-del" data-nca="del" data-l="${esc(r.L)}">scoate</button>`:""}</small></div><input class="nc-q" data-ncq="${esc(r.L)}" inputmode="decimal" value="${r.q?num(r.q):""}" aria-label="Cantitate ${esc(r.label)}"></div>`).join("")+`</div>`;
+      h+=`<div class="en-add nc-add"><input data-ncan="${c}" placeholder="Adaugă în ${esc(CATS.find(x=>x.id===c).name.toLowerCase())}${c==="alcool"?" (ex: Tequila Olmeca)":""}" aria-label="Articol nou"><input data-ncaq="${c}" inputmode="decimal" placeholder="cantitate" aria-label="Cantitate"><input data-ncau="${c}" placeholder="${c==="alcool"?"sticle 700 ml":"unitate"}" aria-label="Unitate"><button type="button" class="btn" data-nca="add" data-c="${c}">+ Adaugă</button></div>`});
     h+=`<label class="en-w" style="display:flex;flex-direction:column;gap:4px;margin-top:14px;font-size:.85rem;font-weight:600;color:var(--muted)">Notă pentru client (apare în PDF și în mesaj)<textarea data-nc="note" rows="3" class="ev-rnote" placeholder="ex: Gheața o aducem noi. Alcoolul în sticle de 1 L.">${esc(NC.note)}</textarea></label>
     <div class="en-save"><button class="btn" type="button" data-nca="norms">Salvează ca norme</button><button class="btn" type="button" data-nca="wa">Copiază pentru WhatsApp</button><button class="btn primary" type="button" data-nca="pdf" ${NC.busy?"disabled":""}>${NC.busy?"Se face PDF-ul…":"PDF pentru client"}</button></div>
     <p class="ev-file">„Salvează ca norme” ține minte cantitățile pe persoană de acum, ca necesarele viitoare să iasă la fel, indiferent de săptămâna încărcată.</p>`;
@@ -2013,12 +2029,19 @@ async function ncClick(t){
   if(a==="menu"){const id=b.dataset.id;NC.menu=NC.menu.includes(id)?NC.menu.filter(x=>x!==id):[...NC.menu,id];if(NC.rows)ncCalc();render();return true}
   if(a==="cat"){const c=b.dataset.c;NC.cats=NC.cats.includes(c)?NC.cats.filter(x=>x!==c):[...NC.cats,c];render();return true}
   if(a==="calc"){ncCalc();render();return true}
+  if(a==="add"){const c=b.dataset.c,V=$("#evView"),n=(V.querySelector(`[data-ncan="${c}"]`)||{}).value||"",qv=(V.querySelector(`[data-ncaq="${c}"]`)||{}).value||"",u=(V.querySelector(`[data-ncau="${c}"]`)||{}).value||"";
+    if(!n.trim()){toast("Scrie numele articolului.");return true}
+    const q=parseFloat(String(qv).replace(",","."));const L="X:"+norm(n.trim());
+    if(NC.rows.some(r=>r.L===L)){toast("Articolul e deja în listă.");return true}
+    NC.rows.push({L,label:n.trim(),cat:c,q:isFinite(q)?q:0,f:1,unit:u.trim()||(c==="alcool"?"sticle 700 ml":"buc"),on:true,src:"manual",per:0,custom:true,manual:true});NC.rows0=NC.rows;render();return true}
+  if(a==="del"){NC.rows=NC.rows.filter(r=>r.L!==b.dataset.l);NC.rows0=NC.rows;if(NC.savedCustom)delete NC.savedCustom[b.dataset.l];render();return true}
   if(a==="wa"){const txt=ncText();try{await navigator.clipboard.writeText(txt);toast("Textul e copiat. Lipește-l în WhatsApp.")}catch(e){window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}return true}
   if(a==="pdf"){ncPDF();return true}
   if(a==="norms"){const p=parseFloat(String(NC.pers).replace(",","."));if(!(p>0)||!NC.rows)return true;
     if(NC.menu.length){toast("Salvează normele fără meniu ales, ca să fie pentru tot meniul.");return true}
-    const map={};NC.rows.forEach(r=>{map[r.L]=r.on&&r.q>0?Math.round(r.q/(r.f||1)/p*1e6)/1e6:0});
-    try{const F=window.CPFS;await F.fs.doc(`${F.base}/config/norme`).set({map,pers:p,at:new Date().toISOString(),by:F.NAME||""});NC.saved=map;NC.savedAt=new Date().toISOString();ncCalc();render();toast("Normele sunt salvate.")}
+    const map={},names={},custom={};NC.rows.forEach(r=>{map[r.L]=r.on&&r.q>0?Math.round(r.q/(r.f||1)/p*1e6)/1e6:0;
+      if(r.custom){custom[r.L]={label:r.label,unit:r.unit,cat:r.cat};r.manual=false}else if(r.label!==ncDefLabel(r))names[r.L]=r.label});
+    try{const F=window.CPFS;await F.fs.doc(`${F.base}/config/norme`).set({map,names,custom,pers:p,at:new Date().toISOString(),by:F.NAME||""});NC.saved=map;NC.savedNames=names;NC.savedCustom=custom;NC.savedAt=new Date().toISOString();ncCalc();render();toast("Normele sunt salvate.")}
     catch(e){toast("Nu am putut salva normele.")}
     return true}
   return true;
