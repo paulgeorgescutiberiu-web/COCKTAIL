@@ -1942,7 +1942,10 @@ function ncOpen(){NC={client:"",data:"",pers:"",menu:[],cats:["alcool","soft","p
 function ncCalc(){
   const p=parseFloat(String(NC.pers).replace(",","."));if(!(p>0)){NC.msg="Scrie numărul de persoane.";NC.rows=null;return}
   const {N,src}=ncNorms();const E0=EN;EN={rows:enTemplateRows()};let M;try{M=enMenuRatios(N,NC.menu.length?NC.menu:null)}finally{EN=E0}
-  NC.rows=Object.keys(M).map(L=>{const i=ncInfo(L);let q=M[L]*p;q=q<=0?0:(["alcool","soft","premix"].includes(i.cat)||q>=3)?Math.ceil(q-1e-9):Math.ceil(q*2)/2;return {L,label:i.label,cat:i.cat,q,unit:enUnit(L,i.cat),on:q>0,src:src[L]||"sapt",per:N[L]||0}})
+  /* la client, alcoolul (în afară de Prosecco) se scrie în sticle de 700 ml, ca în fișa de consumație */
+  NC.rows=Object.keys(M).map(L=>{const i=ncInfo(L);let u=enUnit(L,i.cat),f=1,label=i.label;
+    if(i.cat==="alcool"&&/1\s?L/i.test(u)&&!/PROSECCO/.test(L)){f=1/0.7;u="sticle 700 ml";label=label.replace(/\s*1\s?L$/i,"")}else if(i.cat==="premix"&&u==="sticle")u="sticle 700 ml";
+    let q=M[L]*p*f;q=q<=0?0:(["alcool","soft","premix"].includes(i.cat)||q>=3)?Math.ceil(q-1e-3):Math.ceil(q*2)/2;return {L,label,cat:i.cat,q,f,unit:u,on:q>0,src:src[L]||"sapt",per:N[L]||0}})
     .filter(r=>QTY_CATS.includes(r.cat)).sort((a,b)=>NC_CATS.indexOf(a.cat)-NC_CATS.indexOf(b.cat)||a.label.localeCompare(b.label,"ro"));
   NC.msg=NC.rows.length?"":"Nu am date de consum: încarcă o săptămână cu evenimente sau salvează normele o dată.";
 }
@@ -2014,7 +2017,7 @@ async function ncClick(t){
   if(a==="pdf"){ncPDF();return true}
   if(a==="norms"){const p=parseFloat(String(NC.pers).replace(",","."));if(!(p>0)||!NC.rows)return true;
     if(NC.menu.length){toast("Salvează normele fără meniu ales, ca să fie pentru tot meniul.");return true}
-    const map={};NC.rows.forEach(r=>{map[r.L]=r.on&&r.q>0?Math.round(r.q/p*10000)/10000:0});
+    const map={};NC.rows.forEach(r=>{map[r.L]=r.on&&r.q>0?Math.round(r.q/(r.f||1)/p*1e6)/1e6:0});
     try{const F=window.CPFS;await F.fs.doc(`${F.base}/config/norme`).set({map,pers:p,at:new Date().toISOString(),by:F.NAME||""});NC.saved=map;NC.savedAt=new Date().toISOString();ncCalc();render();toast("Normele sunt salvate.")}
     catch(e){toast("Nu am putut salva normele.")}
     return true}
