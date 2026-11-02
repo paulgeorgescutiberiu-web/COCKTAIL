@@ -283,5 +283,5 @@ function sameDayHTML(d,skipId,adding){const r=sameDay(d,skipId);if(!r||!r.ev.len
   const n=r.ev.length+(adding?1:0),c=r.cap,over=c.bar&&n>c.bar;
   return `<div class="${over?"ev-alert":"ev-ok"} ov-box"><b>${r.ev.length===1?"Mai ai un eveniment":"Mai ai "+r.ev.length+" evenimente"} în ziua asta:</b> ${r.ev.map(x=>esc(x.n)+(x.t?" ("+esc(x.t)+")":"")).join(", ")}.`+
     (c.bar||c.car||c.ppl?` <br>Cu acesta: <b>${n} ${n===1?"eveniment":"evenimente"}</b>${c.bar?` · ai ${c.bar} ${c.bar===1?"bar":"baruri"}`:""}${c.car?` · ${c.car} ${c.car===1?"mașină":"mașini"}`:""}${c.ppl?` · ${c.ppl} oameni (cam ${Math.floor(c.ppl/Math.max(1,n))} pe eveniment)`:""}.${over?" <b>Nu-ți ajung barurile.</b>":c.car&&n>c.car?" <b>Nu-ți ajung mașinile.</b>":""}`:` <small>Pune la Datele firmei câte baruri, mașini și oameni ai, ca să-ți spun dacă îți ajung.</small>`)+`</div>`}
-window.__qr={code,link,leadsHTML,show,sync,pendHTML,sameDayHTML};
+window.__qr={code,link,leadsHTML,show,sync,pendHTML,sameDayHTML};window.__qr.logo=LOGO_SVG;
 })();

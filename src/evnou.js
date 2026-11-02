@@ -388,3 +388,97 @@ function ciClick(t){
   if(a==="make"){ciMake(b);return true}
   return true;
 }
+
+/* ---------- Necesar pentru client: cantități pentru un număr de persoane, de trimis clientului ---------- */
+let NC=null;
+const NC_CATS=["alcool","soft","premix","garnish","altele"];
+function ncNorms(){
+  const saved=NC&&NC.saved||{},R=enRatios(),out={},src={};
+  Object.keys(R).forEach(L=>{if(R[L]>0){out[L]=R[L];src[L]="sapt"}});
+  Object.keys(saved).forEach(L=>{if(typeof saved[L]==="number"){out[L]=saved[L];src[L]="norma"}});
+  return {N:out,src};
+}
+function ncInfo(L){const k=KNOWN[L];const it=D&&D.items.find(i=>i.excelLabel===L);return {label:k?k[0]:it?it.label:capL(L),cat:k?k[1]:it?it.cat:"altele"}}
+function ncOpen(){NC={client:"",data:"",pers:"",menu:[],cats:["alcool","soft","premix","garnish"],rows:null,note:"",saved:null,msg:"",busy:false};route="nec";render();
+  try{const F=window.CPFS;F.fs.doc(`${F.base}/config/norme`).get().then(d=>{if(!NC)return;NC.saved=d.exists&&d.data().map||{};NC.savedAt=d.exists&&d.data().at||"";if(route==="nec")render()}).catch(()=>{NC.saved={}})}catch(e){NC.saved={}}}
+function ncCalc(){
+  const p=parseFloat(String(NC.pers).replace(",","."));if(!(p>0)){NC.msg="Scrie numărul de persoane.";NC.rows=null;return}
+  const {N,src}=ncNorms();const E0=EN;EN={rows:enTemplateRows()};let M;try{M=enMenuRatios(N,NC.menu.length?NC.menu:null)}finally{EN=E0}
+  NC.rows=Object.keys(M).map(L=>{const i=ncInfo(L);let q=M[L]*p;q=q<=0?0:(["alcool","soft","premix"].includes(i.cat)||q>=3)?Math.ceil(q-1e-9):Math.ceil(q*2)/2;return {L,label:i.label,cat:i.cat,q,unit:enUnit(L,i.cat),on:q>0,src:src[L]||"sapt",per:N[L]||0}})
+    .filter(r=>QTY_CATS.includes(r.cat)).sort((a,b)=>NC_CATS.indexOf(a.cat)-NC_CATS.indexOf(b.cat)||a.label.localeCompare(b.label,"ro"));
+  NC.msg=NC.rows.length?"":"Nu am date de consum: încarcă o săptămână cu evenimente sau salvează normele o dată.";
+}
+function ncGrab(){const V=$("#evView");if(!V||!NC)return;
+  V.querySelectorAll("[data-nc]").forEach(i=>NC[i.dataset.nc]=i.value.trim());
+  V.querySelectorAll("[data-ncq]").forEach(i=>{const r=NC.rows&&NC.rows.find(x=>x.L===i.dataset.ncq);if(r){const v=parseFloat(i.value.replace(",","."));r.q=isFinite(v)?v:0}});
+  V.querySelectorAll("[data-nco]").forEach(i=>{const r=NC.rows&&NC.rows.find(x=>x.L===i.dataset.nco);if(r)r.on=i.checked});}
+function viewNec(){
+  const R0=enRecipes().filter(r=>!/^epicur/i.test(r.id||""));
+  let h=`<p style="margin:0 0 10px"><button class="btn" type="button" data-nca="back">← Înapoi la evenimente</button></p>
+  <div class="ev-hero"><p class="ev-sub">Necesar pentru client</p><p class="ev-file">Calculezi ce trebuie să cumpere clientul pentru un anumit număr de persoane și îi trimiți lista ca PDF sau pe WhatsApp.</p></div>
+  <div class="en-grid"><label class="en-w">Client / eveniment<input data-nc="client" value="${esc(NC.client)}" placeholder="ex: Nunta Popescu, Conac X"></label>
+    <label>Data evenimentului<input type="date" data-nc="data" value="${esc(NC.data)}"></label>
+    <label>Persoane<input data-nc="pers" inputmode="numeric" value="${esc(NC.pers)}" placeholder="ex: 150"></label></div>
+  <p class="ev-file" style="margin:4px 0">Meniul (opțional): alege cocktailurile clientului ca premixurile și alcoolul să fie doar pentru ele.</p>
+  <div class="en-days">${R0.map(r=>`<button type="button" class="en-day${NC.menu.includes(r.id)?" on":""}" data-nca="menu" data-id="${esc(r.id)}">${esc(r.name)}</button>`).join("")}</div>
+  <p class="ev-file" style="margin:12px 0 4px">Ce intră în listă:</p>
+  <div class="en-days">${NC_CATS.map(c=>`<button type="button" class="en-day${NC.cats.includes(c)?" on":""}" data-nca="cat" data-c="${c}">${esc(CATS.find(x=>x.id===c).name)}</button>`).join("")}</div>
+  <div class="en-acts" style="margin-top:14px"><button class="btn primary" type="button" data-nca="calc">Calculează necesarul</button></div>`;
+  if(NC.msg)h+=`<p class="ev-alert">${esc(NC.msg)}</p>`;
+  if(NC.rows){
+    const nN=NC.rows.filter(r=>r.src==="norma").length;
+    h+=`<p class="ev-file">${nN?`Calculat după normele tale salvate${NC.savedAt?" ("+esc(String(NC.savedAt).slice(0,10).split("-").reverse().join("."))+")":""}`:`Calculat după ce s-a trimis pe persoană în săptămâna „${esc(D?D.title.big:"")}”`}. Modifică ce vrei; debifează ce nu trimiți.</p>`;
+    NC_CATS.filter(c=>NC.cats.includes(c)).forEach(c=>{const L=NC.rows.filter(r=>r.cat===c);if(!L.length)return;
+      h+=`<h2 class="ev-h2">${esc(CATS.find(x=>x.id===c).name)}</h2><div class="ev-list">`+L.map(r=>`<div class="ev-ret nc-r ${r.on?"":"off"}"><label class="lbl"><input type="checkbox" data-nco="${esc(r.L)}" ${r.on?"checked":""}> ${esc(r.label)}<small>${esc(r.unit)}</small></label><input class="nc-q" data-ncq="${esc(r.L)}" inputmode="decimal" value="${r.q?num(r.q):""}" aria-label="Cantitate ${esc(r.label)}"></div>`).join("")+`</div>`});
+    h+=`<label class="en-w" style="display:flex;flex-direction:column;gap:4px;margin-top:14px;font-size:.85rem;font-weight:600;color:var(--muted)">Notă pentru client (apare în PDF și în mesaj)<textarea data-nc="note" rows="3" class="ev-rnote" placeholder="ex: Gheața o aducem noi. Alcoolul în sticle de 1 L.">${esc(NC.note)}</textarea></label>
+    <div class="en-save"><button class="btn" type="button" data-nca="norms">Salvează ca norme</button><button class="btn" type="button" data-nca="wa">Copiază pentru WhatsApp</button><button class="btn primary" type="button" data-nca="pdf" ${NC.busy?"disabled":""}>${NC.busy?"Se face PDF-ul…":"PDF pentru client"}</button></div>
+    <p class="ev-file">„Salvează ca norme” ține minte cantitățile pe persoană de acum, ca necesarele viitoare să iasă la fel, indiferent de săptămâna încărcată.</p>`;
+  }
+  return h;
+}
+function ncList(){return NC_CATS.filter(c=>NC.cats.includes(c)).map(c=>({c,name:CATS.find(x=>x.id===c).name,rows:NC.rows.filter(r=>r.cat===c&&r.on&&r.q>0)})).filter(g=>g.rows.length)}
+const ncDate=d=>d?d.split("-").reverse().join("."):"";
+function ncText(){
+  let t=`*Necesar băuturi și consumabile*${NC.client?"\n"+NC.client:""}\n${NC.pers} persoane${NC.data?" · "+ncDate(NC.data):""}`;
+  if(NC.menu.length){const R0=enRecipes();t+=`\nMeniu: ${NC.menu.map(id=>(R0.find(r=>r.id===id)||{}).name).filter(Boolean).join(", ")}`}
+  ncList().forEach(g=>{t+=`\n\n*${g.name}*\n`+g.rows.map(r=>`• ${r.label}: ${num(r.q)} ${r.unit}`).join("\n")});
+  if(NC.note)t+=`\n\n${NC.note}`;
+  return t+`\n\nCantitățile sunt estimate pentru ${NC.pers} invitați, din experiența noastră la evenimente.\nCocktail Philosophy · 0743 785 655`;
+}
+async function ncPDF(){
+  if(!window.__pdf){toast("PDF-ul nu e disponibil acum.");return}
+  NC.busy=true;render();
+  try{const pm=await window.__pdf.load(),R0=enRecipes(),G=ncList();
+    const body=[];
+    if(window.__qr&&window.__qr.logo)body.push({svg:window.__qr.logo,width:230,margin:[0,0,0,18]});
+    body.push({text:"Necesar băuturi și consumabile",fontSize:20,bold:true,color:"#14432F"});
+    body.push({text:[NC.client?NC.client+" · ":"",`${NC.pers} persoane`,NC.data?" · "+ncDate(NC.data):""].join(""),fontSize:12,color:"#56655B",margin:[0,4,0,4]});
+    if(NC.menu.length)body.push({text:"Meniu: "+NC.menu.map(id=>(R0.find(r=>r.id===id)||{}).name).filter(Boolean).join(", "),fontSize:11,margin:[0,0,0,8]});
+    G.forEach(g=>{body.push({text:g.name.toUpperCase(),fontSize:11,bold:true,color:"#C99A2E",margin:[0,12,0,4],characterSpacing:1});
+      body.push({table:{widths:["*",70,90],body:g.rows.map(r=>[{text:r.label},{text:num(r.q),alignment:"right",bold:true},{text:r.unit,color:"#56655B"}])},layout:{hLineColor:()=>"#E0E4D8",vLineWidth:()=>0,hLineWidth:(i)=>i===0?0:.6,paddingTop:()=>5,paddingBottom:()=>5}})});
+    if(NC.note)body.push({text:NC.note,margin:[0,16,0,0],fontSize:11});
+    body.push({text:`Cantitățile sunt estimate pentru ${NC.pers} invitați, din experiența noastră la peste 1300 de evenimente. Pentru întrebări: 0743 785 655 · cocktailphilosophy.ro`,fontSize:9,color:"#56655B",margin:[0,18,0,0]});
+    const doc={pageSize:"A4",pageMargins:[48,44,48,44],defaultStyle:{fontSize:11,color:"#16241C"},content:body};
+    const fn=`Necesar ${NC.pers} persoane${NC.client?" - "+NC.client.replace(/[\\/:*?"<>|]/g,""):""}.pdf`;
+    pm.createPdf(doc).download(fn);toast("PDF-ul e gata.");
+  }catch(e){console.warn(e);toast("Nu am putut face PDF-ul. Verifică internetul.")}
+  NC.busy=false;render();
+}
+async function ncClick(t){
+  if(!NC)return false;const b=t.closest("[data-nca]");const o=t.closest("[data-nco]");
+  if(o){ncGrab();render();return true}
+  if(!b)return false;const a=b.dataset.nca;ncGrab();
+  if(a==="back"){NC=null;route="ziua";store.set("evroute",route);render();return true}
+  if(a==="menu"){const id=b.dataset.id;NC.menu=NC.menu.includes(id)?NC.menu.filter(x=>x!==id):[...NC.menu,id];if(NC.rows)ncCalc();render();return true}
+  if(a==="cat"){const c=b.dataset.c;NC.cats=NC.cats.includes(c)?NC.cats.filter(x=>x!==c):[...NC.cats,c];render();return true}
+  if(a==="calc"){ncCalc();render();return true}
+  if(a==="wa"){const txt=ncText();try{await navigator.clipboard.writeText(txt);toast("Textul e copiat. Lipește-l în WhatsApp.")}catch(e){window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}return true}
+  if(a==="pdf"){ncPDF();return true}
+  if(a==="norms"){const p=parseFloat(String(NC.pers).replace(",","."));if(!(p>0)||!NC.rows)return true;
+    if(NC.menu.length){toast("Salvează normele fără meniu ales, ca să fie pentru tot meniul.");return true}
+    const map={};NC.rows.forEach(r=>{map[r.L]=r.on&&r.q>0?Math.round(r.q/p*10000)/10000:0});
+    try{const F=window.CPFS;await F.fs.doc(`${F.base}/config/norme`).set({map,pers:p,at:new Date().toISOString(),by:F.NAME||""});NC.saved=map;NC.savedAt=new Date().toISOString();ncCalc();render();toast("Normele sunt salvate.")}
+    catch(e){toast("Nu am putut salva normele.")}
+    return true}
+  return true;
+}

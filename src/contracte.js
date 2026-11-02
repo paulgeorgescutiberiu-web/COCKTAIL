@@ -1015,7 +1015,7 @@ window.__ctAPI={
   pdf(id){const c=list.find(x=>x.id===id);if(c)return downloadPDF(c,null)}
 };
 window.__ctRefresh=()=>{if(started&&mode==="list"&&!V.hidden)render()};
-window.__ctList=()=>list;window.__ctFirma=()=>firma;
+window.__ctList=()=>list;window.__ctFirma=()=>firma;window.__pdf={load:loadPdfMake};
 /* evenimentele din calendar între două zile (pentru „Preia din calendar” la Evenimente) */
 window.__gcal={async range(from,to){
   const off=d=>{const tz=new Date(d+"T00:00:00").getTimezoneOffset();return (tz>0?"-":"+")+String(Math.abs(tz/60)|0).padStart(2,"0")+":00"};
