@@ -63,12 +63,12 @@
 <div class="calc-box">
 <label for="cpN">Câți invitați aveți? <small>(fără staff și copii)</small></label>
 <div class="calc-in">
-<input type="range" id="cpR" min="20" max="500" step="5" value="120" aria-label="Număr invitați">
-<input type="number" id="cpN" min="1" max="2000" value="120" inputmode="numeric">
+<input type="range" id="cpR" min="20" max="500" step="5" value="150" aria-label="Număr invitați">
+<input type="number" id="cpN" min="1" max="2000" value="150" inputmode="numeric">
 </div>
 <div class="calc-out">
-<div><span>Preț / invitat</span><b class="gold" id="cpPP">12,7 €</b></div>
-<div><span>Total estimat</span><b id="cpTot">1.524 €</b></div>
+<div><span>Preț / invitat</span><b class="gold" id="cpPP">11,4 €</b></div>
+<div><span>Total estimat</span><b id="cpTot">1.710 €</b></div>
 </div>
 <p class="note" style="font-size:16px">Preț orientativ. Oferta finală o primești după ce verificăm data și locația.</p>
 </div>
@@ -224,7 +224,7 @@ function update(v){
 }
 r.addEventListener('input',function(){n.value=r.value;update(r.value)});
 n.addEventListener('input',function(){var v=update(n.value);r.value=Math.min(500,v)});
-update(120);
+update(150);
 if(CPP.barmani)document.querySelectorAll('[data-barmani]').forEach(function(b){var v=CPP.barmani[b.getAttribute('data-barmani')];if(v)b.textContent=v.toLocaleString('ro-RO')+' €'});
 })();
 document.querySelectorAll('.burger nav a').forEach(function(a){a.addEventListener('click',function(){a.closest('details').removeAttribute('open')})});
