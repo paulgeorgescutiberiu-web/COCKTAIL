@@ -305,3 +305,7 @@ p{margin:0}
 .opt-h{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
 .opt-h h3{font-size:clamp(26px,3vw,34px)}
 .opt .n-ex div,.opt .bprices div{background:var(--white)}
+
+/* mențiuni discrete (ex. suplimentul pentru băutura din altă sursă) */
+.mic{margin:0;font-family:var(--sans);font-style:italic;font-weight:500;font-size:14.5px;line-height:1.45;color:var(--green-dark);max-width:640px}
+.sec-ink .mic,.offer .mic{color:var(--green-dark)}

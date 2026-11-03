@@ -8,5 +8,7 @@ window.CP_PRETURI={
   barmani:{1:350,2:520,3:690,4:860},
   /* Pachet Final de An (firme, 1 nov – 31 dec): [de la, până la, € pe invitat + TVA] */
   finalDeAn:[[0,50,19.9],[50,100,16.9],[100,150,13.9],[150,200,11.9],[200,250,10.9],[250,null,9.9]],
+  /* Servicii + consumație: supliment (%) la tariful serviciilor dacă băutura nu vine prin noi / furnizorul nostru */
+  suplimentBauturaClient:30,
   avans:100
 };

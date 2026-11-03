@@ -6,7 +6,8 @@
    data-barmani=K               Pachet barmani cu K barmani
    data-p="barmani-min"         cel mai mic preț la Pachet barmani
    data-p="fa" data-i=I         Pachet Final de An, treapta I
-   data-p="avans"               avansul */
+   data-p="avans"               avansul
+   data-p="supliment"           suplimentul (%) la servicii când băutura nu vine prin noi */
 (function(){
   var P=window.CP_PRETURI; if(!P)return;
   function fmt1(v){return v.toLocaleString('ro-RO',{minimumFractionDigits:1,maximumFractionDigits:1})+' €'}
@@ -30,5 +31,6 @@
   each('[data-p="barmani-min"]',function(){var v=Object.keys(B).map(function(k){return B[k]});return v.length?fmt0(Math.min.apply(null,v)):null});
   var FA=P.finalDeAn||[];
   each('[data-p="fa"]',function(el){var t=FA[+el.dataset.i];return t?fmt1(t[2]):null});
+  each('[data-p="supliment"]',function(){return P.suplimentBauturaClient!=null?P.suplimentBauturaClient+'%':null});
   each('[data-p="avans"]',function(){return P.avans?fmt0(P.avans):null});
 })();
