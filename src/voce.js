@@ -49,6 +49,12 @@ const DECL=[
     parameters:S("object","",{properties:{contract_id:S("string",""),text:S("string","")},required:["contract_id","text"]})},
   {name:"disponibilitate",description:"Ce barmani au spus că sunt disponibili (și care nu) într-o zi.",
     parameters:S("object","",{properties:{data:S("string","AAAA-LL-ZZ")},required:["data"]})},
+  {name:"noteaza_bani",description:"Notează în secțiunea Bani o încasare sau o cheltuială (doar administratorul). Folosește-o pentru „am încasat…”, „am primit avansul…”, „am dat / am plătit / am cheltuit … pe …”. Spune apoi pe scurt ce ai notat.",
+    parameters:S("object","",{properties:{tip:S("string","in = încasare, out = cheltuială",{enum:["in","out"]}),suma:S("number","Suma"),moneda:S("string","RON sau EUR",{enum:["RON","EUR"]}),
+      cat:S("string","Categoria. Încasări: Avans eveniment, Rest eveniment, Bar / servicii, Vânzare marfă, Altele. Cheltuieli: Marfă și alcool, Fructe, gheață, Consumabile, Barmani, Transport și combustibil, Chirie, Echipamente, Marketing, Taxe și impozite, Contabilitate, Utilități și telefon, Altele"),
+      data:S("string","AAAA-LL-ZZ, implicit azi"),met:S("string","numerar, card sau transfer",{enum:["numerar","card","transfer"]}),nota:S("string","De la cine / pe ce")},required:["tip","suma"]})},
+  {name:"bani_luna",description:"Cât s-a încasat, cât s-a cheltuit și cât a rămas într-o lună (din secțiunea Bani).",
+    parameters:S("object","",{properties:{luna:S("string","AAAA-LL, implicit luna curentă")}})},
   {name:"necesar_client",description:"Calculează NECESARUL pentru un client: ce băuturi și consumabile trebuie să cumpere clientul pentru un număr de persoane (lista de trimis clientului, PDF sau WhatsApp). NU creează eveniment și nu face fișă. Folosește-o pentru „necesar pentru 20 de persoane”, „fă-mi un necesar”, „ce trebuie să cumpere clientul pentru…”.",
     parameters:S("object","",{properties:{pers:S("string","Număr persoane"),client:S("string","Numele clientului sau al evenimentului (opțional)"),data:S("string","Data evenimentului AAAA-LL-ZZ (opțional)"),
       meniu:S("array","Cocktailurile alese de client (opțional)",{items:S("string","")}),nota:S("string","Notă pentru client (opțional)")},required:["pers"]})},
@@ -165,6 +171,9 @@ const RUN={
     const m=A.missing(c);if(m.length)return {eroare:"Contractul nu e complet",lipsesc:m};await A.pdf(contract_id);return {ok:true}},
   async notita_contract({contract_id,text}){const A=ctAPI();await A.prep();if(!A.get(contract_id))return {eroare:"Nu găsesc contractul."};await A.addNote(contract_id,text);return {ok:true}},
   async disponibilitate({data}){if(!window.__dispFor)return {eroare:"Disponibilitatea nu e disponibilă."};const r=await window.__dispFor(data);return {data,disponibili:r.ok,indisponibili:r.no}},
+  async noteaza_bani(a){if(!F.isAdmin)return {eroare:"Banii îi vede doar administratorul."};if(!window.__bani)return {eroare:"Secțiunea Bani nu e disponibilă."};
+    try{const x=await window.__bani.add(a||{});return {ok:true,notat:x}}catch(e){return {eroare:"Nu am putut nota. Spune suma."}}},
+  async bani_luna(a){if(!F.isAdmin)return {eroare:"Banii îi vede doar administratorul."};if(!window.__bani)return {eroare:"Secțiunea Bani nu e disponibilă."};return await window.__bani.month(a&&a.luna)},
   async necesar_client(a){
     if(!F.isAdmin)return {eroare:"Necesarul pentru clienți îl face doar administratorul."};
     if(!window.__necNew)return {eroare:"Necesarul nu e disponibil."};
