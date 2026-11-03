@@ -913,6 +913,7 @@ V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
   if(t.closest("[data-bk]")){bkRun();return}
+  if(t.closest("[data-bkdl]")){bkDownload();return}
   const iv=t.closest("[data-inv]");if(iv){const c=list.find(x=>x.id===iv.dataset.id),k=iv.dataset.inv,ak=iv.dataset.id+k;if(!c)return;
     if(!INV.arm[ak]){INV.arm[ak]=true;render();setTimeout(()=>{if(INV.arm[ak]){delete INV.arm[ak];if(mode==="list")render()}},4000);return}
     delete INV.arm[ak];invNew(c,k);return}
@@ -1029,11 +1030,11 @@ const bkDs=f=>"d-"+String(f).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,150);
 async function bkCollect(){
   const out={app:"Cocktail Philosophy",at:new Date().toISOString(),base:F.base,docs:{}};
   const col=async p=>{try{const q=await F.fs.collection(p).get();q.docs.forEach(d=>out.docs[p+"/"+d.id]=d.data())}catch(e){out.docs[p+"/__eroare"]=String(e&&e.code||e)}};
-  for(const c of ["config","privat","contracte","stoc","oameni","alias"])await col(`${F.base}/${c}`);
+  for(const c of ["config","privat","contracte","stoc","oameni","alias","disp"])await col(`${F.base}/${c}`);
   const files=new Set();try{const ev=JSON.parse(out.docs[`${F.base}/config/evenimente`].json);if(ev&&ev.fileName)files.add(ev.fileName)}catch(e){}
   try{(out.docs[`${F.base}/config/arhiva`]&&out.docs[`${F.base}/config/arhiva`].list||[]).forEach(x=>files.add(x.fileName))}catch(e){}
   for(const fn of files)for(const t of ["checks","retur"])await col(`${F.base}/${t}/${bkDs(fn)}/events`);
-  for(const c of ["barLead","barScan","portal"])await col(c);
+  for(const c of ["barLead","barScan","portal","barFeedback"])await col(c);
   try{const d=await F.fs.doc("bar/info").get();if(d.exists)out.docs["bar/info"]=d.data()}catch(e){}
   out.count=Object.keys(out.docs).length;return out}
 async function bkRun(btn){
@@ -1056,7 +1057,15 @@ function bkHTML(){
   if(!due&&!BK.msg)return "";
   return `<div class="ct-card${due?" ct-bk-due":""}"><div class="ct-h"><b>Backup în Google Drive</b><span>${days==null?"niciun backup încă":days===0?"ultimul: azi":`ultimul: acum ${days} ${days===1?"zi":"zile"}`}</span></div>
     <p class="ev-file">${BK.msg?esc(BK.msg):"O copie a tuturor datelor (contracte, evenimente, retur, stoc, prețuri, cereri) se salvează ca fișier în Drive-ul tău. Apare aici o dată pe săptămână."}</p>
-    ${due||BK.busy?`<div class="ct-b"><button class="btn primary" data-bk="1"${BK.busy?" disabled":""}>${BK.busy?"Se face backup…":"Fă backup acum"}</button></div>`:""}</div>`}
+    ${due||BK.busy?`<div class="ct-b"><button class="btn primary" data-bk="1"${BK.busy?" disabled":""}>${BK.busy?"Se face backup…":"Fă backup acum"}</button><button class="btn" data-bkdl="1"${BK.busy?" disabled":""}>Descarcă backup pe acest dispozitiv</button></div>`:""}</div>`}
+/* backup fără Google: fișierul se descarcă direct (pentru când Drive nu merge) */
+async function bkDownload(){if(BK.busy)return;BK.busy=true;BK.msg="Se adună datele…";render();
+  try{const data=await bkCollect(),blob=new Blob([JSON.stringify(data)],{type:"application/json"}),a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);a.download=`backup-cocktail-philosophy-${today()}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
+    BK.last={at:new Date().toISOString(),name:a.download,count:data.count,size:blob.size,local:true};await F.fs.doc(`${F.base}/privat/backup`).set(BK.last).catch(()=>{});
+    BK.msg=`Backup descărcat: ${data.count} înregistrări, ${Math.round(blob.size/1024)} KB. Păstrează fișierul într-un loc sigur (de ex. urcă-l în Drive).`}
+  catch(e){BK.msg="Backup-ul nu a reușit. Încearcă din nou."}
+  BK.busy=false;render()}
 /* butoanele care lucrează cu Google: cerem conectarea chiar în momentul apăsării, ca fereastra să nu fie blocată */
 document.addEventListener("click",e=>{const t=e.target;if(!t||!t.closest)return;
   if(t.closest("[data-gconn]")){e.stopPropagation();G.tok=null;G.errAt=0;gToken().then(()=>{toast("Google conectat. Acum apasă din nou butonul de Drive.");render()}).catch(x=>toast(x&&x.msg||"Nu s-a conectat."));return}
