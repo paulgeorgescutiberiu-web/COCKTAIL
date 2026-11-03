@@ -399,8 +399,15 @@ function ncNorms(){
   return {N:out,src};
 }
 function ncInfo(L){const k=KNOWN[L];const it=D&&D.items.find(i=>i.excelLabel===L);return {label:k?k[0]:it?it.label:capL(L),cat:k?k[1]:it?it.cat:"altele"}}
-function ncOpen(){NC={client:"",data:"",pers:"",menu:[],cats:["alcool","soft","premix","garnish"],rows:null,note:"",saved:null,msg:"",busy:false};route="nec";render();
-  try{const F=window.CPFS;F.fs.doc(`${F.base}/config/norme`).get().then(d=>{if(!NC)return;const x=d.exists?d.data():{};NC.saved=x.map||{};NC.savedNames=x.names||{};NC.savedCustom=x.custom||{};NC.savedAt=x.at||"";if(route==="nec")render()}).catch(()=>{NC.saved={}})}catch(e){NC.saved={}}}
+function ncOpen(pre){NC={client:"",data:"",pers:"",menu:[],cats:["alcool","soft","premix","garnish"],rows:null,note:"",saved:null,msg:"",busy:false,...(pre||{})};route="nec";render();
+  try{const F=window.CPFS;return F.fs.doc(`${F.base}/config/norme`).get().then(d=>{if(!NC)return;const x=d.exists?d.data():{};NC.saved=x.map||{};NC.savedNames=x.names||{};NC.savedCustom=x.custom||{};NC.savedAt=x.at||"";if(route==="nec")render()}).catch(()=>{NC.saved={}})}catch(e){NC.saved={}}}
+/* deschis din altă parte (ex. asistenta vocală): „necesar pentru 20 de persoane” */
+window.__necNew=async pre=>{const b=document.querySelector('nav.tabs button[data-view="evenimente"]');if(b)b.click();
+  const R0=enRecipes(),ids=(pre&&pre.meniu||[]).map(n=>{const k=norm(n);const r=R0.find(x=>norm(x.name)===k||norm(x.id)===k||norm(x.name).includes(k));return r&&r.id}).filter(Boolean);
+  await ncOpen({client:pre&&pre.client||"",data:pre&&pre.data||"",pers:pre&&pre.pers?String(pre.pers):"",menu:ids,note:pre&&pre.nota||""});
+  if(NC&&NC.pers){ncCalc();render()}
+  const v=$("#evView");if(v)v.scrollIntoView({block:"start"});
+  return NC&&NC.rows?NC.rows.filter(r=>r.on&&r.q>0).map(r=>`${r.label}: ${num(r.q)} ${r.unit}`):[]};
 function ncCalc(){
   const p=parseFloat(String(NC.pers).replace(",","."));if(!(p>0)){NC.msg="Scrie numărul de persoane.";NC.rows=null;return}
   const {N,src}=ncNorms();const E0=EN;EN={rows:enTemplateRows()};let M;try{M=enMenuRatios(N,NC.menu.length?NC.menu:null)}finally{EN=E0}

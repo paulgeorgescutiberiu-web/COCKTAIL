@@ -49,7 +49,10 @@ const DECL=[
     parameters:S("object","",{properties:{contract_id:S("string",""),text:S("string","")},required:["contract_id","text"]})},
   {name:"disponibilitate",description:"Ce barmani au spus că sunt disponibili (și care nu) într-o zi.",
     parameters:S("object","",{properties:{data:S("string","AAAA-LL-ZZ")},required:["data"]})},
-  {name:"eveniment_nou",description:"Deschide fișa de marfă (Excelul săptămânii) pentru un eveniment nou completată cu ce a spus utilizatorul. Utilizatorul completează marfa și salvează.",
+  {name:"necesar_client",description:"Calculează NECESARUL pentru un client: ce băuturi și consumabile trebuie să cumpere clientul pentru un număr de persoane (lista de trimis clientului, PDF sau WhatsApp). NU creează eveniment și nu face fișă. Folosește-o pentru „necesar pentru 20 de persoane”, „fă-mi un necesar”, „ce trebuie să cumpere clientul pentru…”.",
+    parameters:S("object","",{properties:{pers:S("string","Număr persoane"),client:S("string","Numele clientului sau al evenimentului (opțional)"),data:S("string","Data evenimentului AAAA-LL-ZZ (opțional)"),
+      meniu:S("array","Cocktailurile alese de client (opțional)",{items:S("string","")}),nota:S("string","Notă pentru client (opțional)")},required:["pers"]})},
+  {name:"eveniment_nou",description:"Deschide fișa de marfă (Excelul săptămânii) pentru un eveniment NOU al firmei, completată cu ce a spus utilizatorul. Nu o folosi pentru necesarul unui client.",
     parameters:S("object","",{properties:{nume:S("string","Numele evenimentului"),data:S("string","AAAA-LL-ZZ"),ora:S("string","HH:MM"),pers:S("string","Număr persoane"),
       echipa:S("string","Barmanii, separați prin spațiu"),transport:S("string","Transport"),note:S("string","Mențiuni")}})}
 ];
@@ -162,6 +165,12 @@ const RUN={
     const m=A.missing(c);if(m.length)return {eroare:"Contractul nu e complet",lipsesc:m};await A.pdf(contract_id);return {ok:true}},
   async notita_contract({contract_id,text}){const A=ctAPI();await A.prep();if(!A.get(contract_id))return {eroare:"Nu găsesc contractul."};await A.addNote(contract_id,text);return {ok:true}},
   async disponibilitate({data}){if(!window.__dispFor)return {eroare:"Disponibilitatea nu e disponibilă."};const r=await window.__dispFor(data);return {data,disponibili:r.ok,indisponibili:r.no}},
+  async necesar_client(a){
+    if(!F.isAdmin)return {eroare:"Necesarul pentru clienți îl face doar administratorul."};
+    if(!window.__necNew)return {eroare:"Necesarul nu e disponibil."};
+    const L=await window.__necNew(a||{});closePanel();
+    return {ok:true,deschis:"Necesarul pentru client, calculat. Utilizatorul îl verifică și apasă „PDF pentru client” sau „Copiază pentru WhatsApp”.",articole:L.slice(0,40)};
+  },
   eveniment_nou(a){
     if(!F.isAdmin)return {eroare:"Fișele de eveniment le face doar administratorul."};
     if(!window.__evNew)return {eroare:"Fișa de eveniment nu e disponibilă."};
@@ -185,6 +194,7 @@ Reguli:
 - După adăugare spui ce lipsește din contract pentru PDF (de obicei datele din buletin: „fă o poză buletinului în formular”).
 - Prețurile uzuale: dacă utilizatorul spune „euro de persoană”, moneda EURO și unitatea „/ PERSOANĂ”.
 - Zilele următoare, ca să calculezi corect datele: ${zile()}.
+- „Necesar pentru N persoane / fă-mi un necesar / ce trebuie să cumpere clientul” = necesar_client (doar lista pentru client). NU folosi eveniment_nou sau adauga_eveniment pentru asta.
 - Poți face și calcule (cantități pentru un număr de invitați, sume, rest de plată) pe baza datelor din funcții.`;
 }
 
