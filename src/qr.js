@@ -13,7 +13,7 @@ function code(e,D){const d=evDate(e,D);return slug(e.name)+(d?"-"+String(d.getDa
 const link=c=>BAR_URL+"?e="+encodeURIComponent(c);
 
 /* ---------- sincronizarea paginii publice (doar administratorul) ---------- */
-let CT=[],FIRMA={},lastSig="",SCANS={},LEADS=[];
+let CT=[],FIRMA={},lastSig="",SCANS={},LEADS=[],LEADS_OK=false,SABL={};
 function menuAll(){let R0=[];try{R0=JSON.parse(document.getElementById("recipes-data").textContent)}catch(e){}
   return R0.filter(r=>r.sec!=="").map(r=>({id:r.id,name:r.name,zero:!!r.zero,sec:r.sec||(r.zero?"zero":"cls"),gust:r.gust||"",desc:r.desc||"",
     ing:r.ingM?r.ingM.split(/\s*,\s*/).filter(Boolean):(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
@@ -43,7 +43,11 @@ if(F.isAdmin){
   F.fs.collection(`${F.base}/contracte`).onSnapshot(s=>{CT=s.docs.map(d=>({...d.data(),id:d.id}));sync();if(window.__evRefresh)window.__evRefresh()},()=>{});
   F.fs.doc(`${F.base}/privat/firma`).get().then(d=>{FIRMA=d.exists?d.data():{};sync()}).catch(()=>{});
   F.fs.collection("barScan").onSnapshot(s=>{SCANS={};s.docs.forEach(d=>SCANS[d.id]=d.data().n||0);refresh()},()=>{});
-  F.fs.collection("barLead").onSnapshot(s=>{LEADS=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));refresh()},()=>{});
+  F.fs.collection("barLead").onSnapshot(s=>{const first=!LEADS_OK;LEADS=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+    if(!first)s.docChanges().forEach(ch=>{if(ch.type==="added"&&!ch.doc.metadata.hasPendingWrites){const x=ch.doc.data()||{};alertMsg(`Cerere nouă de la ${x.nume||"un client"}${x.evn?" ("+x.evn+")":""}`)}});
+    LEADS_OK=true;badge();refresh()},()=>{});
+  F.fs.doc(`${F.base}/privat/sabloane`).get().then(d=>{SABL=d.exists&&d.data().t||{};refresh()}).catch(()=>{});
+  setInterval(()=>{if(document.visibilityState==="visible")badge()},5*60e3);
   setInterval(()=>{if(document.visibilityState==="visible")sync()},15000);
   setTimeout(sync,2500);
 }
@@ -146,21 +150,25 @@ function leadsHTML(){
   let h=`<div class="ct-card qr-leads"><div class="ct-h"><b>Cereri de ofertă</b><span>luna asta: ${S.M} ${S.M===1?"cerere":"cereri"} · ${S.of} oferte · ${S.won} câștigate${S.M?` (${Math.round(S.won/S.M*100)}%)`:""} · ${tot} scanări QR</span></div>`;
   const srcTxt=Object.entries(S.src).sort((a,b)=>b[1].n-a[1].n).map(([k,v])=>`${k} ${v.n}${v.w?` (${v.w} câștigate)`:""}`).join(" · ");
   if(srcTxt)h+=`<p class="ev-file">De unde vin: ${esc(srcTxt)}</p>`;
+  const TR=window.CPCore&&window.CPCore.timpRaspuns(LEADS,Date.now(),90);
+  if(TR)h+=`<p class="ev-file">Răspunzi în medie în <b>${esc(window.CPCore.oreText(TR.mediana))}</b> (ultimele 90 de zile, ${TR.n} ${TR.n===1?"cerere":"cereri"}${TR.subOra?`, ${TR.subOra} în prima oră`:""}). Cine răspunde primul câștigă de cele mai multe ori.</p>`;
+  h+=todoHTML();
   h+=`<div class="ld-tabs">${[["open","Noi"],["oferta","Ofertă trimisă"],["ct","Câștigate"],["pierduta","Pierdute"]].map(([k,n])=>`<button class="en-day${LF===k?" on":""}" data-lf="${k}">${n} ${cnt(k)}</button>`).join("")}<button class="btn" data-ladd="1">+ Cerere nouă</button></div>`;
   if(LADD)h+=`<div class="ld-form"><label>Nume<input data-la="nume"></label><label>Telefon<input data-la="tel" inputmode="tel"></label><label>Data evenimentului<input type="date" data-la="data"></label>
     <label>Invitați<input data-la="inv" inputmode="numeric"></label><label>Locație / oraș<input data-la="loc"></label><label>Sursă<select data-la="src">${SRC.map(([k,n])=>`<option value="${k}">${n}</option>`).join("")}</select></label>
     <label class="ld-w">Ce a cerut<textarea data-la="msg" rows="2"></textarea></label><div class="qr-la ld-w"><button class="btn primary" data-laddsave="1">Salvează cererea</button><button class="btn" data-ladd="0">Renunță</button></div></div>`;
   if(!L.length)h+=`<p class="ev-file">${LF==="open"?"Nicio cerere nouă. Cele de pe QR apar aici singure; pe cele primite pe WhatsApp sau telefon le adaugi cu „+ Cerere nouă”.":"Nimic aici încă."}</p>`;
   L.slice(0,40).forEach(x=>{
-    const fn=String(x.nume||"").split(" ")[0],wa=`https://wa.me/${telWa(x.tel)}?text=${encodeURIComponent(`Bună, ${fn}! Sunt Paul de la Cocktail Philosophy. Mulțumim pentru cerere${x.evn&&!String(x.ev||"").startsWith("sursa-")?` de la ${x.evn}`:""}.`)}`;
-    h+=`<div class="qr-lead"><div><b>${esc(x.nume)}</b> · <a href="tel:${esc(x.tel)}">${esc(x.tel)}</a> <span class="ld-st ld-${x.st||"nou"}">${esc(LST[x.st||""]||"Nouă")}</span>
+    const wa=waHref(x,"prim"),P=window.CPCore&&window.CPCore.pasCerere(x,Date.now()),am=x.amanat&&Date.parse(x.amanat)>Date.now()&&!["ct","pierduta","done"].includes(x.st);
+    h+=`<div class="qr-lead"><div><b>${esc(x.nume)}</b> · <a href="tel:${esc(x.tel)}" data-lu="contact" data-id="${esc(x.id)}">${esc(x.tel)}</a> <span class="ld-st ld-${x.st||"nou"}">${esc(LST[x.st||""]||"Nouă")}</span>${P?` <span class="ld-pas ld-${P.nivel}">${esc(P.eticheta)}</span>`:""}${am?` <span class="ld-pas ld-info">amânată până pe ${esc(fdate(String(x.amanat).slice(0,10)))}</span>`:""}
       <small>${[x.data?"eveniment pe "+fdate(x.data):"",x.loc,x.inv?x.inv+" invitați":"",srcOf(x)==="QR la bar"?(x.evn?"QR la "+x.evn:"QR la bar"):srcOf(x)].filter(Boolean).map(esc).join(" · ")}</small>
       ${x.msg?`<small>„${esc(x.msg)}”</small>`:""}<small>primită pe ${esc(fdate(x.at))}${x.offer?` · ofertă ${esc(x.offer.pachet==="barmani"?x.offer.n+" barmani":"All Inclusive")}: ${esc(eur(x.offer.total))}${x.offer.link?` · <a href="${esc(x.offer.link)}" target="_blank" rel="noopener">PDF</a>`:""}`:""}${x.lost?` · motiv: ${esc(x.lost)}`:""}</small></div>
-      <div class="qr-la"><a class="btn" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>${x.st==="ct"?"":`<button class="btn" data-lo="${esc(x.id)}">${x.offer?"Altă ofertă":"Fă oferta"}</button><button class="btn" data-lead="ct" data-id="${esc(x.id)}">Fă contract</button>`}${x.st==="pierduta"||x.st==="done"||x.st==="ct"?`<button class="btn" data-lead="back" data-id="${esc(x.id)}">Readu</button>`:`<button class="btn" data-llost="${esc(x.id)}">Pierdută</button>`}<button class="btn" data-ldel="${esc(x.id)}">Șterge</button></div></div>`;
+      <div class="qr-la"><a class="btn" href="${esc(wa)}" target="_blank" rel="noopener" data-lu="contact" data-id="${esc(x.id)}">WhatsApp</a>${x.st==="ct"?"":`<button class="btn" data-lo="${esc(x.id)}">${x.offer?"Altă ofertă":"Fă oferta"}</button><button class="btn" data-lead="ct" data-id="${esc(x.id)}">Fă contract</button>`}${x.st==="pierduta"||x.st==="done"||x.st==="ct"?`<button class="btn" data-lead="back" data-id="${esc(x.id)}">Readu</button>`:`<button class="btn" data-llost="${esc(x.id)}">Pierdută</button>`}<button class="btn" data-ldel="${esc(x.id)}">Șterge</button></div></div>`;
     if(LDEL===x.id)h+=`<div class="ld-form"><p class="ld-w">Ștergi cererea de la <b>${esc(x.nume)}</b>? Nu se mai poate recupera.${x.st==="ct"?" Contractul făcut din ea rămâne.":""}</p><div class="qr-la ld-w"><button class="btn primary" data-ldelok="${esc(x.id)}">Da, șterge</button><button class="btn" data-ldel="">Renunță</button></div></div>`;
     if(LLOST===x.id)h+=`<div class="ld-form"><label class="ld-w">De ce s-a pierdut?<select data-ll="m">${LOST.map(m=>`<option>${m}</option>`).join("")}</select></label><div class="qr-la ld-w"><button class="btn primary" data-llsave="${esc(x.id)}">Marchează pierdută</button><button class="btn" data-llost="">Renunță</button></div></div>`;
     if(LOFF&&LOFF.id===x.id)h+=offerForm(x);
   });
+  h+=tplHTML();
   h+=`<div class="qr-la" style="margin-top:8px"><button class="btn" data-qrgen="1">QR general (fără eveniment)</button></div></div>`;
   return h;
 }
@@ -243,15 +251,70 @@ async function offerSend(x,wa){if(LBUSY)return;LBUSY=wa?"send":"pdf";let W=null;
     try{if(window.__gd){const up=await window.__gd.uploadPublic(new File([r.blob],r.name,{type:"application/pdf"}),"Oferte trimise");lk=up.link}}catch(e){}
     if(!lk){const a=document.createElement("a");a.href=URL.createObjectURL(r.blob);a.download=r.name;a.click()}
     const o=LOFF,offer={pachet:o.pachet==="barmani"?"barmani":"ai",n:o.pachet==="barmani"?+o.n:null,inv:o.inv||"",pp:r.pp,total:r.tot,val:o.val||"",note:o.note||"",link:lk,at:new Date().toISOString()};
-    await F.fs.doc(`barLead/${x.id}`).set({offer,st:"oferta"},{merge:true});
+    await F.fs.doc(`barLead/${x.id}`).set({offer,st:"oferta",...(x.contactAt?{}:{contactAt:offer.at})},{merge:true});
     if(wa){const fn=String(x.nume||"").split(" ")[0];const txt=`Bună, ${fn}! Sunt Paul de la Cocktail Philosophy. Vă trimit oferta pentru evenimentul vostru${x.data?" din "+fdate(x.data):""}${x.loc?", "+x.loc:""}:\n\n`+
         (offer.pachet==="barmani"?`Pachet barmani, ${offer.n} ${offer.n===1?"barman":"barmani"}: ${eur(offer.total)}`:`All Inclusive, ${offer.inv} invitați: ${eur(offer.pp)} / persoană, total ${eur(offer.total)}, cu băuturi la discreție`)+
         `\nAvans ${CPP.avans||100} € pentru rezervarea datei.${lk?`\n\nOferta completă: ${lk}`:""}\nMeniul nostru: ${MENU_URL}\n\nAștept cu drag orice întrebare!`;
       const u=`https://wa.me/${telWa(x.tel)}?text=${encodeURIComponent(txt)}`;if(W)W.location.href=u;else window.open(u,"_blank")}
     LOFF=null;}catch(e){console.warn(e);if(W)try{W.close()}catch(_){};alertMsg("Nu am putut face oferta. "+(e&&e.msg||"Verifică internetul și încearcă din nou."))}
   LBUSY="";refresh()}
+/* ---------- urmărirea cererilor: primul răspuns, revenirile după ofertă, șabloanele mesajelor ---------- */
+let LUNDO=null,TODOALL=false,TPLOPEN=false,TPLDRAFT={};
+const TPL=k=>SABL[k]||(window.CPCore?window.CPCore.SABLOANE[k]:"");
+function msgFor(x,k){const C=window.CPCore;if(!C)return "";const sd=x.data?sameDay(x.data):null;
+  const lib=!sd||!sd.ev.length||(sd.cap.bar>0&&sd.ev.length<sd.cap.bar);
+  return C.completeaza(TPL(k),C.contextCerere(x,{dataLibera:lib,meniu:MENU_URL}))}
+const waHref=(x,k)=>`https://wa.me/${telWa(x.tel)}?text=${encodeURIComponent(msgFor(x,k))}`;
+/* câte cereri așteaptă după Paul: pe tabul Contracte și pe iconița aplicației */
+function badge(){const C=window.CPCore;if(!C||!F.isAdmin)return;const n=C.deFacut(LEADS,Date.now()).filter(o=>o.p.nivel!=="info").length;
+  const tb=document.querySelector('[data-view="contracte"]');
+  if(tb){let s=tb.querySelector(".tab-n");if(n&&!s){s=document.createElement("span");s.className="tab-n";tb.appendChild(s)}
+    if(s){if(n){s.textContent=n;s.setAttribute("aria-label",`${n} ${n===1?"cerere așteaptă":"cereri așteaptă"} răspuns`)}else s.remove()}}
+  try{if(navigator.setAppBadge){if(n)navigator.setAppBadge(n);else navigator.clearAppBadge()}}catch(e){}}
+function todoHTML(){const C=window.CPCore;if(!C)return "";const T=C.deFacut(LEADS,Date.now());let h="";
+  if(LUNDO)h+=`<div class="ld-undo" role="status">${esc(LUNDO.msg)} <button class="btn" data-lu="undo">Anulează</button></div>`;
+  if(!T.length)return h;
+  const urg=T.filter(o=>o.p.nivel==="urgent").length;
+  h+=`<div class="ld-todo"><div class="ld-todo-h"><b>De făcut</b><span>${T.length} ${T.length===1?"cerere așteaptă":"cereri așteaptă"} după tine${urg?` · <b class="ld-urg">${urg} ${urg===1?"întârziată":"întârziate"}</b>`:""}</span></div>`;
+  T.slice(0,TODOALL?200:6).forEach(({x,p})=>{const id=esc(x.id),info=[x.data?"eveniment "+fdate(x.data):"",x.inv?x.inv+" invitați":"",x.loc,x.offer?`ofertă ${eur(x.offer.total)}`:""].filter(Boolean).map(esc).join(" · ");
+    let a="";
+    if(p.tip==="raspuns")a=`<a class="btn primary" href="${esc(waHref(x,"prim"))}" target="_blank" rel="noopener" data-lu="contact" data-id="${id}">WhatsApp</a><a class="btn" href="tel:${esc(x.tel)}" data-lu="contact" data-id="${id}">Sună</a><button class="btn" data-lu="vorbit" data-id="${id}">Am vorbit deja</button>`;
+    else if(p.tip==="oferta")a=`<button class="btn primary" data-lo="${id}">Fă oferta</button>`;
+    else if(p.tip==="rev1"||p.tip==="rev2")a=`<a class="btn primary" href="${esc(waHref(x,p.tip))}" target="_blank" rel="noopener" data-lu="${p.tip}" data-id="${id}">${p.tip==="rev1"?"Revino pe WhatsApp":"Ultimul mesaj pe WhatsApp"}</a><button class="btn" data-lu="raspuns" data-id="${id}">A răspuns</button>`;
+    else a=`<button class="btn primary" data-lu="pierduta" data-id="${id}">Marchează pierdută</button>`;
+    a+=`<button class="btn" data-lu="amana" data-id="${id}">${p.tip==="inchide"?"Mai aștept o săptămână":"Amână 2 zile"}</button>`;
+    h+=`<div class="ld-td ld-${p.nivel}"><div class="ld-td-t"><b>${esc(C.titlu(x.nume))}</b> <span class="ld-pas ld-${p.nivel}">${esc(p.eticheta)}</span>${info?`<small>${info}</small>`:""}`+
+      (p.sablon?`<details class="ld-prev"><summary>Vezi mesajul</summary><p>${esc(msgFor(x,p.sablon)).replace(/\n/g,"<br>")}</p></details>`:"")+`</div><div class="qr-la">${a}</div></div>`});
+  if(T.length>6)h+=`<button class="btn ld-more" data-lu="all">${TODOALL?"Arată mai puține":`Arată toate (${T.length})`}</button>`;
+  return h+`</div>`}
+function tplHTML(){const C=window.CPCore;if(!C)return "";
+  return `<details class="ld-tpl"${TPLOPEN?" open":""}><summary>Mesajele de WhatsApp: primul răspuns și revenirile</summary>
+    <p class="ev-file">Se completează singure: {prenume}, {data}, {intrebare} (ce mai trebuie aflat de la client), {locatie}, {invitati}, {total}, {link_oferta}, {valabil}, {meniu}, {data_libera}. Ce scrii între [ și ] dispare dacă lipsește informația, ex: „[ din {data}]”. Revenirile apar la ${C.REGULI.rev1Zile} zile după ofertă și apoi la încă ${C.REGULI.rev2Zile} zile.</p>
+    ${Object.keys(C.SABLOANE).map(k=>`<label class="ld-tl">${esc(C.SABLON_NUME[k])}<textarea data-tpl="${k}" rows="5">${esc(TPLDRAFT[k]!=null?TPLDRAFT[k]:TPL(k))}</textarea></label>`).join("")}
+    <div class="qr-la"><button class="btn primary" data-lu="tplsave">Salvează mesajele</button><button class="btn" data-lu="tplreset">Revino la textele inițiale</button></div></details>`}
+document.addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("ld-tpl"))TPLOPEN=e.target.open},true);
+document.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset.tpl;if(k)TPLDRAFT[k]=e.target.value});
+function luSet(x,upd,msg){const prev={};Object.keys(upd).forEach(k=>prev[k]=x[k]===undefined?null:x[k]);
+  LUNDO={id:x.id,prev,msg};Object.assign(x,upd);
+  /* după un tick: un link WhatsApp/tel trebuie să rămână în pagină până pleacă */
+  setTimeout(()=>{F.fs.doc(`barLead/${x.id}`).set(upd,{merge:true}).catch(()=>alertMsg("Nu am putut salva. Verifică internetul."));badge();refresh()},60)}
+function luClick(t){const b=t.closest("[data-lu]");if(!b)return false;const a=b.dataset.lu,C=window.CPCore;
+  if(a==="all"){TODOALL=!TODOALL;refresh();return true}
+  if(a==="undo"){const u=LUNDO;LUNDO=null;if(u){const x=LEADS.find(y=>y.id===u.id);if(x)Object.assign(x,u.prev);F.fs.doc(`barLead/${u.id}`).set(u.prev,{merge:true}).catch(()=>alertMsg("Nu am putut anula."))}badge();refresh();return true}
+  if(a==="tplsave"||a==="tplreset"){const t={};
+    if(a==="tplsave")document.querySelectorAll("[data-tpl]").forEach(i=>{const v=i.value.trim();if(v&&v!==C.SABLOANE[i.dataset.tpl])t[i.dataset.tpl]=v});
+    F.fs.doc(`${F.base}/privat/sabloane`).set({t,at:new Date().toISOString()}).then(()=>{SABL=t;TPLDRAFT={};alertMsg(a==="tplsave"?"Mesajele sunt salvate.":"Am pus înapoi textele inițiale.");refresh()}).catch(()=>alertMsg("Nu am putut salva mesajele."));return true}
+  const x=LEADS.find(y=>y.id===b.dataset.id);if(!x)return true;const now=new Date().toISOString(),pn=C?C.prenume(x.nume):x.nume;
+  if(a==="contact"){if(!x.st&&!x.contactAt)luSet(x,{contactAt:now},`Notat: i-ai răspuns lui ${pn}.`);return true}
+  if(a==="vorbit"){luSet(x,{contactAt:now},`Notat: ai vorbit cu ${pn}. Urmează oferta.`);return true}
+  if(a==="rev1"||a==="rev2"){luSet(x,{fu:[...(x.fu||[]),{at:now,tip:a}]},`Notat: ${a==="rev1"?"prima revenire":"ultimul mesaj"} către ${pn}.`);return true}
+  if(a==="raspuns"){luSet(x,{clientAt:now,fu:[]},`Notat: ${pn} a răspuns. Revenirile pornesc din nou de azi, dacă e nevoie.`);return true}
+  if(a==="amana"){const p=C&&C.pasCerere(x,Date.now()),z=p&&p.tip==="inchide"?7:2;luSet(x,{amanat:new Date(Date.now()+z*864e5).toISOString()},`Amânat ${z} zile: ${pn}.`);return true}
+  if(a==="pierduta"){const p=C&&C.pasCerere(x,Date.now());luSet(x,{st:"pierduta",lost:p&&p.tip==="trecut"?"Și-a anulat evenimentul":"Nu a mai răspuns"},`${pn}: marcată pierdută.`);return true}
+  return true}
 function alertMsg(m){const t=document.getElementById("toast");if(t){t.textContent=m;t.classList&&t.classList.add("show");setTimeout(()=>t.classList&&t.classList.remove("show"),4000)}}
 function leadClick(t){
+  if(luClick(t))return true;
   const lf=t.closest("[data-lf]");if(lf){LF=lf.dataset.lf;refresh();return true}
   const la=t.closest("[data-ladd]");if(la){LADD=la.dataset.ladd==="1";refresh();if(LADD){const i=document.querySelector("[data-la=nume]");if(i)i.focus()}return true}
   if(t.closest("[data-laddsave]")){const g=k=>{const i=document.querySelector(`[data-la=${k}]`);return i?i.value.trim():""};
@@ -286,5 +349,5 @@ function sameDayHTML(d,skipId,adding){const r=sameDay(d,skipId);if(!r||!r.ev.len
   const n=r.ev.length+(adding?1:0),c=r.cap,over=c.bar&&n>c.bar;
   return `<div class="${over?"ev-alert":"ev-ok"} ov-box"><b>${r.ev.length===1?"Mai ai un eveniment":"Mai ai "+r.ev.length+" evenimente"} în ziua asta:</b> ${r.ev.map(x=>esc(x.n)+(x.t?" ("+esc(x.t)+")":"")).join(", ")}.`+
     (c.bar||c.car||c.ppl?` <br>Cu acesta: <b>${n} ${n===1?"eveniment":"evenimente"}</b>${c.bar?` · ai ${c.bar} ${c.bar===1?"bar":"baruri"}`:""}${c.car?` · ${c.car} ${c.car===1?"mașină":"mașini"}`:""}${c.ppl?` · ${c.ppl} oameni (cam ${Math.floor(c.ppl/Math.max(1,n))} pe eveniment)`:""}.${over?" <b>Nu-ți ajung barurile.</b>":c.car&&n>c.car?" <b>Nu-ți ajung mașinile.</b>":""}`:` <small>Pune la Datele firmei câte baruri, mașini și oameni ai, ca să-ți spun dacă îți ajung.</small>`)+`</div>`}
-window.__qr={code,link,leadsHTML,show,sync,pendHTML,sameDayHTML};window.__qr.logo=LOGO_SVG;
+window.__qr={code,link,leadsHTML,show,sync,pendHTML,sameDayHTML,data:()=>({CT,LEADS})};window.__qr.logo=LOGO_SVG;
 })();
