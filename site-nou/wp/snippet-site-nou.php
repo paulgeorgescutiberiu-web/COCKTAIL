@@ -8,6 +8,8 @@
  * Etapa de probă:  CP_SN_PREFIX = 'nou'  →  /nou/, /nou/meniu/, /nou/oferte/, /nou/nunti/, /nou/corporate/, /nou/petreceri/
  *                  paginile au noindex și banda „Versiune de probă”; restul site-ului rămâne neatins.
  * Lansare:         CP_SN_PREFIX = ''  și  CP_SN_LIVE = true  → prima pagină devine site-ul nou, fără noindex și fără bandă.
+ * Harta site-ului pentru Google: /sitemap-site-nou.xml (paginile de mai sus), trecută în harta Yoast
+ *                  (/sitemap_index.xml) și în robots.txt. După instalare: Search Console → Sitemaps → trimite-o o dată.
  * Paginile se reîmprospătează din GitHub la cel mult 10 minute. Dacă GitHub nu răspunde, se folosește ultima copie bună.
  * Compatibil PHP 7.4.
  */
@@ -30,6 +32,7 @@ if (!defined('CP_SN_LOADED')) { // protecție: dacă snippetul e activ de două 
 			'nunti'     => 'nunti.html',
 			'corporate' => 'corporate.html',
 			'petreceri' => 'petreceri.html',
+			'barman-sibiu' => 'barman-sibiu.html',
 		);
 	}
 
@@ -72,8 +75,34 @@ if (!defined('CP_SN_LOADED')) { // protecție: dacă snippetul e activ de două 
 		return $html;
 	}
 
+	function cp_sn_sitemap() {
+		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+		foreach (cp_sn_pages() as $slug => $file) {
+			$xml .= '<url><loc>' . esc_url(home_url(cp_sn_url($slug))) . '</loc></url>' . "\n";
+		}
+		return $xml . '</urlset>' . "\n";
+	}
+
+	if (CP_SN_LIVE) {
+		// harta paginilor noi apare și în harta Yoast…
+		add_filter('wpseo_sitemap_index', function ($index) {
+			return $index . '<sitemap><loc>' . esc_url(home_url('/sitemap-site-nou.xml')) . '</loc></sitemap>' . "\n";
+		});
+		// …și în robots.txt
+		add_filter('robots_txt', function ($txt) {
+			return rtrim($txt) . "\n\nSitemap: " . home_url('/sitemap-site-nou.xml') . "\n";
+		}, 99);
+	}
+
 	add_action('template_redirect', function () {
 		$path = trim((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+		if (CP_SN_LIVE && $path === 'sitemap-site-nou.xml') {
+			status_header(200);
+			header('Content-Type: application/xml; charset=utf-8');
+			header('X-Robots-Tag: noindex');
+			echo cp_sn_sitemap();
+			exit;
+		}
 		if (CP_SN_PREFIX !== '') {
 			if ($path !== CP_SN_PREFIX && strpos($path, CP_SN_PREFIX . '/') !== 0) { return; }
 			$path = trim(substr($path, strlen(CP_SN_PREFIX)), '/');

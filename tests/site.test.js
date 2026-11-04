@@ -87,3 +87,19 @@ test("apăsările pe WhatsApp, telefon, email, rețele și întrebări ajung în
   assert.deepEqual(errs, []);
   await ctx.close();
 });
+
+test("fiecare pagină din tools/seo-pagini.json e servită de snippetul WordPress și apare în harta site-ului", () => {
+  const php = fs.readFileSync(path.join(SN, "wp/snippet-site-nou.php"), "utf8");
+  const servite = [...php.match(/function cp_sn_pages\(\) \{[\s\S]*?\);/)[0].matchAll(/'([a-z-]*)'\s*=>\s*'([a-z-]+\.html)'/g)];
+  const dinSnippet = Object.fromEntries(servite.map(m => [m[2], m[1] === "" ? "/" : `/${m[1]}/`]));
+  for (const f of PAGES) assert.equal(dinSnippet[f], CFG.pagini[f].url, `${f}: adresa din snippet ≠ cea din seo-pagini.json`);
+  assert.equal(Object.keys(dinSnippet).length, PAGES.length, "snippetul servește pagini care nu sunt în seo-pagini.json");
+  assert.match(php, /wpseo_sitemap_index/);
+  assert.match(php, /robots_txt/);
+});
+
+test("subsolul paginilor principale duce la pagina Barmani Sibiu", () => {
+  for (const f of ["index.html", "nunti.html", "corporate.html", "petreceri.html"]) {
+    assert.ok(fs.readFileSync(path.join(SN, f), "utf8").includes('href="barman-sibiu.html"'), f);
+  }
+});
