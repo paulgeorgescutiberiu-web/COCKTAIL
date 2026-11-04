@@ -10,6 +10,25 @@
 <link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonturi.css">
 <link rel="stylesheet" href="stil.css?v=20261103a">
+<style>
+/* Meniu: partea de sus pe negru, cu statuia în semi-umbră (ca imaginea de previzualizare) */
+.m-hero{position:relative;overflow:hidden;background:var(--ink);color:var(--white);min-height:560px;display:flex;align-items:center}
+.m-statuie{position:absolute;right:max(0px,calc(50% - 640px));bottom:0;height:100%;width:auto;max-width:none;opacity:.92}
+.m-shade{position:absolute;inset:0;background:linear-gradient(90deg,var(--ink) 0%,rgba(26,26,24,.94) 38%,rgba(26,26,24,.7) 60%,rgba(26,26,24,.15) 100%)}
+.m-hero .wrap{position:relative;width:100%;padding-top:96px;padding-bottom:96px;display:flex;flex-direction:column;gap:22px}
+.m-hero .kicker{color:var(--gold-light)}
+.m-hero h1{font-size:clamp(52px,8vw,108px);line-height:1.02;max-width:760px}
+.m-hero .gold{color:var(--gold-light);display:block}
+.m-hero .lead{color:var(--cream);max-width:560px;font-size:22px}
+.m-hero .note{color:var(--sand)}
+@media (max-width:760px){
+.m-hero{min-height:0;align-items:flex-end}
+.m-statuie{right:-12%;height:78%;top:0;bottom:auto;opacity:.55}
+.m-shade{background:linear-gradient(180deg,rgba(26,26,24,.25) 0%,rgba(26,26,24,.85) 45%,var(--ink) 75%)}
+.m-hero .wrap{padding-top:220px;padding-bottom:56px}
+.m-hero .lead{font-size:19px}
+}
+</style>
 <!-- SEO -->
 <link rel="canonical" href="https://cocktailphilosophy.ro/meniu/">
 <meta name="theme-color" content="#1A1A18">
@@ -65,19 +84,16 @@
 
 <main>
 
-<section class="hero">
-<div class="wrap" style="padding-top:48px;padding-bottom:40px">
-<div class="hero-text">
-<p class="kicker">Meniul 2026</p>
-<h1>Filozofie <span class="gold">în pahar</span></h1>
-<p class="lead" style="max-width:560px">Creațiile casei poartă nume de filosofi. Clasicele sunt făcute ca la carte. Iar cele fără alcool nu fac niciun compromis. Siropurile le facem noi, în casă.</p>
+<section class="m-hero">
+<img class="m-statuie" src="img/statuie-crini.webp" alt="" width="510" height="634">
+<div class="m-shade" aria-hidden="true"></div>
+<div class="wrap">
+<p class="kicker">Meniul de cocktailuri 2026</p>
+<h1>Filozofie <span class="gold">în pahar.</span></h1>
+<p class="lead">Creațiile casei poartă nume de filosofi. Clasicele sunt făcute ca la carte. Iar cele fără alcool nu fac niciun compromis. Siropurile le facem noi, în casă.</p>
 <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
 <span class="tag-numa">numa’ zic</span>
 <span class="note">Meniul se poate adapta evenimentului vostru.</span>
-</div>
-</div>
-<div class="hero-art" style="flex:0 1 360px">
-<div class="sun" style="max-width:360px"><img src="img/statuie-crini.webp" alt="" width="510" height="634"></div>
 </div>
 </div>
 </section>
