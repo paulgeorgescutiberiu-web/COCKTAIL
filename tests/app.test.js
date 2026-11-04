@@ -1,6 +1,6 @@
 /* Testul aplicației: pornește index.html construit, cu Firebase simulat (administrator), deschide fiecare tab
    și verifică cererile de ofertă („De făcut”, reveniri, șabloane) și cardul „Săptămâna ta”.
-   Rulare: node --test tests/   (după bash src/build.sh) */
+   Rulare: npm test   (după bash src/build.sh) */
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs"), path = require("path");
@@ -141,7 +141,7 @@ test("„Săptămâna ta” arată evenimentele, echipa, banii și ce e importan
   assert.match(txt, /Diferența · Corporate Firma/i);
   assert.match(txt, /Avans 100 € · Nunta Ana Si Dan/i);
   assert.match(txt, /lucru|lucruri important/);
-  if (process.env.CP_SHOTS) { // capturi pentru verificare vizuală: CP_SHOTS=<folder> node --test tests/
+  if (process.env.CP_SHOTS) { // capturi pentru verificare vizuală: CP_SHOTS=<folder> npm test
     fs.mkdirSync(process.env.CP_SHOTS, { recursive: true });
     await page.setViewportSize({ width: 430, height: 900 });
     await page.$eval("details.rz", d => d.scrollIntoView());

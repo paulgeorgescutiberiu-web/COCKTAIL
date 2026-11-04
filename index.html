@@ -687,7 +687,7 @@ const dataScurta=s=>{const d=parseDay(s);return d?`${d.getDate()} ${MON[d.getMon
 const ziSiData=s=>{const d=parseDay(s);return d?`${ZI[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}`:""};
 /* luni–duminică pentru săptămâna în care e `now` */
 function saptamana(now){const d=new Date(now);d.setHours(0,0,0,0);const a=addDays(d,-((d.getDay()+6)%7));return {de:iso(a),pana:iso(addDays(a,6)),luni:a}}
-const ms=v=>{if(!v)return 0;if(v instanceof Date)return v.getTime();const t=Date.parse(v);return isNaN(t)?0:t};
+const ms=v=>{if(!v)return 0;if(typeof v==="number")return v;if(v instanceof Date)return v.getTime();const t=Date.parse(v);return isNaN(t)?0:t};
 function deCand(t,now){const x=Math.max(0,now-t);if(x<H)return "acum "+Math.max(1,Math.round(x/6e4))+" min";
   if(x<D){const h=Math.round(x/H);return h===1?"de o oră":`de ${h} ore`}const z=Math.floor(x/D);return z===1?"de o zi":`de ${z} zile`}
 
@@ -816,7 +816,7 @@ function emailHTML(R,o){o=o||{};const app=o.app||"https://paulgeorgescutiberiu-w
   const row=(l,r,c)=>`<tr><td style="padding:9px 0;border-top:1px solid ${C.line};font:15px/1.4 Arial,sans-serif;color:${C.ink}">${l}</td><td style="padding:9px 0 9px 12px;border-top:1px solid ${C.line};font:13px/1.4 Arial,sans-serif;color:${c||C.muted};text-align:right;white-space:nowrap">${r}</td></tr>`;
   const tbl=rows=>`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${rows.join("")}</table>`;
   const p=t=>`<p style="font:14px/1.5 Arial,sans-serif;color:${C.muted};margin:6px 0">${t}</p>`;
-  const wa=(tel,txt)=>tel?` <a href="https://wa.me/${telWa(tel)}" style="color:${C.green};font-weight:700;text-decoration:none">WhatsApp</a>`:"";
+  const wa=tel=>tel?` <span style="color:${C.line}">·</span> <a href="https://wa.me/${telWa(tel)}" style="color:${C.green};font-weight:700;text-decoration:none">WhatsApp</a>`:"";
   let b=`<div style="background:${C.cream};padding:24px 12px"><div style="max-width:600px;margin:0 auto;background:#fff;border:1px solid ${C.line};padding:28px 26px">`;
   b+=`<p style="font:700 12px/1 Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:${C.green};margin:0">Cocktail Philosophy</p>`;
   b+=`<h1 style="font:700 28px/1.15 Arial,sans-serif;color:${C.ink};margin:8px 0 4px">Săptămâna ta: ${e(intervalText(R.sapt))}</h1>`;
@@ -825,7 +825,7 @@ function emailHTML(R,o){o=o||{};const app=o.app||"https://paulgeorgescutiberiu-w
   else b+=`<div style="margin:18px 0 0;padding:14px 16px;background:#EEF4EF;border-left:4px solid ${C.green};font:14px/1.5 Arial,sans-serif;color:${C.ink}">Totul e la zi. O săptămână bună!</div>`;
   b+=h2("Evenimentele săptămânii");
   if(!R.evenimente.length)b+=p("Nimic în calendar.");
-  else b+=tbl(R.evenimente.map(x=>{const t=x.echipa&&x.echipa.length?x.echipa.map(m=>`${e(m.nume)}${m.conf==="da"?" ✓":m.conf==="nu"?" ✕":" ·"}`).join(", "):`<span style="color:${C.red}">fără echipă în fișă</span>`;
+  else b+=tbl(R.evenimente.map(x=>{const t=x.echipa&&x.echipa.length?x.echipa.map(m=>`${e(m.nume)}${m.conf==="da"?` <span style="color:${C.green}">✓</span>`:m.conf==="nu"?` <span style="color:${C.red}">✕</span>`:` <span style="color:${C.muted}">?</span>`}`).join(", "):`<span style="color:${C.red}">fără echipă în fișă</span>`;
     const flags=[!x.semnat?`<span style="color:${C.red}">nesemnat</span>`:"",x.semnat&&!x.avans&&!x.faraContract?`<span style="color:${C.red}">avans neîncasat</span>`:""].filter(Boolean).join(" · ");
     return row(`<b>${e(x.nume)}</b>${x.client&&x.client!==x.nume?` <span style="color:${C.muted}">· ${e(x.client)}</span>`:""}<br><span style="font-size:13px;color:${C.muted}">${e([x.ora?"ora "+x.ora:"",x.invitati?x.invitati+" invitați":""].filter(Boolean).join(" · "))}${x.ora||x.invitati?" · ":""}echipa: ${t}</span>${flags?`<br><span style="font-size:13px">${flags}</span>`:""}`,e(ziSiData(x.data)),x.trecut?C.muted:C.ink)}));
   if(R.neconfirmati.length)b+=p(`Neconfirmați încă: ${R.neconfirmati.map(n=>e(n.nume)+(n.nu?" (nu poate)":"")+" la "+e(n.ev)).join(", ")}.`);
