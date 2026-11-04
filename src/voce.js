@@ -55,6 +55,8 @@ const DECL=[
       data:S("string","AAAA-LL-ZZ, implicit azi"),met:S("string","numerar, card sau transfer",{enum:["numerar","card","transfer"]}),nota:S("string","De la cine / pe ce")},required:["tip","suma"]})},
   {name:"bani_luna",description:"Cât s-a încasat, cât s-a cheltuit și cât a rămas într-o lună (din secțiunea Bani).",
     parameters:S("object","",{properties:{luna:S("string","AAAA-LL, implicit luna curentă")}})},
+  {name:"saptamana_mea",description:"Rezumatul săptămânii (ca emailul de luni): ce e urgent, evenimentele săptămânii cu echipa și confirmările, avansurile și diferențele neîncasate, cererile de ofertă care așteaptă răspuns sau revenire, ce lipsește din stoc. Folosește-o pentru „ce am de făcut săptămâna asta”, „ce e urgent”, „pe cine trebuie să sun”, „cine așteaptă răspuns”.",
+    parameters:S("object","",{properties:{}})},
   {name:"necesar_client",description:"Calculează NECESARUL pentru un client: ce băuturi și consumabile trebuie să cumpere clientul pentru un număr de persoane (lista de trimis clientului, PDF sau WhatsApp). NU creează eveniment și nu face fișă. Folosește-o pentru „necesar pentru 20 de persoane”, „fă-mi un necesar”, „ce trebuie să cumpere clientul pentru…”.",
     parameters:S("object","",{properties:{pers:S("string","Număr persoane"),client:S("string","Numele clientului sau al evenimentului (opțional)"),data:S("string","Data evenimentului AAAA-LL-ZZ (opțional)"),
       meniu:S("array","Cocktailurile alese de client (opțional)",{items:S("string","")}),nota:S("string","Notă pentru client (opțional)")},required:["pers"]})},
@@ -174,6 +176,12 @@ const RUN={
   async noteaza_bani(a){if(!F.isAdmin)return {eroare:"Banii îi vede doar administratorul."};if(!window.__bani)return {eroare:"Secțiunea Bani nu e disponibilă."};
     try{const x=await window.__bani.add(a||{});return {ok:true,notat:x}}catch(e){return {eroare:"Nu am putut nota. Spune suma."}}},
   async bani_luna(a){if(!F.isAdmin)return {eroare:"Banii îi vede doar administratorul."};if(!window.__bani)return {eroare:"Secțiunea Bani nu e disponibilă."};return await window.__bani.month(a&&a.luna)},
+  async saptamana_mea(){if(!F.isAdmin)return {eroare:"Rezumatul îl vede doar administratorul."};if(!window.__rez)return {eroare:"Rezumatul nu e disponibil."};
+    const R=window.__rez.calc(),C=window.CPCore;
+    return {saptamana:C.intervalText(R.sapt),prioritati:R.prioritati,
+      evenimente:R.evenimente.map(e=>({nume:e.nume,zi:C.ziSiData(e.data),ora:e.ora,invitati:e.invitati,semnat:e.semnat,avans_incasat:e.avans,echipa:e.echipa?e.echipa.map(m=>m.nume+(m.conf==="da"?" (a confirmat)":m.conf==="nu"?" (nu poate)":" (nu a răspuns)")):"lipsă"})),
+      avansuri_neincasate:R.avans.map(a=>({nume:a.nume,eveniment:C.dataLunga(a.data),suma:a.suma})),diferente_neincasate:R.rest.map(r=>({nume:r.nume,intarziata:r.intarziat})),
+      cereri_de_urmarit:R.cereri.deFacut.map(c=>({nume:c.nume,ce:c.eticheta})),stoc_lipsa:R.stoc.lipsa.slice(0,10),saptamana_viitoare:R.viitoare.map(v=>v.nume+" "+C.dataScurta(v.data))}},
   async necesar_client(a){
     if(!F.isAdmin)return {eroare:"Necesarul pentru clienți îl face doar administratorul."};
     if(!window.__necNew)return {eroare:"Necesarul nu e disponibil."};
@@ -203,6 +211,7 @@ Reguli:
 - După adăugare spui ce lipsește din contract pentru PDF (de obicei datele din buletin: „fă o poză buletinului în formular”).
 - Prețurile uzuale: dacă utilizatorul spune „euro de persoană”, moneda EURO și unitatea „/ PERSOANĂ”.
 - Zilele următoare, ca să calculezi corect datele: ${zile()}.
+- „Ce am de făcut săptămâna asta / ce e urgent / cine așteaptă răspuns” = saptamana_mea. Răspunde scurt: întâi prioritățile, apoi doar ce întreabă.
 - „Necesar pentru N persoane / fă-mi un necesar / ce trebuie să cumpere clientul” = necesar_client (doar lista pentru client). NU folosi eveniment_nou sau adauga_eveniment pentru asta.
 - Poți face și calcule (cantități pentru un număr de invitați, sume, rest de plată) pe baza datelor din funcții.`;
 }

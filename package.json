@@ -1,0 +1,15 @@
+{
+  "name": "cocktail-philosophy",
+  "private": true,
+  "description": "Aplicația, site-ul și uneltele Cocktail Philosophy",
+  "scripts": {
+    "build": "bash src/build.sh",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "seo": "python3 tools/seo-site.py",
+    "og": "node tools/og-imagini.js",
+    "rezumat:demo": "node tools/rezumat/trimite.js --demo"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

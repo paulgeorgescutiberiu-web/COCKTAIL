@@ -540,6 +540,28 @@ a.btn.primary{color:var(--on-leaf)}
 .bn-cb i{width:42%;border-radius:3px 3px 0 0;min-height:1px}.bn-cb i.in,.bn-dot.in{background:#2F7253}.bn-cb i.out,.bn-dot.out{background:#A3321F}.bn-col small{font-size:.7rem;color:var(--muted)}
 .bn-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 3px 0 8px;vertical-align:middle}
 .bn-set{margin-top:22px;border-top:1px solid var(--line);padding-top:10px}.bn-set summary{cursor:pointer;color:var(--muted)}.bn-set label{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-size:.85rem;color:var(--muted)}
+.tabs [role=tab]{position:relative}
+.rz-s{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline;cursor:pointer;padding:2px 0;list-style:none}.rz-s::-webkit-details-marker{display:none}
+.rz-s b{font-size:1.05rem}.rz-s span{color:var(--muted);font-size:.86rem}.rz-s::after{content:"▾";margin-left:auto;color:var(--muted)}.rz[open] .rz-s::after{content:"▴"}
+.rz-n,.rz-red{color:#A3321F}.rz-p{margin:10px 0 4px;padding:10px 14px 10px 30px;border-radius:12px;background:#FBF3E2;color:#3A2A08;line-height:1.5}
+.rz-h{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;font-weight:700}
+.rz-r{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;padding:9px 0;border-top:1px solid var(--line)}.rz-r.off{opacity:.55}
+.rz-r small{display:block;color:var(--muted);font-size:.82rem;margin-top:2px}.rz-t{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.rz-m{font-size:.76rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--line)}.rz-m.rz-da{background:#DCEBDF;color:#1F4A33}.rz-m.rz-da::after{content:" ✓"}.rz-m.rz-nu{background:#F6D9D3;color:#7A2414}.rz-m.rz-q::after{content:" ?";opacity:.6}
+.rz-f{margin-top:10px}
+.tab-n{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;margin-left:6px;border-radius:999px;background:#A3321F;color:#fff;font-size:.72rem;font-weight:700;line-height:1;vertical-align:1px}
+.ld-pas{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--line);color:var(--ink);vertical-align:middle}
+.ld-pas.ld-urgent{background:#A3321F;color:#fff}.ld-pas.ld-azi{background:#F3DFB4;color:#5A3B07}.ld-pas.ld-info{background:var(--line);color:var(--muted)}
+.ld-todo{margin:10px 0 12px;padding:12px 14px;border:2px solid #C2862D;border-radius:14px;background:var(--paper)}
+.ld-todo-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline;margin-bottom:4px}.ld-todo-h b{font-size:1.05rem}.ld-todo-h span{color:var(--muted);font-size:.86rem}.ld-urg{color:#A3321F}
+.ld-td{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.ld-td-t{flex:1 1 260px;min-width:0}.ld-td small{display:block;color:var(--muted);font-size:.82rem;margin-top:3px}.ld-td.ld-urgent .ld-td-t>b{color:#A3321F}
+.ld-prev{margin-top:6px;font-size:.85rem}.ld-prev summary{cursor:pointer;color:var(--muted)}.ld-prev p{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line);white-space:normal;line-height:1.45}
+.ld-more{margin-top:6px}
+.ld-undo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0;padding:8px 12px;border-radius:12px;background:#EEF4EF;color:#1F3B2D;font-size:.9rem}
+.ld-tpl{margin:14px 0 4px;border-top:1px solid var(--line);padding-top:10px}.ld-tpl summary{cursor:pointer;font-weight:600}
+.ld-tl{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-size:.85rem;font-weight:600;color:var(--muted)}
+.ld-tl textarea{width:100%;box-sizing:border-box;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-weight:500;line-height:1.45}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Barlow,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -641,6 +663,204 @@ window.CP_PRETURI={
   suplimentBauturaClient:30,
   avans:100
 };
+</script>
+<script id="cp-core">
+/* Cocktail Philosophy · logica comună (fără ecran, fără Firebase).
+   Aceeași bucată de cod rulează în trei locuri:
+     - în aplicație (window.CPCore): cererile de ofertă „De făcut” și cardul „Săptămâna ta”;
+     - în raportul de luni pe email (tools/rezumat/trimite.js, prin require);
+     - în teste (tests/core.test.js).
+   Tot ce ține de date și de reguli stă aici, ca cele trei să spună același lucru. */
+(function(root,factory){const m=factory();if(typeof module==="object"&&module.exports)module.exports=m;else root.CPCore=m})(typeof self!=="undefined"?self:this,function(){
+"use strict";
+const MON=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+const ZI=["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"];
+const H=36e5,D=864e5;
+
+/* ---------- date ---------- */
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseDay=s=>{const m=String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})/);return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const dataLunga=s=>{const d=parseDay(s);return d?`${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`:""};
+const dataScurta=s=>{const d=parseDay(s);return d?`${d.getDate()} ${MON[d.getMonth()]}`:""};
+const ziSiData=s=>{const d=parseDay(s);return d?`${ZI[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}`:""};
+/* luni–duminică pentru săptămâna în care e `now` */
+function saptamana(now){const d=new Date(now);d.setHours(0,0,0,0);const a=addDays(d,-((d.getDay()+6)%7));return {de:iso(a),pana:iso(addDays(a,6)),luni:a}}
+const ms=v=>{if(!v)return 0;if(typeof v==="number")return v;if(v instanceof Date)return v.getTime();const t=Date.parse(v);return isNaN(t)?0:t};
+function deCand(t,now){const x=Math.max(0,now-t);if(x<H)return "acum "+Math.max(1,Math.round(x/6e4))+" min";
+  if(x<D){const h=Math.round(x/H);return h===1?"de o oră":`de ${h} ore`}const z=Math.floor(x/D);return z===1?"de o zi":`de ${z} zile`}
+
+/* ---------- text ---------- */
+const prenume=s=>{const w=String(s||"").trim().split(/\s+/)[0]||"";return w?w.charAt(0).toLocaleUpperCase("ro-RO")+w.slice(1).toLocaleLowerCase("ro-RO"):""};
+const titlu=s=>String(s||"").toLocaleLowerCase("ro-RO").replace(/(^|[\s-])(\S)/g,(m,a,b)=>a+b.toLocaleUpperCase("ro-RO"));
+const eur=v=>(Math.round((+v||0)*100)/100).toLocaleString("ro-RO",{maximumFractionDigits:2})+" €";
+const nrm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/[^A-Z0-9 ]+/g," ").split(/\s+/).filter(w=>w.length>2);
+const telWa=t=>{let d=String(t||"").replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.startsWith("0"))d="4"+d;return d};
+
+/* ---------- cererile de ofertă: cine așteaptă un răspuns de la noi ---------- */
+const REGULI={
+  raspunsOre:24,      // o cerere nouă fără niciun contact de atâtea ore e „întârziată”
+  ofertaZile:2,       // ai vorbit cu clientul, dar n-ai trimis oferta de atâtea zile
+  rev1Zile:3,         // prima revenire, la atâtea zile după ofertă
+  rev2Zile:4,         // a doua (ultima) revenire, la atâtea zile după prima
+  inchideZile:7       // după ultima revenire fără răspuns, propunem „Pierdută”
+};
+/* Șabloanele mesajelor. {cuvânt} se înlocuiește; [ ... ] e o bucată care dispare dacă un {cuvânt} din ea e gol. */
+const SABLOANE={
+  prim:"Bună, {prenume}! Sunt Paul de la Cocktail Philosophy. Am primit cererea voastră[ pentru {data}][, {locatie}]. Mulțumim!\n{intrebare}",
+  rev1:"Bună, {prenume}! Revin cu drag la oferta pentru evenimentul vostru[ din {data}]. Ați apucat să vă uitați pe ea?\nDacă vreți să ajustăm ceva (meniul, numărul de invitați, pachetul), vă ajut imediat.[ {data_libera}][\n\nOferta: {link_oferta}]",
+  rev2:"Bună, {prenume}! Ultimul mesaj de la mine, ca să nu vă deranjez.[ Oferta rămâne valabilă până pe {valabil}.] Dacă ați ales între timp altă variantă, e perfect în regulă, mi-ar prinde bine doar să știu.\nVă doresc un eveniment minunat!"
+};
+const SABLON_NUME={prim:"Primul mesaj",rev1:"Revenirea 1 (după ofertă)",rev2:"Revenirea 2 (ultima)"};
+function completeaza(tpl,ctx){
+  const val=k=>{const v=ctx[k];return v==null?"":String(v).trim()};
+  const fill=s=>s.replace(/\{([a-z_]+)\}/g,(m,k)=>val(k));
+  let out=String(tpl||"").replace(/\[([^\[\]]*)\]/g,(m,inner)=>{const keys=[...inner.matchAll(/\{([a-z_]+)\}/g)].map(x=>x[1]);return keys.length&&keys.some(k=>!val(k))?"":fill(inner)});
+  out=fill(out);
+  return out.replace(/[ \t]+([,.!?])/g,"$1").replace(/[ \t]{2,}/g," ").replace(/\n{3,}/g,"\n\n").split("\n").map(l=>l.trim()).join("\n").trim();
+}
+/* contextul pentru șabloane, dintr-o cerere */
+function contextCerere(x,o){o=o||{};const of=x.offer||{};
+  return {prenume:prenume(x.nume),data:x.data?dataLunga(x.data):"",locatie:x.loc||"",invitati:x.inv||of.inv||"",
+    intrebare:!(x.inv||of.inv)?"Ca să vă fac o ofertă exactă: câți invitați adulți estimați"+(x.loc?"?":" și unde va avea loc evenimentul?"):!x.loc?"Unde va avea loc evenimentul? Vă trimit oferta imediat după.":!x.data?"Ce dată aveți în vedere? Vă trimit oferta imediat după.":"Vă pregătesc oferta și v-o trimit cât mai repede.",
+    total:of.total?eur(of.total):"",link_oferta:of.link||"",valabil:of.val?dataLunga(of.val):"",meniu:o.meniu||"https://cocktailphilosophy.ro/meniu/",
+    data_libera:o.dataLibera&&x.data?`Data de ${dataScurta(x.data)} e încă liberă la noi, dar în sezon se ocupă repede.`:""}}
+
+const atinsLa=x=>Math.max(ms(x.offer&&x.offer.at),ms(x.clientAt),...((x.fu||[]).map(f=>ms(f.at))),0);
+/* Ce e de făcut cu o cerere acum. null = nimic (închisă, amânată sau încă nu e momentul). */
+function pasCerere(x,now,R){
+  R=Object.assign({},REGULI,R||{});now=ms(now)||Date.now();
+  const st=x.st||"";if(st==="ct"||st==="pierduta"||st==="done")return null;
+  if(x.amanat&&ms(x.amanat)>now)return null;
+  const azi=iso(new Date(now)),fu=(x.fu||[]).length,primit=ms(x.at);
+  if(x.data&&x.data<azi)return {tip:"trecut",nivel:"info",cand:primit,eticheta:`Evenimentul din ${dataScurta(x.data)} a trecut`,sablon:null};
+  if(!st&&!x.contactAt){const ore=(now-primit)/H;
+    return {tip:"raspuns",nivel:ore>=R.raspunsOre?"urgent":"azi",cand:primit,eticheta:`Fără răspuns ${deCand(primit,now)}`,sablon:"prim"}}
+  if(!st&&x.contactAt){const t=ms(x.contactAt);if(now-t>=R.ofertaZile*D)return {tip:"oferta",nivel:"azi",cand:t,eticheta:`Ați vorbit ${deCand(t,now).replace(/^de /,"acum ")}, oferta nu e trimisă`,sablon:null};return null}
+  if(st==="oferta"){const t=atinsLa(x)||primit,z=(now-t)/D;
+    if(fu===0&&z>=R.rev1Zile)return {tip:"rev1",nivel:"azi",cand:t,eticheta:`Oferta trimisă ${deCand(t,now).replace(/^de /,"acum ")}, fără răspuns`,sablon:"rev1"};
+    if(fu===1&&z>=R.rev2Zile)return {tip:"rev2",nivel:"azi",cand:t,eticheta:`Ai revenit ${deCand(t,now).replace(/^de /,"acum ")}, fără răspuns`,sablon:"rev2"};
+    if(fu>=2&&z>=R.inchideZile)return {tip:"inchide",nivel:"info",cand:t,eticheta:`Două reveniri fără răspuns`,sablon:null};
+  }
+  return null}
+const ORDINE={raspuns:0,oferta:1,rev1:2,rev2:3,inchide:4,trecut:5};
+function deFacut(leads,now,R){return (leads||[]).map(x=>({x,p:pasCerere(x,now,R)})).filter(o=>o.p)
+  .sort((a,b)=>(a.p.nivel==="urgent"?-1:0)-(b.p.nivel==="urgent"?-1:0)||ORDINE[a.p.tip]-ORDINE[b.p.tip]||a.p.cand-b.p.cand)}
+/* timpul în care răspundem (de la cerere la primul contact sau la ofertă), pe ultimele `zile` zile */
+function timpRaspuns(leads,now,zile){now=ms(now)||Date.now();const v=(leads||[]).filter(x=>now-ms(x.at)<=(zile||90)*D).map(x=>{
+    const c=ms(x.contactAt)||ms(x.offer&&x.offer.at);return c&&c>=ms(x.at)?(c-ms(x.at))/H:null}).filter(v=>v!=null).sort((a,b)=>a-b);
+  if(!v.length)return null;const m=v.length%2?v[(v.length-1)/2]:(v[v.length/2-1]+v[v.length/2])/2;return {mediana:m,n:v.length,subOra:v.filter(h=>h<=1).length}}
+const oreText=h=>h==null?"":h<1?Math.max(1,Math.round(h*60))+" min":h<48?(Math.round(h*10)/10).toLocaleString("ro-RO")+" h":Math.round(h/24)+" zile";
+
+/* ---------- contracte ---------- */
+const semnat=c=>!!(c.signedId||(c.portalResp&&c.portalResp.signedAt)||c.avansPlatit);
+const numeEv=c=>titlu(c.locatie||c.nume||"");
+
+/* ---------- „Săptămâna ta”: rezumatul de luni dimineață ---------- */
+/* in = {contracte, leads, disp:{uid:{name,conf}}, sursa:{fisa:{ds,title,events:[{key,name,date,time,persons,team}]},stoc:{lipsa:[{label,lipsa,unit}],minus:[label]},at}} */
+function rezumat(inp,now){
+  now=ms(now)||Date.now();const azi=iso(new Date(now)),W=saptamana(now),urm=saptamana(addDays(W.luni,7)),trec=saptamana(addDays(W.luni,-7));
+  const CT=(inp.contracte||[]).filter(c=>c&&c.dataEv),L=inp.leads||[],S=inp.sursa||{},fisa=S.fisa||{},disp=inp.disp||{};
+  const first=s=>(nrm(s)[0]||String(s||"").trim().toUpperCase());
+  const conf=(name,key)=>{const f=first(name);const x=Object.values(disp).find(y=>first(y.name)===f);return x&&x.conf?x.conf[key]||null:null};
+  /* evenimentele săptămânii: contractele din săptămână, cu echipa din fișă dacă se potrivesc */
+  const fe=(fisa.events||[]).filter(e=>e.date>=W.de&&e.date<=W.pana),folosite=new Set();
+  const ev=CT.filter(c=>c.dataEv>=W.de&&c.dataEv<=W.pana).sort((a,b)=>(a.dataEv+(a.oraEv||"")).localeCompare(b.dataEv+(b.oraEv||""))).map(c=>{
+    const w=nrm((c.locatie||"")+" "+(c.nume||""));
+    let f=fe.find(e=>!folosite.has(e.key)&&e.date===c.dataEv&&nrm(e.name).some(x=>w.includes(x)));
+    if(!f){const z=fe.filter(e=>!folosite.has(e.key)&&e.date===c.dataEv);if(z.length===1&&CT.filter(y=>y.dataEv===c.dataEv).length===1)f=z[0]}
+    if(f)folosite.add(f.key);
+    const echipa=f?(f.team||[]).map(n=>({nume:n,conf:conf(n,f.key)})):null;
+    return {nume:numeEv(c),client:titlu(c.nume||""),data:c.dataEv,ora:c.oraEv||(f&&f.time)||"",invitati:c.invitati||(f&&f.persons)||"",tel:c.tel||"",
+      semnat:semnat(c),avans:!!c.avansPlatit,inFisa:!!f,echipa,trecut:c.dataEv<azi}});
+  /* evenimente din fișă fără contract (ex. clienți vechi, colaborări) */
+  fe.filter(e=>!folosite.has(e.key)).forEach(e=>ev.push({nume:titlu(e.name),client:"",data:e.date,ora:e.time||"",invitati:e.persons||"",semnat:true,avans:true,inFisa:true,faraContract:true,
+    echipa:(e.team||[]).map(n=>({nume:n,conf:conf(n,e.key)})),trecut:e.date<azi}));
+  ev.sort((a,b)=>(a.data+(a.ora||"")).localeCompare(b.data+(b.ora||"")));
+  const echipaLipsa=ev.filter(e=>!e.trecut&&(!e.echipa||!e.echipa.length));
+  const neconfirmati=[];ev.filter(e=>!e.trecut&&e.echipa).forEach(e=>e.echipa.forEach(p=>{if(p.conf!=="da")neconfirmati.push({ev:e.nume,data:e.data,nume:p.nume,nu:p.conf==="nu"})}));
+  /* bani */
+  const avans=CT.filter(c=>c.dataEv>=azi&&!c.avansPlatit&&!c.evSkip).sort((a,b)=>a.dataEv.localeCompare(b.dataEv)).map(c=>({nume:numeEv(c),client:titlu(c.nume||""),data:c.dataEv,suma:c.avans?`${c.avans} ${c.monedaAvans==="EURO"?"€":"RON"}`:"",tel:c.tel||"",semnat:semnat(c),curand:c.dataEv<=urm.pana}));
+  const rest=CT.filter(c=>!c.restPlatit&&semnat(c)&&((c.dataRest&&c.dataRest<=W.pana)||c.dataEv<azi)).sort((a,b)=>(a.dataRest||a.dataEv).localeCompare(b.dataRest||b.dataEv))
+    .map(c=>({nume:numeEv(c),client:titlu(c.nume||""),data:c.dataEv,scadenta:c.dataRest||"",intarziat:(c.dataRest||c.dataEv)<azi,tel:c.tel||""}));
+  /* cereri */
+  const todo=deFacut(L,now),inTrec=x=>{const d=iso(new Date(ms(x.at)));return d>=trec.de&&d<=trec.pana};
+  const cereri={deFacut:todo.map(o=>({nume:titlu(o.x.nume),tel:o.x.tel||"",data:o.x.data||"",tip:o.p.tip,nivel:o.p.nivel,eticheta:o.p.eticheta})),
+    noiSaptTrecuta:L.filter(inTrec).length,castigateSaptTrecuta:L.filter(x=>x.st==="ct"&&inTrec(x)).length,
+    deschise:L.filter(x=>!x.st||x.st==="oferta").length,timp:timpRaspuns(L,now,90)};
+  /* săptămâna trecută și cea viitoare */
+  const trecute=CT.filter(c=>c.dataEv>=trec.de&&c.dataEv<=trec.pana).length;
+  const viitoare=CT.filter(c=>c.dataEv>=urm.de&&c.dataEv<=urm.pana).sort((a,b)=>a.dataEv.localeCompare(b.dataEv)).map(c=>({nume:numeEv(c),data:c.dataEv,semnat:semnat(c)}));
+  const contracteNoi=CT.filter(c=>{const d=String(c.dataContract||"");return d>=trec.de&&d<=trec.pana}).length;
+  const stoc=S.stoc||{lipsa:[],minus:[]};
+  const sursaVeche=S.at?(now-ms(S.at))/D:null;
+  /* ce e cel mai important, în ordine */
+  const prioritati=[];
+  rest.filter(r=>r.intarziat).forEach(r=>prioritati.push(`Diferența de la ${r.nume} (${dataScurta(r.data)}) nu e încasată.`));
+  cereri.deFacut.filter(c=>c.nivel==="urgent").forEach(c=>prioritati.push(`${c.nume} așteaptă răspuns ${c.eticheta.replace(/^Fără răspuns /,"")}.`));
+  echipaLipsa.forEach(e=>prioritati.push(`${e.nume} (${ziSiData(e.data)}) nu are echipă în fișă.`));
+  avans.filter(a=>a.curand).forEach(a=>prioritati.push(`Avansul de la ${a.nume} (${dataScurta(a.data)}) nu e încasat.`));
+  if((stoc.lipsa||[]).length)prioritati.push(`${stoc.lipsa.length} ${stoc.lipsa.length===1?"articol nu ajunge":"articole nu ajung"} pentru evenimentele planificate: comandă la furnizor.`);
+  return {generat:new Date(now).toISOString(),azi,sapt:W,urm,trec,evenimente:ev,echipaLipsa,neconfirmati,avans,rest,cereri,stoc,trecute,viitoare,contracteNoi,prioritati,
+    sursaVeche:sursaVeche!=null&&sursaVeche>8?Math.floor(sursaVeche):null}}
+
+/* titlul săptămânii, ex. „3–9 noiembrie” */
+function intervalText(W){const a=parseDay(W.de),b=parseDay(W.pana);return a.getMonth()===b.getMonth()?`${a.getDate()}–${b.getDate()} ${MON[b.getMonth()]}`:`${a.getDate()} ${MON[a.getMonth()]} – ${b.getDate()} ${MON[b.getMonth()]}`}
+
+/* ---------- rezumatul ca email (HTML cu stiluri în linie, merge în Gmail) și ca text ---------- */
+function emailHTML(R,o){o=o||{};const app=o.app||"https://paulgeorgescutiberiu-web.github.io/COCKTAIL/";
+  const e=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const C={ink:"#1A1A18",gold:"#C2862D",green:"#2F5242",red:"#A3321F",muted:"#6b6a63",line:"#e6dfcc",cream:"#FFFEF1"};
+  const h2=t=>`<h2 style="font:700 13px/1.2 Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:${C.gold};margin:28px 0 10px">${e(t)}</h2>`;
+  const row=(l,r,c)=>`<tr><td style="padding:9px 0;border-top:1px solid ${C.line};font:15px/1.4 Arial,sans-serif;color:${C.ink}">${l}</td><td style="padding:9px 0 9px 12px;border-top:1px solid ${C.line};font:13px/1.4 Arial,sans-serif;color:${c||C.muted};text-align:right;white-space:nowrap">${r}</td></tr>`;
+  const tbl=rows=>`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">${rows.join("")}</table>`;
+  const p=t=>`<p style="font:14px/1.5 Arial,sans-serif;color:${C.muted};margin:6px 0">${t}</p>`;
+  const wa=tel=>tel?` <span style="color:${C.line}">·</span> <a href="https://wa.me/${telWa(tel)}" style="color:${C.green};font-weight:700;text-decoration:none">WhatsApp</a>`:"";
+  let b=`<div style="background:${C.cream};padding:24px 12px"><div style="max-width:600px;margin:0 auto;background:#fff;border:1px solid ${C.line};padding:28px 26px">`;
+  b+=`<p style="font:700 12px/1 Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:${C.green};margin:0">Cocktail Philosophy</p>`;
+  b+=`<h1 style="font:700 28px/1.15 Arial,sans-serif;color:${C.ink};margin:8px 0 4px">Săptămâna ta: ${e(intervalText(R.sapt))}</h1>`;
+  b+=p(`${R.evenimente.length?`${R.evenimente.length} ${R.evenimente.length===1?"eveniment":"evenimente"}`:"Niciun eveniment"} săptămâna asta · ${R.cereri.deFacut.length} ${R.cereri.deFacut.length===1?"cerere de urmărit":"cereri de urmărit"} · ${R.avans.length+R.rest.length} ${R.avans.length+R.rest.length===1?"plată de urmărit":"plăți de urmărit"}`);
+  if(R.prioritati.length){b+=`<div style="margin:18px 0 0;padding:14px 16px;background:#FBF3E2;border-left:4px solid ${C.gold}"><p style="font:700 14px/1.3 Arial,sans-serif;color:${C.ink};margin:0 0 6px">Întâi de toate</p><ol style="margin:0;padding-left:20px;font:14px/1.55 Arial,sans-serif;color:${C.ink}">${R.prioritati.slice(0,6).map(x=>`<li>${e(x)}</li>`).join("")}</ol></div>`}
+  else b+=`<div style="margin:18px 0 0;padding:14px 16px;background:#EEF4EF;border-left:4px solid ${C.green};font:14px/1.5 Arial,sans-serif;color:${C.ink}">Totul e la zi. O săptămână bună!</div>`;
+  b+=h2("Evenimentele săptămânii");
+  if(!R.evenimente.length)b+=p("Nimic în calendar.");
+  else b+=tbl(R.evenimente.map(x=>{const t=x.echipa&&x.echipa.length?x.echipa.map(m=>`${e(m.nume)}${m.conf==="da"?` <span style="color:${C.green}">✓</span>`:m.conf==="nu"?` <span style="color:${C.red}">✕</span>`:` <span style="color:${C.muted}">?</span>`}`).join(", "):`<span style="color:${C.red}">fără echipă în fișă</span>`;
+    const flags=[!x.semnat?`<span style="color:${C.red}">nesemnat</span>`:"",x.semnat&&!x.avans&&!x.faraContract?`<span style="color:${C.red}">avans neîncasat</span>`:""].filter(Boolean).join(" · ");
+    return row(`<b>${e(x.nume)}</b>${x.client&&x.client!==x.nume?` <span style="color:${C.muted}">· ${e(x.client)}</span>`:""}<br><span style="font-size:13px;color:${C.muted}">${e([x.ora?"ora "+x.ora:"",x.invitati?x.invitati+" invitați":""].filter(Boolean).join(" · "))}${x.ora||x.invitati?" · ":""}echipa: ${t}</span>${flags?`<br><span style="font-size:13px">${flags}</span>`:""}`,e(ziSiData(x.data)),x.trecut?C.muted:C.ink)}));
+  if(R.neconfirmati.length)b+=p(`Neconfirmați încă: ${R.neconfirmati.map(n=>e(n.nume)+(n.nu?" (nu poate)":"")+" la "+e(n.ev)).join(", ")}.`);
+  b+=h2("Bani de urmărit");
+  if(!R.avans.length&&!R.rest.length)b+=p("Toate avansurile și diferențele sunt încasate.");
+  else b+=tbl([...R.rest.map(x=>row(`Diferența · <b>${e(x.nume)}</b>${wa(x.tel)}`,x.intarziat?`<b>întârziată</b> · ${e(dataScurta(x.scadenta||x.data))}`:`scadentă ${e(dataScurta(x.scadenta))}`,x.intarziat?C.red:C.ink)),
+    ...R.avans.map(x=>row(`Avans${x.suma?" "+e(x.suma):""} · <b>${e(x.nume)}</b>${x.semnat?"":` <span style="color:${C.muted}">(contract nesemnat)</span>`}${wa(x.tel)}`,`eveniment ${e(dataScurta(x.data))}`,x.curand?C.red:C.muted))]);
+  b+=h2("Cereri de ofertă");
+  const T=R.cereri.timp;
+  b+=p(`Săptămâna trecută: ${R.cereri.noiSaptTrecuta} ${R.cereri.noiSaptTrecuta===1?"cerere nouă":"cereri noi"}${R.cereri.castigateSaptTrecuta?`, ${R.cereri.castigateSaptTrecuta} ${R.cereri.castigateSaptTrecuta===1?"câștigată":"câștigate"}`:""} · ${R.cereri.deschise} deschise în total${T?` · răspunzi în medie în ${oreText(T.mediana)}`:""}.`);
+  if(R.cereri.deFacut.length)b+=tbl(R.cereri.deFacut.slice(0,10).map(c=>row(`<b>${e(c.nume)}</b>${wa(c.tel)}${c.data?`<br><span style="font-size:13px;color:${C.muted}">eveniment ${e(dataLunga(c.data))}</span>`:""}`,e(c.eticheta),c.nivel==="urgent"?C.red:C.ink)));
+  else b+=p("Nicio cerere nu așteaptă după tine.");
+  if((R.stoc.lipsa||[]).length||(R.stoc.minus||[]).length){b+=h2("Stoc");
+    if(R.stoc.lipsa.length)b+=tbl(R.stoc.lipsa.slice(0,12).map(s=>row(e(s.label),`lipsesc ${e(String(s.lipsa).replace(".",","))}${s.unit?" "+e(s.unit):""}`,C.red)));
+    if(R.stoc.minus.length)b+=p(`Sub zero (probabil lipsește o factură sau un inventar): ${R.stoc.minus.slice(0,8).map(e).join(", ")}.`)}
+  b+=h2("Pe scurt");
+  b+=p(`Săptămâna trecută: ${R.trecute} ${R.trecute===1?"eveniment":"evenimente"}, ${R.contracteNoi} ${R.contracteNoi===1?"contract nou":"contracte noi"}.`);
+  b+=p(`Săptămâna viitoare (${e(intervalText(R.urm))}): ${R.viitoare.length?R.viitoare.map(v=>e(v.nume)+" "+e(dataScurta(v.data))+(v.semnat?"":" (nesemnat)")).join(", "):"nimic încă"}.`);
+  if(R.sursaVeche)b+=p(`<i>Fișa și stocul sunt cele de acum ${R.sursaVeche} zile. Deschide aplicația ca să se actualizeze.</i>`);
+  b+=`<p style="margin:26px 0 0"><a href="${e(app)}" style="display:inline-block;background:${C.green};color:#fff;font:700 15px/1 Arial,sans-serif;padding:14px 20px;text-decoration:none">Deschide aplicația</a></p>`;
+  b+=`</div><p style="max-width:600px;margin:12px auto 0;font:12px/1.4 Arial,sans-serif;color:${C.muted};text-align:center">Trimis automat în fiecare luni dimineață, din aplicația Cocktail Philosophy.</p></div>`;
+  return b}
+function emailText(R){const L=[`SĂPTĂMÂNA TA: ${intervalText(R.sapt)}`,""];
+  if(R.prioritati.length){L.push("ÎNTÂI DE TOATE");R.prioritati.slice(0,6).forEach((x,i)=>L.push(`${i+1}. ${x}`));L.push("")}
+  L.push("EVENIMENTE");if(!R.evenimente.length)L.push("- nimic în calendar");
+  R.evenimente.forEach(x=>L.push(`- ${ziSiData(x.data)}${x.ora?" "+x.ora:""}: ${x.nume}${x.invitati?", "+x.invitati+" invitați":""} · echipa: ${x.echipa&&x.echipa.length?x.echipa.map(m=>m.nume+(m.conf==="da"?" ✓":m.conf==="nu"?" ✕":"")).join(", "):"LIPSĂ"}${!x.semnat?" · NESEMNAT":""}`));
+  L.push("","BANI");if(!R.avans.length&&!R.rest.length)L.push("- totul încasat");
+  R.rest.forEach(x=>L.push(`- diferența ${x.nume}${x.intarziat?" (ÎNTÂRZIATĂ)":""}`));R.avans.forEach(x=>L.push(`- avans ${x.nume}, eveniment ${dataScurta(x.data)}`));
+  L.push("","CERERI");if(!R.cereri.deFacut.length)L.push("- nimic de urmărit");R.cereri.deFacut.slice(0,10).forEach(c=>L.push(`- ${c.nume}: ${c.eticheta}`));
+  if((R.stoc.lipsa||[]).length){L.push("","STOC");R.stoc.lipsa.slice(0,12).forEach(s=>L.push(`- ${s.label}: lipsesc ${s.lipsa}${s.unit?" "+s.unit:""}`))}
+  return L.join("\n")}
+
+return {MON,ZI,iso,parseDay,addDays,saptamana,dataLunga,dataScurta,ziSiData,deCand,prenume,titlu,eur,telWa,nrm,
+  REGULI,SABLOANE,SABLON_NUME,completeaza,contextCerere,pasCerere,deFacut,timpRaspuns,oreText,semnat,rezumat,intervalText,emailHTML,emailText};
+});
 </script>
 <script id="app" type="text/plain">
 (function(){
@@ -2828,6 +3048,7 @@ function viewList(){
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length} ${list.length===1?"contract":"contracte"}</p><p class="ev-file">Le vezi doar tu. Barmanii nu au acces la contracte.</p></div>
     <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button><button class="btn" data-bk="1">Backup Drive</button></div></div>`;
   h+=gPick();
+  if(window.__rez)h+=window.__rez.html();
   if(window.__qr)h+=window.__qr.leadsHTML();
   h+=thanksHTML();
   h+=bkHTML();
@@ -3911,7 +4132,7 @@ function code(e,D){const d=evDate(e,D);return slug(e.name)+(d?"-"+String(d.getDa
 const link=c=>BAR_URL+"?e="+encodeURIComponent(c);
 
 /* ---------- sincronizarea paginii publice (doar administratorul) ---------- */
-let CT=[],FIRMA={},lastSig="",SCANS={},LEADS=[];
+let CT=[],FIRMA={},lastSig="",SCANS={},LEADS=[],LEADS_OK=false,SABL={};
 function menuAll(){let R0=[];try{R0=JSON.parse(document.getElementById("recipes-data").textContent)}catch(e){}
   return R0.filter(r=>r.sec!=="").map(r=>({id:r.id,name:r.name,zero:!!r.zero,sec:r.sec||(r.zero?"zero":"cls"),gust:r.gust||"",desc:r.desc||"",
     ing:r.ingM?r.ingM.split(/\s*,\s*/).filter(Boolean):(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
@@ -3941,7 +4162,11 @@ if(F.isAdmin){
   F.fs.collection(`${F.base}/contracte`).onSnapshot(s=>{CT=s.docs.map(d=>({...d.data(),id:d.id}));sync();if(window.__evRefresh)window.__evRefresh()},()=>{});
   F.fs.doc(`${F.base}/privat/firma`).get().then(d=>{FIRMA=d.exists?d.data():{};sync()}).catch(()=>{});
   F.fs.collection("barScan").onSnapshot(s=>{SCANS={};s.docs.forEach(d=>SCANS[d.id]=d.data().n||0);refresh()},()=>{});
-  F.fs.collection("barLead").onSnapshot(s=>{LEADS=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));refresh()},()=>{});
+  F.fs.collection("barLead").onSnapshot(s=>{const first=!LEADS_OK;LEADS=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+    if(!first)s.docChanges().forEach(ch=>{if(ch.type==="added"&&!ch.doc.metadata.hasPendingWrites){const x=ch.doc.data()||{};alertMsg(`Cerere nouă de la ${x.nume||"un client"}${x.evn?" ("+x.evn+")":""}`)}});
+    LEADS_OK=true;badge();refresh()},()=>{});
+  F.fs.doc(`${F.base}/privat/sabloane`).get().then(d=>{SABL=d.exists&&d.data().t||{};refresh()}).catch(()=>{});
+  setInterval(()=>{if(document.visibilityState==="visible")badge()},5*60e3);
   setInterval(()=>{if(document.visibilityState==="visible")sync()},15000);
   setTimeout(sync,2500);
 }
@@ -4044,21 +4269,25 @@ function leadsHTML(){
   let h=`<div class="ct-card qr-leads"><div class="ct-h"><b>Cereri de ofertă</b><span>luna asta: ${S.M} ${S.M===1?"cerere":"cereri"} · ${S.of} oferte · ${S.won} câștigate${S.M?` (${Math.round(S.won/S.M*100)}%)`:""} · ${tot} scanări QR</span></div>`;
   const srcTxt=Object.entries(S.src).sort((a,b)=>b[1].n-a[1].n).map(([k,v])=>`${k} ${v.n}${v.w?` (${v.w} câștigate)`:""}`).join(" · ");
   if(srcTxt)h+=`<p class="ev-file">De unde vin: ${esc(srcTxt)}</p>`;
+  const TR=window.CPCore&&window.CPCore.timpRaspuns(LEADS,Date.now(),90);
+  if(TR)h+=`<p class="ev-file">Răspunzi în medie în <b>${esc(window.CPCore.oreText(TR.mediana))}</b> (ultimele 90 de zile, ${TR.n} ${TR.n===1?"cerere":"cereri"}${TR.subOra?`, ${TR.subOra} în prima oră`:""}). Cine răspunde primul câștigă de cele mai multe ori.</p>`;
+  h+=todoHTML();
   h+=`<div class="ld-tabs">${[["open","Noi"],["oferta","Ofertă trimisă"],["ct","Câștigate"],["pierduta","Pierdute"]].map(([k,n])=>`<button class="en-day${LF===k?" on":""}" data-lf="${k}">${n} ${cnt(k)}</button>`).join("")}<button class="btn" data-ladd="1">+ Cerere nouă</button></div>`;
   if(LADD)h+=`<div class="ld-form"><label>Nume<input data-la="nume"></label><label>Telefon<input data-la="tel" inputmode="tel"></label><label>Data evenimentului<input type="date" data-la="data"></label>
     <label>Invitați<input data-la="inv" inputmode="numeric"></label><label>Locație / oraș<input data-la="loc"></label><label>Sursă<select data-la="src">${SRC.map(([k,n])=>`<option value="${k}">${n}</option>`).join("")}</select></label>
     <label class="ld-w">Ce a cerut<textarea data-la="msg" rows="2"></textarea></label><div class="qr-la ld-w"><button class="btn primary" data-laddsave="1">Salvează cererea</button><button class="btn" data-ladd="0">Renunță</button></div></div>`;
   if(!L.length)h+=`<p class="ev-file">${LF==="open"?"Nicio cerere nouă. Cele de pe QR apar aici singure; pe cele primite pe WhatsApp sau telefon le adaugi cu „+ Cerere nouă”.":"Nimic aici încă."}</p>`;
   L.slice(0,40).forEach(x=>{
-    const fn=String(x.nume||"").split(" ")[0],wa=`https://wa.me/${telWa(x.tel)}?text=${encodeURIComponent(`Bună, ${fn}! Sunt Paul de la Cocktail Philosophy. Mulțumim pentru cerere${x.evn&&!String(x.ev||"").startsWith("sursa-")?` de la ${x.evn}`:""}.`)}`;
-    h+=`<div class="qr-lead"><div><b>${esc(x.nume)}</b> · <a href="tel:${esc(x.tel)}">${esc(x.tel)}</a> <span class="ld-st ld-${x.st||"nou"}">${esc(LST[x.st||""]||"Nouă")}</span>
+    const wa=waHref(x,"prim"),P=window.CPCore&&window.CPCore.pasCerere(x,Date.now()),am=x.amanat&&Date.parse(x.amanat)>Date.now()&&!["ct","pierduta","done"].includes(x.st);
+    h+=`<div class="qr-lead"><div><b>${esc(x.nume)}</b> · <a href="tel:${esc(x.tel)}" data-lu="contact" data-id="${esc(x.id)}">${esc(x.tel)}</a> <span class="ld-st ld-${x.st||"nou"}">${esc(LST[x.st||""]||"Nouă")}</span>${P?` <span class="ld-pas ld-${P.nivel}">${esc(P.eticheta)}</span>`:""}${am?` <span class="ld-pas ld-info">amânată până pe ${esc(fdate(String(x.amanat).slice(0,10)))}</span>`:""}
       <small>${[x.data?"eveniment pe "+fdate(x.data):"",x.loc,x.inv?x.inv+" invitați":"",srcOf(x)==="QR la bar"?(x.evn?"QR la "+x.evn:"QR la bar"):srcOf(x)].filter(Boolean).map(esc).join(" · ")}</small>
       ${x.msg?`<small>„${esc(x.msg)}”</small>`:""}<small>primită pe ${esc(fdate(x.at))}${x.offer?` · ofertă ${esc(x.offer.pachet==="barmani"?x.offer.n+" barmani":"All Inclusive")}: ${esc(eur(x.offer.total))}${x.offer.link?` · <a href="${esc(x.offer.link)}" target="_blank" rel="noopener">PDF</a>`:""}`:""}${x.lost?` · motiv: ${esc(x.lost)}`:""}</small></div>
-      <div class="qr-la"><a class="btn" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>${x.st==="ct"?"":`<button class="btn" data-lo="${esc(x.id)}">${x.offer?"Altă ofertă":"Fă oferta"}</button><button class="btn" data-lead="ct" data-id="${esc(x.id)}">Fă contract</button>`}${x.st==="pierduta"||x.st==="done"||x.st==="ct"?`<button class="btn" data-lead="back" data-id="${esc(x.id)}">Readu</button>`:`<button class="btn" data-llost="${esc(x.id)}">Pierdută</button>`}<button class="btn" data-ldel="${esc(x.id)}">Șterge</button></div></div>`;
+      <div class="qr-la"><a class="btn" href="${esc(wa)}" target="_blank" rel="noopener" data-lu="contact" data-id="${esc(x.id)}">WhatsApp</a>${x.st==="ct"?"":`<button class="btn" data-lo="${esc(x.id)}">${x.offer?"Altă ofertă":"Fă oferta"}</button><button class="btn" data-lead="ct" data-id="${esc(x.id)}">Fă contract</button>`}${x.st==="pierduta"||x.st==="done"||x.st==="ct"?`<button class="btn" data-lead="back" data-id="${esc(x.id)}">Readu</button>`:`<button class="btn" data-llost="${esc(x.id)}">Pierdută</button>`}<button class="btn" data-ldel="${esc(x.id)}">Șterge</button></div></div>`;
     if(LDEL===x.id)h+=`<div class="ld-form"><p class="ld-w">Ștergi cererea de la <b>${esc(x.nume)}</b>? Nu se mai poate recupera.${x.st==="ct"?" Contractul făcut din ea rămâne.":""}</p><div class="qr-la ld-w"><button class="btn primary" data-ldelok="${esc(x.id)}">Da, șterge</button><button class="btn" data-ldel="">Renunță</button></div></div>`;
     if(LLOST===x.id)h+=`<div class="ld-form"><label class="ld-w">De ce s-a pierdut?<select data-ll="m">${LOST.map(m=>`<option>${m}</option>`).join("")}</select></label><div class="qr-la ld-w"><button class="btn primary" data-llsave="${esc(x.id)}">Marchează pierdută</button><button class="btn" data-llost="">Renunță</button></div></div>`;
     if(LOFF&&LOFF.id===x.id)h+=offerForm(x);
   });
+  h+=tplHTML();
   h+=`<div class="qr-la" style="margin-top:8px"><button class="btn" data-qrgen="1">QR general (fără eveniment)</button></div></div>`;
   return h;
 }
@@ -4141,15 +4370,70 @@ async function offerSend(x,wa){if(LBUSY)return;LBUSY=wa?"send":"pdf";let W=null;
     try{if(window.__gd){const up=await window.__gd.uploadPublic(new File([r.blob],r.name,{type:"application/pdf"}),"Oferte trimise");lk=up.link}}catch(e){}
     if(!lk){const a=document.createElement("a");a.href=URL.createObjectURL(r.blob);a.download=r.name;a.click()}
     const o=LOFF,offer={pachet:o.pachet==="barmani"?"barmani":"ai",n:o.pachet==="barmani"?+o.n:null,inv:o.inv||"",pp:r.pp,total:r.tot,val:o.val||"",note:o.note||"",link:lk,at:new Date().toISOString()};
-    await F.fs.doc(`barLead/${x.id}`).set({offer,st:"oferta"},{merge:true});
+    await F.fs.doc(`barLead/${x.id}`).set({offer,st:"oferta",...(x.contactAt?{}:{contactAt:offer.at})},{merge:true});
     if(wa){const fn=String(x.nume||"").split(" ")[0];const txt=`Bună, ${fn}! Sunt Paul de la Cocktail Philosophy. Vă trimit oferta pentru evenimentul vostru${x.data?" din "+fdate(x.data):""}${x.loc?", "+x.loc:""}:\n\n`+
         (offer.pachet==="barmani"?`Pachet barmani, ${offer.n} ${offer.n===1?"barman":"barmani"}: ${eur(offer.total)}`:`All Inclusive, ${offer.inv} invitați: ${eur(offer.pp)} / persoană, total ${eur(offer.total)}, cu băuturi la discreție`)+
         `\nAvans ${CPP.avans||100} € pentru rezervarea datei.${lk?`\n\nOferta completă: ${lk}`:""}\nMeniul nostru: ${MENU_URL}\n\nAștept cu drag orice întrebare!`;
       const u=`https://wa.me/${telWa(x.tel)}?text=${encodeURIComponent(txt)}`;if(W)W.location.href=u;else window.open(u,"_blank")}
     LOFF=null;}catch(e){console.warn(e);if(W)try{W.close()}catch(_){};alertMsg("Nu am putut face oferta. "+(e&&e.msg||"Verifică internetul și încearcă din nou."))}
   LBUSY="";refresh()}
+/* ---------- urmărirea cererilor: primul răspuns, revenirile după ofertă, șabloanele mesajelor ---------- */
+let LUNDO=null,TODOALL=false,TPLOPEN=false,TPLDRAFT={};
+const TPL=k=>SABL[k]||(window.CPCore?window.CPCore.SABLOANE[k]:"");
+function msgFor(x,k){const C=window.CPCore;if(!C)return "";const sd=x.data?sameDay(x.data):null;
+  const lib=!sd||!sd.ev.length||(sd.cap.bar>0&&sd.ev.length<sd.cap.bar);
+  return C.completeaza(TPL(k),C.contextCerere(x,{dataLibera:lib,meniu:MENU_URL}))}
+const waHref=(x,k)=>`https://wa.me/${telWa(x.tel)}?text=${encodeURIComponent(msgFor(x,k))}`;
+/* câte cereri așteaptă după Paul: pe tabul Contracte și pe iconița aplicației */
+function badge(){const C=window.CPCore;if(!C||!F.isAdmin)return;const n=C.deFacut(LEADS,Date.now()).filter(o=>o.p.nivel!=="info").length;
+  const tb=document.querySelector('[data-view="contracte"]');
+  if(tb){let s=tb.querySelector(".tab-n");if(n&&!s){s=document.createElement("span");s.className="tab-n";tb.appendChild(s)}
+    if(s){if(n){s.textContent=n;s.setAttribute("aria-label",`${n} ${n===1?"cerere așteaptă":"cereri așteaptă"} răspuns`)}else s.remove()}}
+  try{if(navigator.setAppBadge){if(n)navigator.setAppBadge(n);else navigator.clearAppBadge()}}catch(e){}}
+function todoHTML(){const C=window.CPCore;if(!C)return "";const T=C.deFacut(LEADS,Date.now());let h="";
+  if(LUNDO)h+=`<div class="ld-undo" role="status">${esc(LUNDO.msg)} <button class="btn" data-lu="undo">Anulează</button></div>`;
+  if(!T.length)return h;
+  const urg=T.filter(o=>o.p.nivel==="urgent").length;
+  h+=`<div class="ld-todo"><div class="ld-todo-h"><b>De făcut</b><span>${T.length} ${T.length===1?"cerere așteaptă":"cereri așteaptă"} după tine${urg?` · <b class="ld-urg">${urg} ${urg===1?"întârziată":"întârziate"}</b>`:""}</span></div>`;
+  T.slice(0,TODOALL?200:6).forEach(({x,p})=>{const id=esc(x.id),info=[x.data?"eveniment "+fdate(x.data):"",x.inv?x.inv+" invitați":"",x.loc,x.offer?`ofertă ${eur(x.offer.total)}`:""].filter(Boolean).map(esc).join(" · ");
+    let a="";
+    if(p.tip==="raspuns")a=`<a class="btn primary" href="${esc(waHref(x,"prim"))}" target="_blank" rel="noopener" data-lu="contact" data-id="${id}">WhatsApp</a><a class="btn" href="tel:${esc(x.tel)}" data-lu="contact" data-id="${id}">Sună</a><button class="btn" data-lu="vorbit" data-id="${id}">Am vorbit deja</button>`;
+    else if(p.tip==="oferta")a=`<button class="btn primary" data-lo="${id}">Fă oferta</button>`;
+    else if(p.tip==="rev1"||p.tip==="rev2")a=`<a class="btn primary" href="${esc(waHref(x,p.tip))}" target="_blank" rel="noopener" data-lu="${p.tip}" data-id="${id}">${p.tip==="rev1"?"Revino pe WhatsApp":"Ultimul mesaj pe WhatsApp"}</a><button class="btn" data-lu="raspuns" data-id="${id}">A răspuns</button>`;
+    else a=`<button class="btn primary" data-lu="pierduta" data-id="${id}">Marchează pierdută</button>`;
+    a+=`<button class="btn" data-lu="amana" data-id="${id}">${p.tip==="inchide"?"Mai aștept o săptămână":"Amână 2 zile"}</button>`;
+    h+=`<div class="ld-td ld-${p.nivel}"><div class="ld-td-t"><b>${esc(C.titlu(x.nume))}</b> <span class="ld-pas ld-${p.nivel}">${esc(p.eticheta)}</span>${info?`<small>${info}</small>`:""}`+
+      (p.sablon?`<details class="ld-prev"><summary>Vezi mesajul</summary><p>${esc(msgFor(x,p.sablon)).replace(/\n/g,"<br>")}</p></details>`:"")+`</div><div class="qr-la">${a}</div></div>`});
+  if(T.length>6)h+=`<button class="btn ld-more" data-lu="all">${TODOALL?"Arată mai puține":`Arată toate (${T.length})`}</button>`;
+  return h+`</div>`}
+function tplHTML(){const C=window.CPCore;if(!C)return "";
+  return `<details class="ld-tpl"${TPLOPEN?" open":""}><summary>Mesajele de WhatsApp: primul răspuns și revenirile</summary>
+    <p class="ev-file">Se completează singure: {prenume}, {data}, {intrebare} (ce mai trebuie aflat de la client), {locatie}, {invitati}, {total}, {link_oferta}, {valabil}, {meniu}, {data_libera}. Ce scrii între [ și ] dispare dacă lipsește informația, ex: „[ din {data}]”. Revenirile apar la ${C.REGULI.rev1Zile} zile după ofertă și apoi la încă ${C.REGULI.rev2Zile} zile.</p>
+    ${Object.keys(C.SABLOANE).map(k=>`<label class="ld-tl">${esc(C.SABLON_NUME[k])}<textarea data-tpl="${k}" rows="5">${esc(TPLDRAFT[k]!=null?TPLDRAFT[k]:TPL(k))}</textarea></label>`).join("")}
+    <div class="qr-la"><button class="btn primary" data-lu="tplsave">Salvează mesajele</button><button class="btn" data-lu="tplreset">Revino la textele inițiale</button></div></details>`}
+document.addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("ld-tpl"))TPLOPEN=e.target.open},true);
+document.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset.tpl;if(k)TPLDRAFT[k]=e.target.value});
+function luSet(x,upd,msg){const prev={};Object.keys(upd).forEach(k=>prev[k]=x[k]===undefined?null:x[k]);
+  LUNDO={id:x.id,prev,msg};Object.assign(x,upd);
+  /* după un tick: un link WhatsApp/tel trebuie să rămână în pagină până pleacă */
+  setTimeout(()=>{F.fs.doc(`barLead/${x.id}`).set(upd,{merge:true}).catch(()=>alertMsg("Nu am putut salva. Verifică internetul."));badge();refresh()},60)}
+function luClick(t){const b=t.closest("[data-lu]");if(!b)return false;const a=b.dataset.lu,C=window.CPCore;
+  if(a==="all"){TODOALL=!TODOALL;refresh();return true}
+  if(a==="undo"){const u=LUNDO;LUNDO=null;if(u){const x=LEADS.find(y=>y.id===u.id);if(x)Object.assign(x,u.prev);F.fs.doc(`barLead/${u.id}`).set(u.prev,{merge:true}).catch(()=>alertMsg("Nu am putut anula."))}badge();refresh();return true}
+  if(a==="tplsave"||a==="tplreset"){const t={};
+    if(a==="tplsave")document.querySelectorAll("[data-tpl]").forEach(i=>{const v=i.value.trim();if(v&&v!==C.SABLOANE[i.dataset.tpl])t[i.dataset.tpl]=v});
+    F.fs.doc(`${F.base}/privat/sabloane`).set({t,at:new Date().toISOString()}).then(()=>{SABL=t;TPLDRAFT={};alertMsg(a==="tplsave"?"Mesajele sunt salvate.":"Am pus înapoi textele inițiale.");refresh()}).catch(()=>alertMsg("Nu am putut salva mesajele."));return true}
+  const x=LEADS.find(y=>y.id===b.dataset.id);if(!x)return true;const now=new Date().toISOString(),pn=C?C.prenume(x.nume):x.nume;
+  if(a==="contact"){if(!x.st&&!x.contactAt)luSet(x,{contactAt:now},`Notat: i-ai răspuns lui ${pn}.`);return true}
+  if(a==="vorbit"){luSet(x,{contactAt:now},`Notat: ai vorbit cu ${pn}. Urmează oferta.`);return true}
+  if(a==="rev1"||a==="rev2"){luSet(x,{fu:[...(x.fu||[]),{at:now,tip:a}]},`Notat: ${a==="rev1"?"prima revenire":"ultimul mesaj"} către ${pn}.`);return true}
+  if(a==="raspuns"){luSet(x,{clientAt:now,fu:[]},`Notat: ${pn} a răspuns. Revenirile pornesc din nou de azi, dacă e nevoie.`);return true}
+  if(a==="amana"){const p=C&&C.pasCerere(x,Date.now()),z=p&&p.tip==="inchide"?7:2;luSet(x,{amanat:new Date(Date.now()+z*864e5).toISOString()},`Amânat ${z} zile: ${pn}.`);return true}
+  if(a==="pierduta"){const p=C&&C.pasCerere(x,Date.now());luSet(x,{st:"pierduta",lost:p&&p.tip==="trecut"?"Și-a anulat evenimentul":"Nu a mai răspuns"},`${pn}: marcată pierdută.`);return true}
+  return true}
 function alertMsg(m){const t=document.getElementById("toast");if(t){t.textContent=m;t.classList&&t.classList.add("show");setTimeout(()=>t.classList&&t.classList.remove("show"),4000)}}
 function leadClick(t){
+  if(luClick(t))return true;
   const lf=t.closest("[data-lf]");if(lf){LF=lf.dataset.lf;refresh();return true}
   const la=t.closest("[data-ladd]");if(la){LADD=la.dataset.ladd==="1";refresh();if(LADD){const i=document.querySelector("[data-la=nume]");if(i)i.focus()}return true}
   if(t.closest("[data-laddsave]")){const g=k=>{const i=document.querySelector(`[data-la=${k}]`);return i?i.value.trim():""};
@@ -4184,7 +4468,7 @@ function sameDayHTML(d,skipId,adding){const r=sameDay(d,skipId);if(!r||!r.ev.len
   const n=r.ev.length+(adding?1:0),c=r.cap,over=c.bar&&n>c.bar;
   return `<div class="${over?"ev-alert":"ev-ok"} ov-box"><b>${r.ev.length===1?"Mai ai un eveniment":"Mai ai "+r.ev.length+" evenimente"} în ziua asta:</b> ${r.ev.map(x=>esc(x.n)+(x.t?" ("+esc(x.t)+")":"")).join(", ")}.`+
     (c.bar||c.car||c.ppl?` <br>Cu acesta: <b>${n} ${n===1?"eveniment":"evenimente"}</b>${c.bar?` · ai ${c.bar} ${c.bar===1?"bar":"baruri"}`:""}${c.car?` · ${c.car} ${c.car===1?"mașină":"mașini"}`:""}${c.ppl?` · ${c.ppl} oameni (cam ${Math.floor(c.ppl/Math.max(1,n))} pe eveniment)`:""}.${over?" <b>Nu-ți ajung barurile.</b>":c.car&&n>c.car?" <b>Nu-ți ajung mașinile.</b>":""}`:` <small>Pune la Datele firmei câte baruri, mașini și oameni ai, ca să-ți spun dacă îți ajung.</small>`)+`</div>`}
-window.__qr={code,link,leadsHTML,show,sync,pendHTML,sameDayHTML};window.__qr.logo=LOGO_SVG;
+window.__qr={code,link,leadsHTML,show,sync,pendHTML,sameDayHTML,data:()=>({CT,LEADS})};window.__qr.logo=LOGO_SVG;
 })();
 
 /* ---------- Raport lunar + echipa (barmani și plata lor) — doar administratorul ---------- */
@@ -4514,6 +4798,8 @@ const DECL=[
       data:S("string","AAAA-LL-ZZ, implicit azi"),met:S("string","numerar, card sau transfer",{enum:["numerar","card","transfer"]}),nota:S("string","De la cine / pe ce")},required:["tip","suma"]})},
   {name:"bani_luna",description:"Cât s-a încasat, cât s-a cheltuit și cât a rămas într-o lună (din secțiunea Bani).",
     parameters:S("object","",{properties:{luna:S("string","AAAA-LL, implicit luna curentă")}})},
+  {name:"saptamana_mea",description:"Rezumatul săptămânii (ca emailul de luni): ce e urgent, evenimentele săptămânii cu echipa și confirmările, avansurile și diferențele neîncasate, cererile de ofertă care așteaptă răspuns sau revenire, ce lipsește din stoc. Folosește-o pentru „ce am de făcut săptămâna asta”, „ce e urgent”, „pe cine trebuie să sun”, „cine așteaptă răspuns”.",
+    parameters:S("object","",{properties:{}})},
   {name:"necesar_client",description:"Calculează NECESARUL pentru un client: ce băuturi și consumabile trebuie să cumpere clientul pentru un număr de persoane (lista de trimis clientului, PDF sau WhatsApp). NU creează eveniment și nu face fișă. Folosește-o pentru „necesar pentru 20 de persoane”, „fă-mi un necesar”, „ce trebuie să cumpere clientul pentru…”.",
     parameters:S("object","",{properties:{pers:S("string","Număr persoane"),client:S("string","Numele clientului sau al evenimentului (opțional)"),data:S("string","Data evenimentului AAAA-LL-ZZ (opțional)"),
       meniu:S("array","Cocktailurile alese de client (opțional)",{items:S("string","")}),nota:S("string","Notă pentru client (opțional)")},required:["pers"]})},
@@ -4633,6 +4919,12 @@ const RUN={
   async noteaza_bani(a){if(!F.isAdmin)return {eroare:"Banii îi vede doar administratorul."};if(!window.__bani)return {eroare:"Secțiunea Bani nu e disponibilă."};
     try{const x=await window.__bani.add(a||{});return {ok:true,notat:x}}catch(e){return {eroare:"Nu am putut nota. Spune suma."}}},
   async bani_luna(a){if(!F.isAdmin)return {eroare:"Banii îi vede doar administratorul."};if(!window.__bani)return {eroare:"Secțiunea Bani nu e disponibilă."};return await window.__bani.month(a&&a.luna)},
+  async saptamana_mea(){if(!F.isAdmin)return {eroare:"Rezumatul îl vede doar administratorul."};if(!window.__rez)return {eroare:"Rezumatul nu e disponibil."};
+    const R=window.__rez.calc(),C=window.CPCore;
+    return {saptamana:C.intervalText(R.sapt),prioritati:R.prioritati,
+      evenimente:R.evenimente.map(e=>({nume:e.nume,zi:C.ziSiData(e.data),ora:e.ora,invitati:e.invitati,semnat:e.semnat,avans_incasat:e.avans,echipa:e.echipa?e.echipa.map(m=>m.nume+(m.conf==="da"?" (a confirmat)":m.conf==="nu"?" (nu poate)":" (nu a răspuns)")):"lipsă"})),
+      avansuri_neincasate:R.avans.map(a=>({nume:a.nume,eveniment:C.dataLunga(a.data),suma:a.suma})),diferente_neincasate:R.rest.map(r=>({nume:r.nume,intarziata:r.intarziat})),
+      cereri_de_urmarit:R.cereri.deFacut.map(c=>({nume:c.nume,ce:c.eticheta})),stoc_lipsa:R.stoc.lipsa.slice(0,10),saptamana_viitoare:R.viitoare.map(v=>v.nume+" "+C.dataScurta(v.data))}},
   async necesar_client(a){
     if(!F.isAdmin)return {eroare:"Necesarul pentru clienți îl face doar administratorul."};
     if(!window.__necNew)return {eroare:"Necesarul nu e disponibil."};
@@ -4662,6 +4954,7 @@ Reguli:
 - După adăugare spui ce lipsește din contract pentru PDF (de obicei datele din buletin: „fă o poză buletinului în formular”).
 - Prețurile uzuale: dacă utilizatorul spune „euro de persoană”, moneda EURO și unitatea „/ PERSOANĂ”.
 - Zilele următoare, ca să calculezi corect datele: ${zile()}.
+- „Ce am de făcut săptămâna asta / ce e urgent / cine așteaptă răspuns” = saptamana_mea. Răspunde scurt: întâi prioritățile, apoi doar ce întreabă.
 - „Necesar pentru N persoane / fă-mi un necesar / ce trebuie să cumpere clientul” = necesar_client (doar lista pentru client). NU folosi eveniment_nou sau adauga_eveniment pentru asta.
 - Poți face și calcule (cantități pentru un număr de invitați, sume, rest de plată) pe baza datelor din funcții.`;
 }
@@ -5008,6 +5301,57 @@ window.__bani={async add(x){await loadCfg();const d=x.data&&/^\d{4}-\d{2}-\d{2}$
   const it={tip:x.tip==="out"?"out":"in",suma:Math.round(nr(x.suma)*100)/100,moneda:x.moneda==="EUR"?"EUR":"RON",cat:CAT[x.tip==="out"?"out":"in"].includes(x.cat)?x.cat:"Altele",data:d,firma:x.firma||CFG.firma,met:MET.includes(x.met)?x.met:"numerar",nota:String(x.nota||"").slice(0,200),ref:"",at:new Date().toISOString()};
   if(!(it.suma>0))throw new Error("suma");await ref(k).set({items:{[id]:it}},{merge:true});(M[k]=M[k]||{})[id]=it;if(started)render();return it},
   async month(k){k=k||ym(new Date());await loadCfg();await loadMonth(k);const L=list(k),S=sums(L);return {luna:mLabel(k),incasat:both(S,"in"),cheltuit:both(S,"out"),rămas_lei:Math.round(leiTot(L,"in").s-leiTot(L,"out").s),numar:L.length}},CAT};
+})();
+
+/* „Săptămâna ta”: cardul din Contracte și sursa pentru emailul de luni dimineață.
+   Calculul e în cp-core.js (CPCore.rezumat), același și în aplicație, și în email.
+   Aplicația salvează în privat/rezumat ce știe doar ea (fișa săptămânii cu echipele și ce lipsește din stoc),
+   ca robotul de luni (tools/rezumat/) să aibă datele chiar dacă nu deschizi aplicația în dimineața aceea. */
+(function(){
+const F=window.CPFS,C=window.CPCore;if(!F||!F.isAdmin||!C)return;
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const dsKey=f=>"d-"+String(f).replace(/[^A-Za-z0-9_\-.~:@+]/g,"-").slice(0,150);
+let DISP={},STOC=null,lastSig="",OPEN=null;
+
+F.fs.collection(`${F.base}/disp`).onSnapshot(s=>{const n={};s.docs.forEach(d=>{const x=d.data()||{};n[d.id]={name:x.name||"",conf:x.conf||{}}});DISP=n;refresh()},()=>{});
+
+/* fișa săptămânii încărcate: evenimente, ore, persoane, echipă */
+function fisa(){try{const e=window.__cp&&window.__cp.evd();if(!e||!e.aoa)return null;const D=window.__cp.parseAOA(e.aoa,e.fileName),ds=dsKey(e.fileName);
+  return {ds,title:D.title&&D.title.big||e.fileName,events:D.events.map(x=>{const d=x.date||(D.title&&D.title.date);
+    return {key:`${ds}|${x.col}`,name:x.name,date:d?C.iso(d):"",time:x.time||"",persons:typeof x.persons==="number"?x.persons:(x.persons?String(x.persons):""),team:x.team||[]}})}}catch(err){return null}}
+/* ce nu ajunge din stoc pentru evenimentele planificate și ce e sub zero */
+async function stoc(){if(!window.__stocAll)return null;try{const all=await window.__stocAll();
+  return {lipsa:all.filter(a=>a.disponibil<0).map(a=>({label:a.articol,lipsa:Math.round(-a.disponibil*100)/100})).sort((a,b)=>b.lipsa-a.lipsa).slice(0,30),
+    minus:all.filter(a=>a.stoc<0).map(a=>a.articol).slice(0,30)}}catch(e){return null}}
+async function publish(){if(document.visibilityState!=="visible")return;
+  const s=await stoc();if(s)STOC=s;const f=fisa();
+  const data={fisa:f||{ds:"",title:"",events:[]},stoc:STOC||{lipsa:[],minus:[]}},sig=JSON.stringify(data);
+  if(sig===lastSig)return;
+  try{await F.fs.doc(`${F.base}/privat/rezumat`).set({...data,at:new Date().toISOString(),by:F.NAME||""});lastSig=sig;refresh()}catch(e){}}
+setTimeout(publish,6000);setInterval(publish,90000);
+document.addEventListener("cp-stoc",()=>{clearTimeout(publish._t);publish._t=setTimeout(publish,3000)});
+
+function calc(){const q=window.__qr&&window.__qr.data?window.__qr.data():{CT:[],LEADS:[]};
+  return C.rezumat({contracte:q.CT,leads:q.LEADS,disp:DISP,sursa:{fisa:fisa()||{events:[]},stoc:STOC||{lipsa:[],minus:[]},at:new Date().toISOString()}},Date.now())}
+function html(){let R;try{R=calc()}catch(e){console.warn(e);return ""}
+  const luni=new Date().getDay()===1,saved=ls.get("cp-rz-open-"+R.sapt.de),open=OPEN!=null?OPEN:saved!=null?saved==="1":luni||R.prioritati.length>0;
+  const n=R.prioritati.length;
+  let h=`<details class="ct-card rz"${open?" open":""}><summary class="rz-s"><b>Săptămâna ta</b><span>${esc(C.intervalText(R.sapt))} · ${R.evenimente.length} ${R.evenimente.length===1?"eveniment":"evenimente"}${n?` · <b class="rz-n">${n} ${n===1?"lucru important":"lucruri importante"}</b>`:" · totul e la zi"}</span></summary>`;
+  if(n)h+=`<ol class="rz-p">${R.prioritati.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`;
+  h+=`<h3 class="rz-h">Evenimente</h3>`;
+  if(!R.evenimente.length)h+=`<p class="ev-file">Nimic săptămâna asta.</p>`;
+  R.evenimente.forEach(x=>{const t=x.echipa&&x.echipa.length?x.echipa.map(m=>`<span class="rz-m rz-${m.conf==="da"?"da":m.conf==="nu"?"nu":"q"}" title="${m.conf==="da"?"a confirmat":m.conf==="nu"?"nu poate":"nu a răspuns încă"}">${esc(m.nume)}</span>`).join(""):`<span class="rz-m rz-nu">fără echipă în fișă</span>`;
+    h+=`<div class="rz-r${x.trecut?" off":""}"><div><b>${esc(x.nume)}</b><small>${esc([C.ziSiData(x.data),x.ora?"ora "+x.ora:"",x.invitati?x.invitati+" invitați":""].filter(Boolean).join(" · "))}${!x.semnat?" · <b class=rz-red>nesemnat</b>":x.faraContract?"":!x.avans?" · <b class=rz-red>avans neîncasat</b>":""}</small></div><div class="rz-t">${t}</div></div>`});
+  if(R.avans.length||R.rest.length){h+=`<h3 class="rz-h">Bani de urmărit</h3>`;
+    R.rest.forEach(x=>h+=`<div class="rz-r"><div><b>Diferența · ${esc(x.nume)}</b><small>${x.intarziat?`<b class=rz-red>întârziată</b> · `:""}${esc(x.scadenta?"scadentă "+C.dataScurta(x.scadenta):"eveniment "+C.dataScurta(x.data))}</small></div>${x.tel?`<a class="btn" href="https://wa.me/${esc(C.telWa(x.tel))}" target="_blank" rel="noopener">WhatsApp</a>`:""}</div>`);
+    R.avans.forEach(x=>h+=`<div class="rz-r"><div><b>Avans${x.suma?" "+esc(x.suma):""} · ${esc(x.nume)}</b><small>eveniment ${esc(C.dataLunga(x.data))}${x.semnat?"":" · contract nesemnat"}</small></div>${x.tel?`<a class="btn" href="https://wa.me/${esc(C.telWa(x.tel))}" target="_blank" rel="noopener">WhatsApp</a>`:""}</div>`)}
+  if(R.stoc.lipsa.length){h+=`<h3 class="rz-h">Stoc</h3><p class="ev-file">Nu ajung pentru evenimentele planificate: ${R.stoc.lipsa.slice(0,10).map(s=>`${esc(s.label)} (−${esc(String(s.lipsa).replace(".",","))})`).join(", ")}. Le găsești la Stoc → Comandă furnizor.</p>`}
+  h+=`<p class="ev-file rz-f">Săptămâna viitoare: ${R.viitoare.length?R.viitoare.map(v=>esc(v.nume)+" "+esc(C.dataScurta(v.data))).join(", "):"nimic încă"}. Același rezumat îți vine pe email luni dimineață.</p></details>`;
+  return h}
+function refresh(){if(window.__ctRefresh)window.__ctRefresh()}
+document.addEventListener("toggle",e=>{if(e.target.classList&&e.target.classList.contains("rz")){OPEN=e.target.open;ls.set("cp-rz-open-"+C.saptamana(Date.now()).de,OPEN?"1":"0")}},true);
+window.__rez={html,calc,publish};
 })();
 
 /* After a save reloads the page, reopen what was being edited */

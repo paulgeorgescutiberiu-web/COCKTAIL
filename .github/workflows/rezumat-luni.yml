@@ -1,0 +1,52 @@
+# Emailul „Săptămâna ta”, în fiecare luni dimineață (≈ 07:20 ora României iarna, 08:20 vara).
+# Citește din Firebase (contracte, cereri, confirmările echipei, fișa și stocul salvate de aplicație) și trimite prin Gmail.
+# Secrete necesare (Settings → Secrets and variables → Actions): FIREBASE_SA, CP_TEAM, GMAIL_USER, GMAIL_APP_PASSWORD.
+# Opțional: MAIL_TO (altă adresă), APP_URL (linkul aplicației din buton). Pașii: tools/rezumat/README.md
+name: Rezumat de luni
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      doar_previzualizare:
+        description: "Doar previzualizare (nu trimite emailul; rezumatul apare ca fișier la rulare)"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: rezumat-luni
+  cancel-in-progress: false
+jobs:
+  trimite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Europe/Bucharest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/rezumat/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: tools/rezumat
+      - name: Fă rezumatul și trimite-l
+        working-directory: tools/rezumat
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          CP_TEAM: ${{ secrets.CP_TEAM }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          APP_URL: ${{ vars.APP_URL }}
+        run: node trimite.js ${{ inputs.doar_previzualizare && '--preview' || '' }}
+      - name: Păstrează rezumatul (de deschis din pagina rulării)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rezumat
+          path: tools/rezumat/rezumat.html
+          if-no-files-found: ignore
+          retention-days: 30

@@ -1,0 +1,49 @@
+# Verificarea automată, la fiecare modificare: aplicația se construiește din src/ exact ca index.html din repo,
+# pornește cu Firebase simulat și toate taburile merg, cererile și „Săptămâna ta” se comportă corect,
+# etichetele SEO ale site-ului sunt la zi și măsurarea apăsărilor funcționează.
+# Dacă ceva e roșu, pagina rulării spune exact ce test a picat.
+name: Verificare
+on:
+  push:
+    branches: ["**"]
+    paths-ignore: ["social/**", "**/*.md"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verificare-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TZ: Europe/Bucharest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Testele (aplicație, logică, site, construire)
+        run: npm test
+        env:
+          CP_SHOTS: capturi
+      - name: Rezumatul de luni, cu date de test
+        run: node tools/rezumat/trimite.js --demo
+      - name: Capturi și rezumatul de test (de deschis din pagina rulării)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verificare
+          path: |
+            capturi/
+            tools/rezumat/rezumat.html
+          if-no-files-found: ignore
+          retention-days: 14

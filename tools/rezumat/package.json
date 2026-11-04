@@ -1,0 +1,14 @@
+{
+  "name": "cp-rezumat-luni",
+  "private": true,
+  "description": "Emailul de luni dimineață: Săptămâna ta (Cocktail Philosophy)",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "trimite": "node trimite.js",
+    "demo": "node trimite.js --demo"
+  },
+  "dependencies": {
+    "firebase-admin": "13.10.0",
+    "nodemailer": "10.2.1"
+  }
+}
