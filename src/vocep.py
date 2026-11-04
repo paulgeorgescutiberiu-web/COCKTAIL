@@ -7,14 +7,14 @@ v=open("voce.js",encoding="utf-8").read()
 rep('\n/* After a save reloads the page, reopen what was being edited */',"\n"+v+'\n/* After a save reloads the page, reopen what was being edited */')
 rep("</style>\n</head>","""#vcBtn{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:61;width:60px;height:60px;border-radius:50%;border:0;background:var(--leaf-deep);color:#fff;font-size:26px;box-shadow:0 6px 20px rgba(0,0,0,.3);cursor:pointer;display:grid;place-items:center}
 #vcBtn::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:3px solid var(--gold);opacity:.9}
-#vcBtn.on{background:var(--danger)}#vcBtn.on::after{animation:vcPulse 1.2s ease-out infinite}
+#vcBtn.on{background:var(--danger)}#vcBtn.on::after{animation:vcPulse 1.2s ease-out infinite}#vcBtn.talk{background:var(--gold);color:#1b1b1b}
 @keyframes vcPulse{from{transform:scale(1);opacity:.9}to{transform:scale(1.45);opacity:0}}
 #vcPanel{box-sizing:border-box;position:fixed;right:12px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:61;width:min(420px,calc(100vw - 24px));max-height:min(70vh,560px);display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:18px;background:var(--card);color:var(--ink);border:1.5px solid var(--line);box-shadow:0 12px 40px rgba(0,0,0,.3)}
 #vcPanel[hidden]{display:none}
 .vc-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.vc-top b{font-family:Anton,Impact,sans-serif;font-size:1.5rem;color:var(--gold);line-height:1}
 .vc-top span{color:var(--muted);font-size:.85rem}.vc-t{margin-left:auto;font-size:.8rem;color:var(--muted);display:flex;gap:4px;align-items:center}
-.vc-x{background:none;border:0;font-size:1.1rem;color:var(--muted);cursor:pointer;padding:4px 6px}
-.vc-set{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}.vc-set label{display:flex;gap:6px;align-items:center}
+.vc-x{background:none;border:0;font-size:1.1rem;color:var(--muted);cursor:pointer;padding:4px 6px}.vc-cfgb{margin-left:auto}
+.vc-set{display:flex;flex-direction:column;gap:8px;font-size:.82rem;color:var(--muted);padding:10px;border-radius:12px;background:var(--paper);border:1px solid var(--line)}.vc-set[hidden],.vc-row[hidden]{display:none}.vc-set .vc-t{margin-left:0}.vc-row{display:flex;flex-direction:column;gap:8px}.vc-set label{display:flex;gap:6px;align-items:center}
 .vc-set input[type=range]{width:120px;accent-color:var(--gold)}.vc-set select{flex:1;min-width:0;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font-size:.82rem}.vc-set select[hidden]{display:none}
 .vc-log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:120px}
 .vc-hint{color:var(--muted);font-size:.9rem;margin:0;line-height:1.6}
@@ -23,7 +23,11 @@ rep("</style>\n</head>","""#vcBtn{position:fixed;right:16px;bottom:calc(16px + e
 .vc-act{align-self:center;font-size:.78rem;color:var(--muted);padding:2px 8px}
 .vc-go{width:100%}.vc-go[hidden]{display:none}
 .vc-ask{display:flex;gap:8px}.vc-ask[hidden]{display:none}.vc-ask .btn{flex:1}
-.vc-mic{border:0;border-radius:14px;padding:14px;font:inherit;font-weight:700;font-size:1.05rem;background:var(--leaf);color:var(--on-leaf);cursor:pointer}.vc-mic.on{background:var(--danger)}
+.vc-mic{border:0;border-radius:14px;padding:14px;font:inherit;font-weight:700;font-size:1.05rem;background:var(--leaf);color:var(--on-leaf);cursor:pointer}.vc-mic.on{background:var(--danger);color:#fff}.vc-mic.wait{opacity:.75}.vc-mic[hidden]{display:none}
+.vc-st{text-align:center;font-size:.85rem;color:var(--muted);min-height:1.2em}.vc-st[hidden]{display:none}
+.vc-st.live::before{content:"";display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:var(--danger);vertical-align:middle;animation:vcBlink 1.2s ease-in-out infinite}
+@keyframes vcBlink{50%{opacity:.25}}
+.vc-chips{display:flex;flex-wrap:wrap;gap:6px}.vc-chip{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}
 .vc-f{display:flex;gap:8px}.vc-f input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
 @media print{#vcBtn,#vcPanel{display:none!important}}
 </style>
