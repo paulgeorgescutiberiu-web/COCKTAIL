@@ -3010,8 +3010,8 @@ function portalRow(c){
     ${r.menu&&r.menu.length||r.obs?`<div class="ct-m">${r.menu&&r.menu.length?`Meniu ales: ${esc(r.menu.join(", "))}`:""}${r.obs?`<br>Preferințe: ${esc(r.obs)}`:""}</div>`:""}
     <div class="ct-b"><button class="btn primary" data-porwa="${c.id}">Trimite portalul pe WhatsApp</button><button class="btn" data-porcp="${c.id}">Copiază linkul</button><button class="btn" data-porup="${c.id}">Actualizează portalul</button>${r.signedAt&&!c.portalSaved?`<button class="btn primary" data-porsg="${c.id}">Salvează contractul semnat în Drive</button>`:""}</div>`;
 }
-async function portalPublish(c){
-  POR.busy[c.id]=true;render();
+async function portalPublish(c,quiet){
+  POR.busy[c.id]=true;if(!quiet)render();
   try{
     if(!c.dataEv)throw {msg:"Completează întâi data evenimentului în contract."};
     const tok=c.portalTok||porTok(),F0=firma||FIRMA_DEF;
@@ -3027,9 +3027,10 @@ async function portalPublish(c){
       pdf};
     await F.fs.doc(`portal/${tok}`).set(doc,{merge:true});
     if(!c.portalTok){await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalTok:tok},{merge:true});c.portalTok=tok}
-    toast(pdf?"Portalul e gata. Trimite linkul clientului.":"Portalul e gata, dar fără PDF-ul contractului (prea mare).");
-  }catch(e){console.warn(e);toast(e&&e.msg||(e&&e.code==="permission-denied"?"Nu am drept să creez portalul. Adaugă regulile noi în Firebase (portal).":"Nu am putut crea portalul. Verifică internetul."))}
-  finally{delete POR.busy[c.id];render()}
+    if(quiet)toast(pdf?"Contractul a fost salvat și portalul clientului e actualizat.":"Contractul a fost salvat. Portalul e actualizat, dar fără PDF-ul contractului (prea mare).");
+    else toast(pdf?"Portalul e gata. Trimite linkul clientului.":"Portalul e gata, dar fără PDF-ul contractului (prea mare).");
+  }catch(e){console.warn(e);toast((quiet?"Contractul e salvat, dar portalul nu s-a actualizat. Apasă „Actualizează portalul”. ":"")+(e&&e.msg||(e&&e.code==="permission-denied"?"Nu am drept să creez portalul. Adaugă regulile noi în Firebase (portal).":"Nu am putut crea portalul. Verifică internetul.")))}
+  finally{delete POR.busy[c.id];if(!quiet||mode==="list")render()}
 }
 async function portalRefresh(c,quiet){
   if(!c.portalTok)return;
@@ -3623,7 +3624,7 @@ V.addEventListener("click",async e=>{
   const gp=t.closest("[data-gp]");if(gp&&G.pick){const v=gp.dataset.gp,c=G.pick.c;if(v==="__cancel"){G.pick=null;render();return}gsync(c,gp,v==="__new"?null:v);return}
   const pd=t.closest("[data-pdf]");if(pd){const c=list.find(x=>x.id===pd.dataset.pdf);if(c)downloadPDF(c,pd);return}
   const ed=t.closest("[data-ed]");if(ed){const c=list.find(x=>x.id===ed.dataset.ed);if(c){f={...BLANK(),...c,ocr:{}};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)}return}
-  const du=t.closest("[data-dup]");if(du){const c=list.find(x=>x.id===du.dataset.dup);if(c){f={...BLANK(),...c,id:null,ocr:{},dataContract:today(),dataEv:"",dataRest:"",avansPlatit:false,restPlatit:false};errs=[];ocrMsg="Copie după contractul existent: completează data evenimentului și verifică restul.";mode="form";render();window.scrollTo(0,V.offsetTop-10)}return}
+  const du=t.closest("[data-dup]");if(du){const c=list.find(x=>x.id===du.dataset.dup);if(c){f={...BLANK(),...c,id:null,ocr:{},portalTok:"",portalResp:null,portalSaved:false,payOrder:null,driveId:"",calId:"",signedId:"",signedName:"",signedMime:"",signedAt:"",clientSig:null,dataContract:today(),dataEv:"",dataRest:"",avansPlatit:false,restPlatit:false};errs=[];ocrMsg="Copie după contractul existent: completează data evenimentului și verifică restul.";mode="form";render();window.scrollTo(0,V.offsetTop-10)}return}
   const de=t.closest("[data-del]");if(de){const id=de.dataset.del;if(confirmDel!==id){confirmDel=id;render();setTimeout(()=>{if(confirmDel===id){confirmDel=null;if(mode==="list")render()}},4000);return}
     confirmDel=null;F.fs.doc(`${F.base}/contracte/${id}`).delete().then(()=>toast("Contractul a fost șters.")).catch(()=>toast("Nu am putut șterge."));return}
   if(!b)return;const a=b.dataset.c;
@@ -3645,11 +3646,12 @@ V.addEventListener("click",async e=>{
   if(a==="save"||a==="pdf"||a==="gsync"){grab();errs=check(f);G.pick=null;
     if(a==="gsync"&&!errs.length&&!f.dataEv)errs=[{k:"dataEv",m:"Lipsește: Data evenimentului"}];
     if(a==="gsync"&&errs.length){render();const el=$("#ctErr");if(el)el.scrollIntoView({block:"center"});return}
-    if(a==="gsync"){b.disabled=true;const ok=await save();b.disabled=false;if(!ok)return;await gsync({...clean(f),id:f.id,driveId:f.driveId||"",calId:f.calId||""},b);return}
+    if(a==="gsync"){b.disabled=true;const ok=await save();b.disabled=false;if(!ok)return;const cs={...clean(f),id:f.id};if(cs.portalTok&&cs.dataEv)portalPublish(cs,true);await gsync({...cs,driveId:f.driveId||"",calId:f.calId||""},b);return}
     if(a==="pdf"&&errs.length){render();const el=$("#ctErr");if(el)el.scrollIntoView({block:"center"});return}
     if(a==="save"&&!f.nume.trim()){errs=[{k:"nume",m:"Scrie măcar numele clientului."}];render();return}
     b.disabled=true;const ok=await save();b.disabled=false;if(!ok)return;
-    if(a==="pdf")await downloadPDF(clean(f),b);else toast(errs.length?"Contractul a fost salvat. Mai sunt câmpuri de completat înainte de PDF.":"Contractul a fost salvat.");
+    const cs={...clean(f),id:f.id},porUp=!!(cs.portalTok&&cs.dataEv);if(porUp)portalPublish(cs,true);
+    if(a==="pdf")await downloadPDF(clean(f),b);else if(!porUp||errs.length)toast(errs.length?"Contractul a fost salvat. Mai sunt câmpuri de completat înainte de PDF.":"Contractul a fost salvat.");
     if(!errs.length){mode="list";f=null;render()}else render();return}
 });
 
