@@ -2684,6 +2684,22 @@ function getWorker(){
 function fileToCanvas(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=rej;fr.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
   const W=Math.min(2000,Math.max(1400,im.width)),s=W/im.width,c=document.createElement("canvas");c.width=W;c.height=Math.round(im.height*s);
   const x=c.getContext("2d");x.filter="grayscale(1) contrast(1.4)";x.drawImage(im,0,0,c.width,c.height);res(c)};im.src=fr.result};fr.readAsDataURL(file)})}
+/* PDF (scanat sau digital): fiecare pagină devine o imagine; textul digital, dacă există, se ia direct */
+const PDFJS={js:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",worker:"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"};
+const isPDF=f=>f&&(f.type==="application/pdf"||/\.pdf$/i.test(f.name||""));
+async function pdfToPages(file,max=3){
+  const L=await loadScript(PDFJS.js,"pdfjsLib");L.GlobalWorkerOptions.workerSrc=PDFJS.worker;
+  const doc=await L.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise,out=[];
+  for(let i=1;i<=Math.min(doc.numPages,max);i++){
+    const pg=await doc.getPage(i),v0=pg.getViewport({scale:1}),s=Math.min(4,Math.max(1400,Math.min(2000,v0.width*2.5))/v0.width),v=pg.getViewport({scale:s});
+    const c=document.createElement("canvas");c.width=Math.round(v.width);c.height=Math.round(v.height);const x=c.getContext("2d");
+    x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:x,viewport:v}).promise;
+    const g=document.createElement("canvas");g.width=c.width;g.height=c.height;const gx=g.getContext("2d");gx.filter="grayscale(1) contrast(1.4)";gx.drawImage(c,0,0);
+    let text="";try{const tc=await pg.getTextContent();let y=null;tc.items.forEach(it=>{const yy=it.transform&&it.transform[5];text+=(y!==null&&Math.abs(yy-y)>2?"\n":(text?" ":""))+it.str;y=yy})}catch(e){}
+    out.push({c:g,text:text.trim()});
+  }
+  return out;
+}
 function crop(c,y0){const o=document.createElement("canvas");o.width=c.width;o.height=Math.round(c.height*(1-y0));o.getContext("2d").drawImage(c,0,c.height*y0,c.width,o.height,0,0,o.width,o.height);return o}
 const fixMRZ=s=>String(s||"").toUpperCase().replace(/[«‹(\[{]/g,"<").replace(/\s+/g,"");
 function parseMRZ(txt){
@@ -2721,22 +2737,43 @@ function parseVisual(txt){
   }
   return out;
 }
+async function ocrPage(w,c){
+  await w.setParameters({tessedit_char_whitelist:"",tessedit_pageseg_mode:"3"});
+  const full=(await w.recognize(c)).data.text;
+  await w.setParameters({tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<",tessedit_pageseg_mode:"6"});
+  const mrz=(await w.recognize(crop(c,0.62))).data.text;
+  await w.setParameters({tessedit_char_whitelist:"",tessedit_pageseg_mode:"3"});
+  return {full,mrz};
+}
+/* textul tipărit are prioritate; zona MRZ completează ce lipsește */
+const idFields=(full,mrz)=>({...Object.fromEntries(Object.entries(parseMRZ(mrz+"\n"+full)).filter(([k,v])=>v)),...parseVisual(full)});
 async function readID(file){
-  ocrBusy=true;ocrMsg="Se pregătește cititorul (prima dată durează mai mult)…";grab();render();
+  const pdf=isPDF(file);
+  ocrBusy=true;ocrMsg=pdf?"Se deschide PDF-ul…":"Se pregătește cititorul (prima dată durează mai mult)…";grab();render();
   try{
-    const [c,w]=await Promise.all([fileToCanvas(file),getWorker()]);
-    ocrMsg="Se citește buletinul…";render();
-    await w.setParameters({tessedit_char_whitelist:"",tessedit_pageseg_mode:"3"});
-    const full=(await w.recognize(c)).data.text;
-    await w.setParameters({tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<",tessedit_pageseg_mode:"6"});
-    const mrz=(await w.recognize(crop(c,0.62))).data.text;
-    await w.setParameters({tessedit_char_whitelist:"",tessedit_pageseg_mode:"3"});
-    /* textul tipărit are prioritate; zona MRZ completează ce lipsește */
-    const r={...Object.fromEntries(Object.entries(parseMRZ(mrz+"\n"+full)).filter(([k,v])=>v)),...parseVisual(full)};
+    let r={};
+    if(pdf){
+      const pages=await pdfToPages(file);
+      if(!pages.length)throw new Error("pdf gol");
+      /* PDF digital: textul se citește direct, fără OCR */
+      pages.forEach(p=>{if(p.text){const x=idFields(p.text,p.text);Object.keys(x).forEach(k=>{if(!r[k])r[k]=x[k]})}});
+      if(!r.cnp||!r.nume){
+        ocrMsg="Se pregătește cititorul (prima dată durează mai mult)…";render();const w=await getWorker();
+        for(let i=0;i<pages.length;i++){
+          ocrMsg=`Se citește buletinul din PDF${pages.length>1?` (pagina ${i+1} din ${pages.length})`:""}…`;render();
+          const o=await ocrPage(w,pages[i].c),x=idFields(o.full,o.mrz);Object.keys(x).forEach(k=>{if(!r[k])r[k]=x[k]});
+          if(r.cnp&&r.nume&&r.strada)break;
+        }
+      }
+    }else{
+      const [c,w]=await Promise.all([fileToCanvas(file),getWorker()]);
+      ocrMsg="Se citește buletinul…";render();
+      const o=await ocrPage(w,c);r=idFields(o.full,o.mrz);
+    }
     const keys=Object.keys(r);f.ocr={};
     keys.forEach(k=>{f[k]=r[k];f.ocr[k]=true});
-    ocrMsg=keys.length?`Am citit ${keys.length} câmpuri (marcate cu galben). Verifică-le cu buletinul în mână și completează ce lipsește.${r.strada?"":" Adresa nu apare pe buletinele noi: scrie-o din certificatul de domiciliu."}`:"Nu am reușit să citesc buletinul. Fă o poză dreaptă, bine luminată, cu tot buletinul în cadru, sau completează manual.";
-  }catch(e){console.warn(e);ocrMsg="Cititorul nu s-a putut încărca. Verifică internetul sau completează manual."}
+    ocrMsg=keys.length?`Am citit ${keys.length} câmpuri (marcate cu galben). Verifică-le cu buletinul în mână și completează ce lipsește.${r.strada?"":" Adresa nu apare pe buletinele noi: scrie-o din certificatul de domiciliu."}`:(pdf?"Nu am reușit să citesc buletinul din PDF. Scanează-l drept, clar, cu tot buletinul în pagină, sau completează manual.":"Nu am reușit să citesc buletinul. Fă o poză dreaptă, bine luminată, cu tot buletinul în cadru, sau completează manual.");
+  }catch(e){console.warn(e);ocrMsg=pdf?"PDF-ul nu s-a putut deschide (poate e protejat cu parolă) sau cititorul nu s-a încărcat. Verifică internetul sau completează manual.":"Cititorul nu s-a putut încărca. Verifică internetul sau completează manual."}
   ocrBusy=false;render();
 }
 
@@ -2758,7 +2795,7 @@ const sel=(k,label,opts)=>`<label>${label}<select data-f="${k}">${opts.map(v=>`<
 function viewForm(){
   let h=`<div class="st-top"><div><p class="ev-sub">${f.id?"Editează contractul":"Contract nou"}</p><p class="ev-file">Câmpurile cu * sunt obligatorii. Ce lipsește îți arăt înainte de PDF.</p></div>
     <div class="st-acts"><button class="btn" data-c="back">Renunță</button></div></div>
-    <div class="st-ai"><button class="btn primary" data-c="foto"${ocrBusy?" disabled":""}>Citește buletinul din poză</button><input type="file" id="ctFoto" accept="image/*" hidden>
+    <div class="st-ai"><button class="btn primary" data-c="foto"${ocrBusy?" disabled":""}>Citește buletinul din poză sau PDF</button><input type="file" id="ctFoto" accept="image/*,application/pdf,.pdf" hidden>
     <p class="ev-file">Poza rămâne pe telefon: textul se citește direct aici, nu se trimite nicăieri și nu se salvează.</p>${ocrMsg?`<p class="${ocrBusy?"ev-sub":"ev-alert ct-msg"}">${esc(ocrMsg)}</p>`:""}</div>
     <h2 class="ev-h2">Beneficiar</h2><div class="st-meta">
     ${inp("nume","Nume și prenume",{ph:"BRANGA VLAD ALEXANDRU"})}${inp("tel","Telefon",{type:"tel",im:"tel"})}
