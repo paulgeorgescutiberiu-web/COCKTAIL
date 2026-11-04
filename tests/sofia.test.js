@@ -103,6 +103,7 @@ test("Sofia cu vocea telefonului: „nu e bine” la confirmare înseamnă NU, �
   const call = { calls: [{ name: "marcheaza_incasare", args: { contract_id: "c1", ce: "avans", incasat: true } }] };
   await page.click("#vcBtn");   // deschide panoul și ascultă; nu spunem nimic
   await page.waitForFunction(() => window.__REC >= 1 && !/Gata, trimite/.test(document.getElementById("vcMic").textContent));
+  await page.click("#vcCfgB"); await page.uncheck("#vcConv");   // fără ascultare automată între pași, ca replicile să ajungă unde trebuie
   await page.evaluate(c => { window.__SCRIPT.push(c, { chunks: ["Bine, am renunțat."] }); window.__SAY.push("nu e bine"); }, call);
   await page.fill("#vcIn", "Marchează avansul Anei ca încasat");
   await page.click("#vcF button[type=submit]");
@@ -126,6 +127,7 @@ test("Sofia cu Gemini Live: sunet în ambele sensuri, funcții, confirmare doar 
   assert.deepEqual(cfg.mod, ["AUDIO"]);
   assert.ok(cfg.fn.includes("inchide_conversatia") && cfg.conf);
   assert.match(await page.textContent("#vcMic"), /Încheie conversația/);
+  assert.equal((await page.evaluate(() => window.__sofia.state())).loop, true, "vocea Sofiei trece prin legătura WebRTC (anularea ecoului)");
   if (process.env.CP_SHOTS) await page.screenshot({ path: path.join(process.env.CP_SHOTS, "sofia-live.png") });
 
   const tc = (id, args) => ({ type: "toolCall", functionCalls: [{ id, name: "marcheaza_incasare", args: { contract_id: "c1", ce: "avans", incasat: true, ...args } }] });
@@ -175,5 +177,22 @@ test("Sofia cu Gemini Live: sunet în ambele sensuri, funcții, confirmare doar 
   await page.waitForFunction(() => window.__LIVE.closed, null, { timeout: 6000 });
   await page.waitForFunction(() => /Vorbește cu Sofia/.test(document.getElementById("vcMic").textContent));
   assert.deepEqual(errors, [], errors.join("\n"));
+  await ctx.close();
+});
+
+test("ecoul pe difuzor: cât vorbește Sofia, microfonul rămâne închis la ecou și se deschide doar la o voce clar mai tare", async () => {
+  const { page, errors, ctx } = await open("live");
+  const r = await page.evaluate(() => {
+    const g = window.__sofia.gate, L = { ctx: { currentTime: 10 }, playEnd: 15, pre: [], hot: 0, open: false }, out = [];
+    const step = (t, r) => { L.ctx.currentTime = t; out.push(g(L, r)); };
+    step(10.0, 0.12); step(10.1, 0.15); step(10.2, 0.1); step(10.3, 0.14);   // început: ecou tare, doar învață
+    step(10.5, 0.13); step(10.6, 0.16); step(10.7, 0.12);                     // ecou: rămâne închis
+    step(10.8, 0.7); step(10.9, 0.8);                                         // vorbești tu, tare: se deschide
+    step(11.0, 0.1);                                                          // rămâne deschis până termină
+    step(15.6, 0.1);                                                          // după ce a terminat: normal
+    return out;
+  });
+  assert.deepEqual(r, ["off", "off", "off", "off", "off", "off", "off", "off", "flush", "on", "on"]);
+  assert.deepEqual(errors, []);
   await ctx.close();
 });

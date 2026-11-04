@@ -402,23 +402,70 @@ function liveConfirm(q){
 const LIVE_MODELS=["gemini-3.1-flash-live-preview","gemini-2.5-flash-native-audio-preview-12-2025","gemini-2.5-flash-native-audio-preview-09-2025"];
 const LIVE_VOICES={Sulafat:"Sulafat · caldă",Aoede:"Aoede · lejeră",Kore:"Kore · fermă",Leda:"Leda · tânără",Despina:"Despina · catifelată",Achernar:"Achernar · blândă",Zephyr:"Zephyr · luminoasă",Vindemiatrix:"Vindemiatrix · delicată"};
 VS.mode=LS.get("cp-voce-mod","live");
+VS.duplex=LS.get("cp-voce-dup","auto");
 VS.lvoice=LS.get("cp-voce-live","Sulafat");if(!LIVE_VOICES[VS.lvoice])VS.lvoice="Sulafat";
 const liveOK=()=>!!(window.AudioContext&&window.AudioWorkletNode&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.WebSocket);
 const useLive=()=>VS.mode==="live"&&liveOK()&&!VS.liveBroken;
 const IDLE_MS=45000;   // după 45 de secunde de liniște conversația se închide singură (microfonul deschis costă)
 /* Microfonul: 16 kHz, PCM pe 16 biți, bucăți de 100 ms (media pe fereastră ca filtru simplu înainte de reeșantionare) */
-const WK=`class P extends AudioWorkletProcessor{constructor(){super();this.r=sampleRate/16000;this.b=new Int16Array(1600);this.n=0;this.a=0;this.s=0;this.c=0}
+const WK=`class P extends AudioWorkletProcessor{constructor(){super();this.r=sampleRate/16000;this.b=new Int16Array(1600);this.n=0;this.a=0;this.s=0;this.c=0;this.q=0}
 process(i){const ch=i[0]&&i[0][0];if(!ch)return true;
 for(let k=0;k<ch.length;k++){this.s+=ch[k];this.c++;this.a+=1;if(this.a>=this.r){this.a-=this.r;let v=this.s/this.c;this.s=0;this.c=0;v=v<-1?-1:v>1?1:v;
-this.b[this.n++]=v<0?v*32768:v*32767;if(this.n===1600){this.port.postMessage(this.b.buffer,[this.b.buffer]);this.b=new Int16Array(1600);this.n=0}}}
+this.q+=v*v;this.b[this.n++]=v<0?v*32768:v*32767;if(this.n===1600){this.port.postMessage({b:this.b.buffer,r:Math.sqrt(this.q/1600)},[this.b.buffer]);this.b=new Int16Array(1600);this.n=0;this.q=0}}}
 return true}}registerProcessor("cp-mic",P)`;
 function b64(buf){const u=new Uint8Array(buf);let s="";for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)}
 const playing=L=>!!L&&L.ctx.currentTime<L.playEnd-0.05;
+/* Ecoul pe difuzor: telefonul anulează ecoul doar pentru sunetul „de apel”. Vocea Sofiei trece deci printr-o legătură WebRTC
+   locală (două RTCPeerConnection în pagină) și se aude dintr-un <audio>, ca un apel; dacă nu merge, se aude direct. */
+async function loopback(ctx){
+  if(!window.RTCPeerConnection)return null;
+  const a=new RTCPeerConnection(),b=new RTCPeerConnection(),el=new Audio(),dest=ctx.createMediaStreamDestination();
+  const close=()=>{try{a.close();b.close()}catch(e){}el.srcObject=null};
+  try{
+    a.onicecandidate=e=>e.candidate&&b.addIceCandidate(e.candidate).catch(()=>{});
+    b.onicecandidate=e=>e.candidate&&a.addIceCandidate(e.candidate).catch(()=>{});
+    const got=new Promise(r=>b.ontrack=e=>r(e.streams[0]||new MediaStream([e.track])));
+    dest.stream.getTracks().forEach(t=>a.addTrack(t,dest.stream));
+    const o=await a.createOffer();await a.setLocalDescription(o);await b.setRemoteDescription(o);
+    const an=await b.createAnswer();await b.setLocalDescription(an);await a.setRemoteDescription(an);
+    const late=ms=>new Promise((_,j)=>setTimeout(()=>j(new Error("loopback")),ms));
+    el.srcObject=await Promise.race([got,late(2500)]);el.autoplay=true;
+    await Promise.race([new Promise(r=>{const ok=()=>a.connectionState==="connected"&&r();a.onconnectionstatechange=ok;ok()}),late(2500)]);
+    await el.play();
+    return {dest,close};
+  }catch(e){console.warn("Sofia: fără anularea ecoului prin WebRTC",e);close();return null}
+}
+/* Cât vorbește Sofia (și încă puțin după), microfonul trimite liniște, ca ea să nu se audă singură și să se întrerupă.
+   Dacă vorbești clar mai tare decât ecoul ei, microfonul se deschide (cu bucățile de dinainte, să nu se piardă începutul).
+   În modul „doar prin atingere” rămâne închis până termină ea sau apeși „Întrerupe-o”. */
+const ECHO_TAIL=0.5,SIL=b64(new Int16Array(1600).buffer);
+function gate(L,r){
+  const t=L.ctx.currentTime;
+  if(t>=L.playEnd+ECHO_TAIL){L.open=false;L.hot=0;L.pre=[];L.t0=null;return "on"}
+  if(L.open)return "on";
+  if(L.t0==null)L.t0=t;
+  if(VS.duplex==="atingere")return "off";
+  if(t-L.t0<0.4){L.floor=L.floor==null?r:Math.max(L.floor*0.85+r*0.15,r*0.5);return "off"}   // la început doar învață cât de tare e ecoul
+  const thr=Math.max(0.05,(L.floor||0)*3.5);
+  if(r>thr){if(++L.hot>=2){L.open=true;return "flush"}}
+  else{L.hot=0;L.floor=L.floor==null?r:L.floor*0.85+r*0.15}
+  return "off";
+}
+function micChunk(L,d){
+  if(L.stopped||L.session.isClosed)return;
+  const snd=x=>L.session.sendAudioRealtime({mimeType:"audio/pcm;rate=16000",data:x}).catch(()=>{});
+  const data=b64(d.b),g=gate(L,d.r);
+  if(g==="off"){L.pre.push(data);if(L.pre.length>4)L.pre.shift();snd(SIL);return}
+  if(g==="flush"){L.pre.forEach(snd);L.pre=[]}
+  snd(data);
+}
+/* „Întrerupe-o”: oprește vocea pe loc și ignoră restul răspunsului; microfonul se deschide imediat */
+function interrupt(L){flushPlay(L);L.drop=true;L.open=true;paintState()}
 function play(L,data){
   const bin=atob(data),n=bin.length>>1;if(!n)return;
   const buf=L.ctx.createBuffer(1,n,24000),ch=buf.getChannelData(0);
   for(let i=0;i<n;i++){let v=bin.charCodeAt(2*i)|(bin.charCodeAt(2*i+1)<<8);if(v>=32768)v-=65536;ch[i]=v/32768}
-  const s=L.ctx.createBufferSource();s.buffer=buf;s.connect(L.ctx.destination);
+  const s=L.ctx.createBufferSource();s.buffer=buf;s.connect(L.out||L.ctx.destination);
   const at=Math.max(L.ctx.currentTime+0.02,L.playEnd);s.start(at);L.playEnd=at+buf.duration;
   L.srcs.push(s);s.onended=()=>{L.srcs=L.srcs.filter(x=>x!==s)};
 }
@@ -441,7 +488,7 @@ async function startLive(){
   if(!X||!X.ready()){add("act","Asistentul are nevoie de serviciul AI al aplicației (cel de la facturi), care nu e configurat.");return}
   shush();stopListen();
   const ctx=new AudioContext();   // creat chiar în atingere, altfel telefonul nu dă voie la sunet
-  const L={ctx,srcs:[],playEnd:0,last:Date.now(),uB:null,aB:null,stopped:false};
+  const L={ctx,srcs:[],playEnd:0,last:Date.now(),uB:null,aB:null,stopped:false,pre:[],hot:0,open:false};
   VS.liveStarting=true;setStatus("Pornesc conversația…");paint();
   try{
     if(ctx.state==="suspended")await ctx.resume();
@@ -452,7 +499,8 @@ async function startLive(){
     await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([WK],{type:"application/javascript"})));
     L.src=ctx.createMediaStreamSource(stream);L.node=new AudioWorkletNode(ctx,"cp-mic");
     const mute=ctx.createGain();mute.gain.value=0;L.src.connect(L.node);L.node.connect(mute);mute.connect(ctx.destination);
-    L.node.port.onmessage=e=>{if(!L.stopped&&!L.session.isClosed)L.session.sendAudioRealtime({mimeType:"audio/pcm;rate=16000",data:b64(e.data)}).catch(()=>{})};
+    L.node.port.onmessage=e=>micChunk(L,e.data);
+    L.loop=await loopback(ctx);if(L.loop)L.out=L.loop.dest;
     if(!VS.liveStarting)throw new Error("oprit");
     VS.live=L;VS.liveStarting=false;VS.status="";
     L.tick=setInterval(()=>liveTick(L),500);
@@ -474,7 +522,7 @@ function stopLive(msg){
   L.stopped=true;VS.live=null;VS.pend=null;VS.ask=null;VS.status="";clearInterval(L.tick);
   try{L.node.port.onmessage=null;L.node.disconnect()}catch(e){}try{L.src.disconnect()}catch(e){}
   try{L.stream.getTracks().forEach(t=>t.stop())}catch(e){}
-  flushPlay(L);try{L.ctx.close()}catch(e){}try{L.session.close()}catch(e){}
+  flushPlay(L);try{L.loop&&L.loop.close()}catch(e){}try{L.ctx.close()}catch(e){}try{L.session.close()}catch(e){}
   if(msg)add("act",msg);paint();
 }
 function liveTick(L){
@@ -489,16 +537,16 @@ async function liveLoop(L){
     for await(const m of L.session.receive()){
       if(L.stopped)break;
       if(m.type==="serverContent"){
-        if(m.interrupted){flushPlay(L);L.aB=null}
+        if(m.interrupted){flushPlay(L);L.aB=null;L.drop=false}
         const it=m.inputTranscription&&m.inputTranscription.text;
-        if(it){L.last=Date.now();if(!L.uB)L.uB=add("eu","");L.uB.text+=it;L.aB=null;
+        if(it){L.last=Date.now();L.drop=false;if(!L.uB)L.uB=add("eu","");L.uB.text+=it;L.aB=null;
           if(VS.pend&&VS.pend.asked){VS.pend.heard+=" "+it;const v=yesNo(VS.pend.heard);if(v!=null){VS.pend.yes=v;VS.pend.no=!v}}
           paint()}
         const ot=m.outputTranscription&&m.outputTranscription.text;
         if(ot&&VS.pend&&!VS.pend.asked){VS.pend.asked=true;VS.pend.heard=""}   // „da” contează doar după ce Sofia a pus întrebarea
         if(ot){if(!L.aB)L.aB=add("ai","");L.aB.text+=ot;L.uB=null;paint()}
-        for(const p of (m.modelTurn&&m.modelTurn.parts)||[])if(p.inlineData&&/^audio\//.test(p.inlineData.mimeType||"")){play(L,p.inlineData.data);L.uB=null;L.last=Date.now()}
-        if(m.turnComplete){L.aB=null;L.uB=null;if(L.closeAfter)L.closeAt=Date.now()}
+        if(!L.drop)for(const p of (m.modelTurn&&m.modelTurn.parts)||[])if(p.inlineData&&/^audio\//.test(p.inlineData.mimeType||"")){play(L,p.inlineData.data);L.uB=null;L.last=Date.now()}
+        if(m.turnComplete){L.aB=null;L.uB=null;L.drop=false;if(L.closeAfter)L.closeAt=Date.now()}
       }else if(m.type==="toolCall")liveTools(L,m.functionCalls||[]);
     }
   }catch(e){console.warn("Sofia live",e)}
@@ -536,6 +584,7 @@ function paintState(){
   if(!mic||!VS.open)return;
   let lbl,sub="",cls="";
   if(VS.liveStarting){lbl="Pornesc…";cls="wait"}
+  else if(L&&talking){lbl="✋ Întrerupe-o";cls="on";sub=VS.duplex==="atingere"?"Sofia vorbește · atinge ca s-o întrerupi":"Sofia vorbește · atinge sau vorbește tare ca s-o întrerupi"}
   else if(L){lbl="■ Încheie conversația";cls="on";
     sub=VS.status?VS.status:VS.pend?"Aștept: da sau nu":talking?"Sofia vorbește · vorbește peste ea ca s-o întrerupi":"Te ascult… vorbește liber"}
   else if(VS.listening){lbl="■ Gata, trimite";cls="on";sub=VS.heard?"„"+VS.heard+"”":"Te ascult…"}
@@ -599,6 +648,7 @@ async function talkTurn(o={}){
 }
 /* Butonul mare: pornește / oprește conversația; dacă Sofia vorbește (vocea telefonului), o oprește și ascultă */
 function micPress(){
+  if(VS.live&&playing(VS.live)){interrupt(VS.live);return}
   if(VS.live||VS.liveStarting){stopLive();return}
   if(useLive()){startLive();return}
   if(VS.listening){stopListen();return}
@@ -612,7 +662,8 @@ function mount(){
   p.innerHTML=`<div class="vc-top"><b>Sofia</b><span>asistenta vocală</span><button type="button" class="vc-x vc-cfgb" id="vcCfgB" aria-label="Setări" aria-expanded="false">⚙︎</button><button type="button" class="vc-x" id="vcX" aria-label="Închide">✕</button></div>
     <div class="vc-set" id="vcCfg" hidden>
       <label>Vocea <select id="vcMode" aria-label="Felul vocii"><option value="live">Gemini Live (naturală, în timp real)</option><option value="clasic">Vocea telefonului</option></select></label>
-      <div class="vc-row" id="vcLv"><label>Cine vorbește <select id="vcLVoice" aria-label="Vocea Sofiei">${Object.entries(LIVE_VOICES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("")}</select></label></div>
+      <div class="vc-row" id="vcLv"><label>Cine vorbește <select id="vcLVoice" aria-label="Vocea Sofiei">${Object.entries(LIVE_VOICES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("")}</select></label>
+        <label>Întreruperi <select id="vcDup" aria-label="Cum o întrerupi"><option value="auto">vorbind peste ea</option><option value="atingere">doar prin atingere (difuzor, zgomot)</option></select></label></div>
       <div class="vc-row" id="vcCl"><label>Vocea <select id="vcVoice" aria-label="Vocea telefonului"></select></label>
         <label>Viteză <input type="range" id="vcRate" min="0.9" max="1.7" step="0.05"> <output id="vcRateV"></output></label>
         <label class="vc-t"><input type="checkbox" id="vcTalk"> răspunde cu voce</label>
@@ -644,6 +695,7 @@ function mount(){
   rt.onchange=()=>{LS.set("cp-voce-viteza",String(VS.rate));speak("Așa vorbesc acum. E bine?")};
   $("#vcVoice").onchange=e=>{const v=roVoices().find(x=>x.name===e.target.value);if(v){VS.voice=v;LS.set("cp-voce-nume",v.name);speak("Bună, eu sunt Sofia.")}};
   paintVoices();
+  const dp=$("#vcDup");dp.value=VS.duplex;dp.onchange=()=>{VS.duplex=dp.value;LS.set("cp-voce-dup",VS.duplex)};
   const lv=$("#vcLVoice");lv.value=VS.lvoice;
   lv.onchange=()=>{VS.lvoice=lv.value;LS.set("cp-voce-live",VS.lvoice);add("act",VS.live?"Vocea nouă se aude de la următoarea conversație.":"Am schimbat vocea.")};
   $("#vcMode").onchange=e=>{VS.mode=e.target.value;LS.set("cp-voce-mod",VS.mode);VS.liveBroken=false;stopLive();stopListen();shush();
@@ -656,4 +708,5 @@ function mount(){
   paint();
 }
 mount();
+window.__sofia={gate,state:()=>({live:!!VS.live,loop:!!(VS.live&&VS.live.loop),open:!!(VS.live&&VS.live.open)})};   // pentru teste
 })();
