@@ -3998,7 +3998,7 @@ const LST={"":"Nouă",oferta:"Ofertă trimisă",ct:"Câștigată",pierduta:"Pier
 const SRC=[["whatsapp","WhatsApp"],["telefon","Telefon"],["instagram","Instagram"],["facebook","Facebook"],["recomandare","Recomandare"],["site","Site"],["alta","Altă sursă"]];
 const srcOf=x=>String(x.ev||"").startsWith("sursa-")?(x.evn||"Altă sursă"):"QR la bar";
 const LOST=["Prețul","Data e ocupată","Nu a mai răspuns","A ales pe altcineva","Și-a anulat evenimentul","Alt motiv"];
-let LF="open",LOFF=null,LADD=false,LLOST=null,LBUSY="";
+let LF="open",LOFF=null,LADD=false,LLOST=null,LBUSY="",LDEL=null;
 const CPP=window.CP_PRETURI||{};   // din site-nou/preturi.js, pus în aplicație la construire
 const TIERS=CPP.allInclusive||[[0,50,18.4],[50,100,15.4],[100,150,12.4],[150,200,10.4],[200,250,9.4],[250,300,8.4],[300,350,7.4],[350,null,6.4]];
 const PTS=TIERS.map(t=>[t[1]===null?375:(t[0]+t[1])/2,t[2]]);
@@ -4028,7 +4028,8 @@ function leadsHTML(){
     h+=`<div class="qr-lead"><div><b>${esc(x.nume)}</b> · <a href="tel:${esc(x.tel)}">${esc(x.tel)}</a> <span class="ld-st ld-${x.st||"nou"}">${esc(LST[x.st||""]||"Nouă")}</span>
       <small>${[x.data?"eveniment pe "+fdate(x.data):"",x.loc,x.inv?x.inv+" invitați":"",srcOf(x)==="QR la bar"?(x.evn?"QR la "+x.evn:"QR la bar"):srcOf(x)].filter(Boolean).map(esc).join(" · ")}</small>
       ${x.msg?`<small>„${esc(x.msg)}”</small>`:""}<small>primită pe ${esc(fdate(x.at))}${x.offer?` · ofertă ${esc(x.offer.pachet==="barmani"?x.offer.n+" barmani":"All Inclusive")}: ${esc(eur(x.offer.total))}${x.offer.link?` · <a href="${esc(x.offer.link)}" target="_blank" rel="noopener">PDF</a>`:""}`:""}${x.lost?` · motiv: ${esc(x.lost)}`:""}</small></div>
-      <div class="qr-la"><a class="btn" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>${x.st==="ct"?"":`<button class="btn" data-lo="${esc(x.id)}">${x.offer?"Altă ofertă":"Fă oferta"}</button><button class="btn" data-lead="ct" data-id="${esc(x.id)}">Fă contract</button>`}${x.st==="pierduta"||x.st==="done"||x.st==="ct"?`<button class="btn" data-lead="back" data-id="${esc(x.id)}">Readu</button>`:`<button class="btn" data-llost="${esc(x.id)}">Pierdută</button>`}</div></div>`;
+      <div class="qr-la"><a class="btn" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>${x.st==="ct"?"":`<button class="btn" data-lo="${esc(x.id)}">${x.offer?"Altă ofertă":"Fă oferta"}</button><button class="btn" data-lead="ct" data-id="${esc(x.id)}">Fă contract</button>`}${x.st==="pierduta"||x.st==="done"||x.st==="ct"?`<button class="btn" data-lead="back" data-id="${esc(x.id)}">Readu</button>`:`<button class="btn" data-llost="${esc(x.id)}">Pierdută</button>`}<button class="btn" data-ldel="${esc(x.id)}">Șterge</button></div></div>`;
+    if(LDEL===x.id)h+=`<div class="ld-form"><p class="ld-w">Ștergi cererea de la <b>${esc(x.nume)}</b>? Nu se mai poate recupera.${x.st==="ct"?" Contractul făcut din ea rămâne.":""}</p><div class="qr-la ld-w"><button class="btn primary" data-ldelok="${esc(x.id)}">Da, șterge</button><button class="btn" data-ldel="">Renunță</button></div></div>`;
     if(LLOST===x.id)h+=`<div class="ld-form"><label class="ld-w">De ce s-a pierdut?<select data-ll="m">${LOST.map(m=>`<option>${m}</option>`).join("")}</select></label><div class="qr-la ld-w"><button class="btn primary" data-llsave="${esc(x.id)}">Marchează pierdută</button><button class="btn" data-llost="">Renunță</button></div></div>`;
     if(LOFF&&LOFF.id===x.id)h+=offerForm(x);
   });
@@ -4134,7 +4135,9 @@ function leadClick(t){
   const lof=t.closest("[data-lof]");if(lof&&lof.tagName==="SELECT")return false;
   const ls=t.closest("[data-losend]");if(ls){const x=LEADS.find(y=>y.id===ls.dataset.losend);if(x)offerSend(x,true);return true}
   const lp=t.closest("[data-lopdf]");if(lp){const x=LEADS.find(y=>y.id===lp.dataset.lopdf);if(x)offerSend(x,false);return true}
-  const ll=t.closest("[data-llost]");if(ll){LLOST=ll.dataset.llost||null;LOFF=null;refresh();return true}
+  const ld=t.closest("[data-ldel]");if(ld){LDEL=ld.dataset.ldel||null;LLOST=null;LOFF=null;refresh();return true}
+  const ldo=t.closest("[data-ldelok]");if(ldo){const id=ldo.dataset.ldelok;LDEL=null;F.fs.doc(`barLead/${id}`).delete().then(()=>alertMsg("Cererea a fost ștearsă.")).catch(()=>{alertMsg("Nu am putut șterge cererea. Verifică internetul.");refresh()});return true}
+  const ll=t.closest("[data-llost]");if(ll){LLOST=ll.dataset.llost||null;LOFF=null;LDEL=null;refresh();return true}
   const lls=t.closest("[data-llsave]");if(lls){const m=document.querySelector("[data-ll=m]");F.fs.doc(`barLead/${lls.dataset.llsave}`).set({st:"pierduta",lost:m?m.value:""},{merge:true}).catch(()=>{});LLOST=null;return true}
   const l=t.closest("[data-lead]");
   if(l){const x=LEADS.find(y=>y.id===l.dataset.id);if(!x)return true;const a=l.dataset.lead;
