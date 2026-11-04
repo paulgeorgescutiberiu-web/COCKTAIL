@@ -111,10 +111,10 @@ function render(){
 
   <section class="card"><h2><span class="n">4</span>Avansul</h2>
     <p>Avans: <b>${esc(e.avans)} ${esc(e.monedaAvans)}</b>${e.dataRest?` · diferența până la ${esc(fd(e.dataRest))}`:""}</p>
-    ${P.pay&&P.pay.url?`<div class="row"><a class="btn" href="${esc(P.pay.url)}" target="_blank" rel="noopener">Plătește avansul cu cardul</a></div><p class="mut">Sau prin transfer bancar:</p>`:`<p class="mut">Prin transfer bancar:</p>`}
+    ${e.avansPrimit?`<p class="okmsg">✓ Am primit avansul${e.avansPrimit.suma?` de ${esc(e.avansPrimit.suma)} ${esc(e.avansPrimit.moneda||"")}`:""}${e.avansPrimit.data?` pe ${esc(fd(e.avansPrimit.data))}`:""}. Data evenimentului e rezervată. Mulțumim!</p></section>`:`<p class="mut">Prin transfer bancar:</p>
     <div class="iban" id="iban">${esc(P.firma.iban||"")}</div>
     <p class="mut">Beneficiar: ${esc(P.firma.nume||"")}${P.firma.banca?` · ${esc(P.firma.banca)}`:""}<br>Detalii plată: avans eveniment ${esc(fd(e.dataEv))}</p>
-    <div class="row"><button class="btn sec" id="cpIban" type="button">Copiază IBAN-ul</button></div></section>
+    <div class="row"><button class="btn sec" id="cpIban" type="button">Copiază IBAN-ul</button></div></section>`}
 
   <p class="foot">Întrebări? Scrieți-ne pe WhatsApp: <b>${esc(P.firma.tel||"0743 785 655")}</b><br>Tu te distrezi, noi ne ocupăm de bar. 🍸</p>`;
   A.innerHTML=h;
@@ -134,7 +134,7 @@ function bind(){
     try{await ref.set({resp:P.resp},{merge:true});$("#menuOk").textContent="Am salvat alegerea. O vedem imediat.";$("#menuOk").classList.remove("hide")}
     catch(e){$("#menuOk").textContent="Nu am putut salva. Verificați internetul și încercați din nou.";$("#menuOk").classList.remove("hide")}
     b.disabled=false};
-  $("#cpIban").onclick=()=>{const t=P.firma.iban||"";(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{$("#cpIban").textContent="IBAN copiat ✓"},()=>{const r=document.createRange();r.selectNodeContents($("#iban"));const s=getSelection();s.removeAllRanges();s.addRange(r)})};
+  if($("#cpIban"))$("#cpIban").onclick=()=>{const t=P.firma.iban||"";(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{$("#cpIban").textContent="IBAN copiat ✓"},()=>{const r=document.createRange();r.selectNodeContents($("#iban"));const s=getSelection();s.removeAllRanges();s.addRange(r)})};
   const pad=$("#pad");if(!pad)return;
   const dpr=Math.max(1,window.devicePixelRatio||1),W=pad.clientWidth,H=pad.clientHeight;pad.width=W*dpr;pad.height=H*dpr;
   const x=pad.getContext("2d");x.scale(dpr,dpr);x.lineWidth=2.4;x.lineCap="round";x.lineJoin="round";x.strokeStyle="#111";
