@@ -193,11 +193,10 @@ function viewList(){
     if(past!==lastPast){h+=`<h2 class="ev-h2">${past?"Trecute":"Următoarele"}</h2>`;lastPast=past}
     h+=`<div class="ct-card"><div class="ct-h"><b>${esc(c.nume||"Fără nume")}</b><span>${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""}</span></div>
       <div class="ct-m">${esc(c.pret||"")} ${esc(c.moneda||"")} ${esc(c.unitate==="TOTAL"?"total":"/ persoană")} · avans ${esc(c.avans||"—")} ${esc(c.monedaAvans||"")} · diferența la ${esc(shortDate(c.dataRest)||"—")}</div>
-      <div class="ct-b"><button class="ct-chip ${c.avansPlatit?"on":""}" data-tog="avansPlatit" data-id="${c.id}">${c.avansPlatit?"✓ Avans încasat":"Avans neîncasat"}</button>
-      <button class="ct-chip ${c.restPlatit?"on":""}" data-tog="restPlatit" data-id="${c.id}">${c.restPlatit?"✓ Diferență încasată":"Diferență neîncasată"}</button></div>
+      ${rcvRow(c)}
+      <div class="ct-b"><button class="ct-chip ${c.restPlatit?"on":""}" data-tog="restPlatit" data-id="${c.id}">${c.restPlatit?"✓ Diferență încasată":"Diferență neîncasată"}</button></div>
       <div class="ct-b ct-sg">${c.signedId?`<a class="ct-chip on" href="https://drive.google.com/file/d/${esc(c.signedId)}/view" target="_blank" rel="noopener">✓ Semnat de client${c.signedAt?" · "+esc(shortDate(c.signedAt)):""} · vezi</a>`:`<span class="ct-chip">Nesemnat de client</span>`}
       <label class="btn${c.signedId?"":" primary"} ct-up">${c.signedId?"Înlocuiește contractul semnat":"Încarcă contractul semnat de client"}<input type="file" accept="application/pdf,image/*" data-sgn="${c.id}" hidden></label></div>
-      ${payRow(c)}
       ${invRow(c)}
       ${portalRow(c)}
       ${c.rent&&c.rent.calc?`<div class="ct-m">Rentabilitate: venit ${lei(c.rent.calc.venit)} · profit <b>${lei(c.rent.calc.profit)}</b> (${pct(c.rent.calc.marja)})</div>`:""}
@@ -222,8 +221,6 @@ function viewFirma(){
     <div class="st-meta">${row("socialHook","Adresa webhook Make (https://hook.eu1.make.com/…)")}</div>
     <h2 class="ev-h2">TikTok (clipuri video)</h2><p class="ev-file">Pentru „Postare → Video”. Clipul se urcă în Drive, în „TikTok Cocktail Philosophy / De postat”, apoi aplicația îl trimite la webhook-ul din Make (scenariul „Postare TikTok”), care îl pune în coada din Upload-Post. Cheia Upload-Post stă doar în Make.</p>
     <div class="st-meta">${row("ttHook","Adresa webhook Make pentru TikTok")}${row("ttLimit","Postări pe lună în planul Upload-Post (ex: 10)")}</div>
-    <h2 class="ev-h2">Plata avansului cu cardul (Revolut)</h2><p class="ev-file">Pentru butonul „Link de plată avans”. E adresa webhook-ului din Make (scenariul „Avans Revolut”), care creează linkul în Revolut Business. Cheia Revolut stă doar în Make, nu în aplicație.</p>
-    <div class="st-meta">${row("payHook","Adresa webhook Make pentru plăți")}</div>
     <h2 class="ev-h2">Facturare SmartBill</h2><p class="ev-file">Pentru butoanele „Factură avans” și „Factură finală” de la contracte. E adresa webhook-ului din Make (scenariul „Factură SmartBill”). Cheia SmartBill stă doar în Make, nu în aplicație.</p>
     <div class="st-meta">${row("invHook","Adresa webhook Make pentru facturi")}${row("sbSerie","Seria facturilor în SmartBill (ex: CPH)")}<label>TVA<select data-fi="sbTva">${[["neplatitor","Neplătitor de TVA"],["21","Plătitor, 21%"],["11","Plătitor, 11%"]].map(([v,n])=>`<option value="${v}"${(x.sbTva||"neplatitor")===v?" selected":""}>${n}</option>`).join("")}</select></label><label>Cum se creează<select data-fi="sbDraft"><option value="da"${(x.sbDraft||"da")==="da"?" selected":""}>Ciornă (o verific în SmartBill)</option><option value="nu"${x.sbDraft==="nu"?" selected":""}>Factură emisă direct</option></select></label></div>
     <h2 class="ev-h2">Ce echipament și oameni ai</h2><p class="ev-file">Când faci un contract pe o zi în care mai ai evenimente, aplicația îți spune dacă îți ajung.</p>
@@ -248,7 +245,7 @@ function render(){try{if(!G.tc)gPrep()}catch(e){}
   V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():(gConnHTML()+viewList());
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
-  if(mode==="list"){payAuto();portalAuto()}
+  if(mode==="list")portalAuto();
 }
 function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
   V.querySelectorAll("[data-cb]").forEach(el=>{f[el.dataset.cb]=el.checked})}
@@ -370,12 +367,12 @@ async function portalPublish(c,quiet){
     let pdf=null;try{pdf=await b64(await pdfBlob(c));if(pdf.length>850000)pdf=null}catch(e){pdf=null}
     const isTotal=c.unitate==="TOTAL";
     const doc={v:1,updatedAt:new Date().toISOString(),
-      ev:{dataEv:c.dataEv||"",oraEv:c.oraEv||"",locatie:tcase(c.locatie||""),invitati:String(c.invitati||""),pachet:tcase(c.obiect||""),pret:String(c.pret||""),moneda:c.moneda==="EURO"?"€":"RON",unitate:isTotal?"total":"/ persoană",tva:c.tva||"",ore:c.ore||"",avans:String(c.avans||""),monedaAvans:c.monedaAvans==="EURO"?"EUR":"RON",dataRest:c.dataRest||"",plata:c.plata||""},
+      ev:{dataEv:c.dataEv||"",oraEv:c.oraEv||"",locatie:tcase(c.locatie||""),invitati:String(c.invitati||""),pachet:tcase(c.obiect||""),pret:String(c.pret||""),moneda:c.moneda==="EURO"?"€":"RON",unitate:isTotal?"total":"/ persoană",tva:c.tva||"",ore:c.ore||"",avans:String(c.avans||""),avansPrimit:c.avansPlatit?{suma:String(c.avansSuma||c.avans||""),moneda:(c.avansMoneda||payCur(c)),data:c.avansPlatitLa||""}:null,monedaAvans:c.monedaAvans==="EURO"?"EUR":"RON",dataRest:c.dataRest||"",plata:c.plata||""},
       client:{nume:tcase(c.nume||""),prenume:tcase(String(c.nume||"").trim().split(/\s+/).slice(-1)[0]||"")},
       firma:{nume:F0.nume,iban:F0.iban,banca:F0.banca,tel:"0743 785 655"},
       oferte:[{t:"Meniul 2026",u:"https://cocktailphilosophy.ro/meniu/"},isTotal?{t:"Oferta pachet barmani",u:"https://cocktailphilosophy.ro/oferte/#pachet-barmani"}:{t:"Oferta All you can drink",u:"https://cocktailphilosophy.ro/oferte/#all-inclusive"}],
       menuOpts:porMenuOptions(),
-      pay:c.payOrder&&c.payOrder.url?{url:c.payOrder.url}:null,
+      pay:null,
       pdf};
     await F.fs.doc(`portal/${tok}`).set(doc,{merge:true});
     if(!c.portalTok){await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalTok:tok},{merge:true});c.portalTok=tok}
@@ -422,6 +419,31 @@ function payRow(c){
   if(o&&o.url)return `<div class="ct-b"><button class="btn primary" data-paywa="${c.id}">Trimite linkul de plată pe WhatsApp</button><button class="btn" data-paycp="${c.id}">Copiază linkul</button><button class="btn" data-paychk="${c.id}">Verifică plata</button></div>
     <div class="ct-m">Link de plată creat ${esc(shortDate(String(o.at||"").slice(0,10)))} · ${esc(c.avans)} ${esc(c.monedaAvans)}. Când clientul plătește, avansul se bifează singur.</div>`;
   return `<div class="ct-b"><button class="btn" data-paynew="${c.id}">💳 Link de plată avans (${esc(c.avans)} ${esc(c.monedaAvans)})</button></div>`;
+}
+/* ---------- Recepția avansului: suma, data și cum s-a plătit ---------- */
+const RCV={f:null,undo:null};
+const MET=[["transfer","Transfer bancar"],["numerar","Numerar"],["card","Card"]];
+function rcvRow(c){
+  if(c.avansPlatit){const met=(MET.find(m=>m[0]===(c.avansMet||(c.avansCard?"card":"")))||[])[1];
+    return `<div class="ct-b"><span class="ct-chip on">✓ Avans primit${c.avansSuma||c.avans?`: ${esc(c.avansSuma||c.avans)} ${esc(c.avansMoneda||payCur(c))}`:""}${c.avansPlatitLa?" · "+esc(shortDate(c.avansPlatitLa)):""}${met?" · "+esc(met.toLowerCase()):""}</span>`+
+      (RCV.undo===c.id?`<button class="btn" data-rcvundo="${c.id}" data-ok="1">Sigur? Anulează recepția</button><button class="btn" data-rcvundo="">Renunță</button>`:`<button class="btn" data-rcvundo="${c.id}">Anulează</button>`)+`</div>`}
+  const o=RCV.f&&RCV.f.id===c.id?RCV.f:null;
+  if(!o)return `<div class="ct-b"><button class="btn primary" data-rcv="${c.id}">💰 Recepție avans${c.avans?` (${esc(c.avans)} ${esc(payCur(c))})`:""}</button></div>`;
+  return `<div class="st-meta ct-rcv"><label>Suma primită<input data-rv="suma" inputmode="decimal" value="${esc(o.suma)}"></label>
+    <label>Moneda<select data-rv="moneda">${["RON","EUR"].map(m=>`<option${o.moneda===m?" selected":""}>${m}</option>`).join("")}</select></label>
+    <label>Data<input type="date" data-rv="data" value="${esc(o.data)}"></label>
+    <label>Cum a plătit<select data-rv="met">${MET.map(([k,n])=>`<option value="${k}"${o.met===k?" selected":""}>${n}</option>`).join("")}</select></label></div>
+    <div class="ct-b"><button class="btn primary" data-rcvok="${c.id}">Salvează avansul primit</button><button class="btn" data-rcv="">Renunță</button></div>`;
+}
+async function rcvSave(c){
+  const g=k=>{const i=V.querySelector(`[data-rv=${k}]`);return i?i.value.trim():""};
+  const suma=g("suma").replace(/\s/g,""),n=Number(suma.replace(/\.(?=\d{3}(\D|$))/g,"").replace(",","."));
+  if(!(isFinite(n)&&n>0))return toast("Scrie suma primită.");
+  const upd={avansPlatit:true,avansSuma:suma,avansMoneda:g("moneda")||"RON",avansPlatitLa:g("data")||today(),avansMet:g("met")||"transfer"};upd.avansCard=upd.avansMet==="card";
+  try{await F.fs.doc(`${F.base}/contracte/${c.id}`).set(upd,{merge:true});RCV.f=null;Object.assign(c,upd);
+    toast(`Avansul de la ${tcase(surname(c.nume))} e notat ✓ Îl găsești și în tab-ul Bani.`);render();
+    if(c.portalTok&&c.dataEv)portalPublish(c,true)}
+  catch(e){toast("Nu am putut salva avansul. Verifică internetul.")}
 }
 /* ---------- Facturare SmartBill (prin scenariul Make „Factură SmartBill”) ---------- */
 const INV={busy:{},arm:{}};
@@ -949,6 +971,10 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
 V.addEventListener("change",e=>{const i=e.target;if(i&&i.dataset&&i.dataset.f==="dataEv"){const o=document.getElementById("ctOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,f&&f.id,true)}});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
+  const rv=t.closest("[data-rcv]");if(rv){const c=list.find(x=>x.id===rv.dataset.rcv);RCV.f=c?{id:c.id,suma:String(c.avans||""),moneda:payCur(c),data:today(),met:/numerar/.test(c.plata||"")?"numerar":"transfer"}:null;RCV.undo=null;render();return}
+  const rk=t.closest("[data-rcvok]");if(rk){const c=list.find(x=>x.id===rk.dataset.rcvok);if(c)rcvSave(c);return}
+  const ru=t.closest("[data-rcvundo]");if(ru){const id=ru.dataset.rcvundo;if(!id||!ru.dataset.ok){RCV.undo=id||null;render();return}
+    RCV.undo=null;const c=list.find(x=>x.id===id);F.fs.doc(`${F.base}/contracte/${id}`).set({avansPlatit:false,avansCard:false,avansSuma:"",avansMet:"",avansPlatitLa:""},{merge:true}).then(()=>{if(c){Object.assign(c,{avansPlatit:false});if(c.portalTok&&c.dataEv)portalPublish(c,true)}}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
   const tog=t.closest("[data-tog]");if(tog){const c=list.find(x=>x.id===tog.dataset.id);if(c)F.fs.doc(`${F.base}/contracte/${c.id}`).set({[tog.dataset.tog]:!c[tog.dataset.tog]},{merge:true}).catch(()=>toast("Nu s-a salvat. Încearcă din nou."));return}
   if(t.closest("[data-bk]")){bkRun();return}
   if(t.closest("[data-bkdl]")){bkDownload();return}

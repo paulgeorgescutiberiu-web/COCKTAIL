@@ -57,7 +57,7 @@ async function del(k,id){try{const FV=firebase.firestore.FieldValue;await ref(k)
 function sugg(){
   if(!CT)return [];const have=new Set();Object.values(M).forEach(L=>Object.values(L||{}).forEach(x=>{if(x&&x.ref)have.add(x.ref)}));
   const out=[];CT.forEach(c=>{const who=tcase(String(c.nume||"").split(" ")[0]);
-    if(c.avansPlatit&&nr(c.avans)>0&&!have.has(c.id+"|avans"))out.push({ref:c.id+"|avans",tip:"in",cat:"Avans eveniment",suma:String(nr(c.avans)),moneda:c.monedaAvans==="EURO"?"EUR":"RON",data:c.avansPlatitLa||c.dataContract||iso(new Date()),met:c.avansCard?"card":"numerar",nota:`Avans ${who}${c.locatie?" · "+tcase(c.locatie):""}${c.dataEv?" · "+fday(c.dataEv):""}`});
+    if(c.avansPlatit&&nr(c.avans)>0&&!have.has(c.id+"|avans"))out.push({ref:c.id+"|avans",tip:"in",cat:"Avans eveniment",suma:String(nr(c.avansSuma||c.avans)),moneda:c.avansMoneda||(c.monedaAvans==="EURO"?"EUR":"RON"),data:c.avansPlatitLa||c.dataContract||iso(new Date()),met:c.avansMet||(c.avansCard?"card":"numerar"),nota:`Avans ${who}${c.locatie?" · "+tcase(c.locatie):""}${c.dataEv?" · "+fday(c.dataEv):""}`});
     if(c.restPlatit&&!have.has(c.id+"|rest")){const tot=String(c.unitate||"").includes("PERSOAN")?nr(c.pret)*nr(c.invitati):nr(c.pret),cur=c.moneda==="EURO"?"EUR":"RON",av=(c.monedaAvans==="EURO"?"EUR":"RON")===cur?nr(c.avans):0;
       out.push({ref:c.id+"|rest",tip:"in",cat:"Rest eveniment",suma:tot>av?String(Math.round((tot-av)*100)/100):"",moneda:cur,data:c.dataRest||c.dataEv||iso(new Date()),met:/numerar/.test(c.plata||"")?"numerar":"transfer",nota:`Rest ${who}${c.locatie?" · "+tcase(c.locatie):""}${c.dataEv?" · "+fday(c.dataEv):""}`})}});
   return out.sort((a,b)=>String(b.data).localeCompare(String(a.data))).slice(0,12)}
