@@ -1,3 +1,5 @@
+> **Acum emailul de luni pleacă din Firebase** (funcția `rezumatLuni`, vezi `functions/README.md`), deci secretele din GitHub de mai jos nu mai sunt necesare. Scriptul de aici rămâne pentru previzualizare (`node trimite.js --demo`).
+
 # Emailul de luni: „Săptămâna ta”
 
 Luni dimineață (în jur de 07:20 iarna și 08:20 vara) primești pe email ce ai de făcut în săptămâna care începe:

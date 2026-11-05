@@ -1,13 +1,14 @@
 {
   "name": "cocktail-functions",
   "private": true,
-  "description": "Funcțiile Firebase ale aplicației Cocktail Philosophy (biletul pentru conversația live a Sofiei)",
+  "description": "Funcțiile Firebase ale aplicației Cocktail Philosophy (Sofia live, postări programate, emailul de luni)",
   "main": "index.js",
   "engines": {
     "node": "22"
   },
   "dependencies": {
     "firebase-admin": "14.5.0",
-    "firebase-functions": "7.4.0"
+    "firebase-functions": "7.4.0",
+    "nodemailer": "10.2.1"
   }
 }

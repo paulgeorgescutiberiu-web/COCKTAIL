@@ -100,3 +100,26 @@ exports.postariProgramate = onSchedule({
     }
   }
 });
+
+/* rezumatLuni: emailul „Săptămâna ta”, în fiecare luni la 07:20 (ora României). Logica: functions/rezumat.js
+   Secrete: GMAIL_USER (adresa de pe care pleacă și la care vine) și GMAIL_APP_PASSWORD (parola de aplicație Gmail). */
+const REZ = require("./rezumat");
+const GMAIL_USER = defineSecret("GMAIL_USER");
+const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");
+exports.rezumatLuni = onSchedule({
+  schedule: "20 7 * * 1",
+  timeZone: "Europe/Bucharest",
+  region: "europe-west1",
+  maxInstances: 1,
+  memory: "256MiB",
+  timeoutSeconds: 120,
+  retryCount: 1,
+  secrets: [GMAIL_USER, GMAIL_APP_PASSWORD],
+}, async () => {
+  const db = getFirestore();
+  const B = await REZ.gasesteEchipa(db);
+  if (!B) { logger.warn("rezumatLuni: nu am găsit echipa"); return; }
+  const m = REZ.mesaj(await REZ.dateEchipa(db, B), Date.now(), "https://paulgeorgescutiberiu-web.github.io/COCKTAIL/");
+  const info = await REZ.trimiteEmail(GMAIL_USER.value().trim(), GMAIL_APP_PASSWORD.value(), "", m);
+  logger.info("rezumatLuni: trimis", m.subiect, info.messageId);
+});

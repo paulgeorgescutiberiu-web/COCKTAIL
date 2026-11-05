@@ -3,9 +3,9 @@
 # Secrete necesare (Settings → Secrets and variables → Actions): FIREBASE_SA, CP_TEAM, GMAIL_USER, GMAIL_APP_PASSWORD.
 # Opțional: MAIL_TO (altă adresă), APP_URL (linkul aplicației din buton). Pașii: tools/rezumat/README.md
 name: Rezumat de luni
+# Emailul de luni pleacă acum din Firebase (funcția rezumatLuni, functions/rezumat.js), fără secrete în GitHub.
+# Aici a rămas doar rularea de mână, pentru previzualizare.
 on:
-  schedule:
-    - cron: "17 5 * * 1"
   workflow_dispatch:
     inputs:
       doar_previzualizare:

@@ -1,3 +1,12 @@
+# Funcțiile Firebase
+
+**Cel mai simplu:** dublu-clic pe `Porneste-functiile.command` (în folderul aplicației, pe Mac). Te conectează la Google, îți cere cele 3 chei (le lipești doar în Terminal) și publică tot. Proiectul trebuie să fie înainte pe planul Blaze.
+
+Funcțiile:
+- `sofiaLive` – biletul pentru vocea live a Sofiei (detalii mai jos);
+- `postariProgramate` – la 10 minute trimite la Make postările programate din aplicație (`social.js`);
+- `rezumatLuni` – emailul „Săptămâna ta”, lunea la 07:20 (`rezumat.js`, cu același calcul ca aplicația din `cp-core.js`, copiat automat din `src/` la publicare). Secrete: `GMAIL_USER`, `GMAIL_APP_PASSWORD`.
+
 # Serverul pentru conversația live a Sofiei
 
 ## De ce e nevoie de el
