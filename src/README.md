@@ -26,7 +26,7 @@ Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina r
 | `raport.js` | Raportul lunar și plata barmanilor |
 | `disp.js` | Echipa: disponibilitatea barmanilor și confirmarea evenimentelor |
 | `qr.js` | QR-ul de la bar, cererile de ofertă, pagina publică `bar.html` |
-| `voce.js` | Sofia, asistentul vocal în română: ascultă, întreabă Gemini (cu funcții pentru rețete, evenimente, stoc, contracte, încasări, disponibilitate; „adaugă un eveniment” salvează contractul, îl pune în calendarul Google și PDF-ul în Drive) și răspunde cu voce |
+| `voce.js` | Sofia, asistentul vocal în română, cu funcții pentru rețete, evenimente, stoc, contracte, încasări, disponibilitate, bani („adaugă un eveniment” salvează contractul, îl pune în calendarul Google și PDF-ul în Drive). Două moduri (⚙︎ în panou): **Gemini Live** (implicit: conversație în timp real, voce naturală, se poate întrerupe, se închide singură după 45 s de liniște sau la „gata”; pe difuzor vocea ei trece printr-o legătură WebRTC locală, ca telefonul să-i anuleze ecoul, iar cât vorbește microfonul trimite liniște până vorbești clar mai tare decât ecoul; setarea „Întreruperi: doar prin atingere” îl ține închis de tot. Vocea: 8 voci Gemini (implicit Sulafat), două „motoare” (3.1 Live rapid, 2.5 audio nativ expresiv), „🔊 Ascult-o” o pornește ca s-o auzi; redare la 24 kHz cu rezervă de 120 ms la începutul frazei. Pe laptop (Mac): ⌥S deschide/închide, Space pornește, întrerupe sau oprește) și **vocea telefonului** (rezervă: răspunsul vine în flux și e citit propoziție cu propoziție, ascultă până taci, conversație continuă). Scrierile se confirmă; în Live, a doua chemare cu `confirmat=true` trece doar după un „da” auzit sau apăsat |
 | `meniu.js` | Aducerea rețetarului la Meniul 2026 de pe site, o singură dată (rețetele au și câmpurile pentru meniul clienților) |
 | `cp-core.js` | Logica comună, fără ecran: regulile de urmărire a cererilor, șabloanele mesajelor, rezumatul săptămânii și emailul. O folosesc aplicația (`window.CPCore`), emailul de luni (`tools/rezumat/`) și testele |
 | `rezumat.js` | Cardul „Săptămâna ta” din Contracte; salvează în `privat/rezumat` fișa săptămânii și ce lipsește din stoc, pentru emailul de luni |
@@ -72,5 +72,5 @@ npm test
 
 `tests/app.test.js` pornește `index.html` cu un Firebase simulat (`tests/fake-firebase.js`, date în `tests/date-test.js`),
 deschide toate taburile și verifică cererile și „Săptămâna ta”. `tests/core.test.js` verifică regulile, `tests/site.test.js` verifică site-ul,
-iar `tests/build.test.js` verifică dacă `index.html` e construit din sursele actuale. Pe GitHub rulează singure la fiecare modificare
+`tests/sofia.test.js` verifică asistentul vocal (cu Gemini, vocea și microfonul simulate), iar `tests/build.test.js` verifică dacă `index.html` e construit din sursele actuale. Pe GitHub rulează singure la fiecare modificare
 (`.github/workflows/verificare.yml`). Cu `CP_SHOTS=capturi npm test` se salvează și o captură de ecran.
