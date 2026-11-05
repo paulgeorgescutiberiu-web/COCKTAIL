@@ -21,7 +21,7 @@ Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina r
 | `stoc.js`, `stoc.css` | Stocul din depozit, facturi, inventar, comanda la furnizor, AI |
 | `cons.js` | Consumația și Excelul de consum pe eveniment |
 | `evnou.js` | „Eveniment nou”, editarea fișei, săptămâni anterioare |
-| `contracte.js` | Contracte, portalul clientului, plăți, rentabilitate, notițe, postare Instagram |
+| `contracte.js` | Contracte, portalul clientului, plăți, rentabilitate, notițe, postare Instagram + Facebook (acum sau programată, cu idei de postări; vezi `social/README.md`) |
 | `oferte.js` | Ofertele și meniurile |
 | `raport.js` | Raportul lunar și plata barmanilor |
 | `disp.js` | Echipa: disponibilitatea barmanilor și confirmarea evenimentelor |
@@ -33,7 +33,7 @@ Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina r
 | `corep.py` | Pasul de construire care pune `cp-core.js`, `rezumat.js` și stilurile lor în aplicație |
 | `reguli-firestore.txt` | Regulile de securitate Firebase (se pun manual în consolă) |
 
-Serverul (Firebase Functions) e în `functions/`: funcția `sofiaLive` dă biletul pentru conversația live a Sofiei. Instalarea: `functions/README.md`.
+Serverul (Firebase Functions) e în `functions/`: funcția `sofiaLive` dă biletul pentru conversația live a Sofiei, iar `postariProgramate` publică la 10 minute postările programate (logica în `functions/social.js`, testată de `tests/social.test.js`). Instalarea: `functions/README.md`.
 
 Pagini separate, în rădăcină: `portal.html` (portalul clientului) și `bar.html` (pagina invitaților de la bar).
 

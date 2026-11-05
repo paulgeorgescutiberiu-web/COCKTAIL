@@ -58,3 +58,45 @@ exports.sofiaLive = onCall({
   }
   return { token: j.name, model, rezerve: lista.slice(1, 3) };
 });
+
+/* postariProgramate: la 10 minute publică pe Instagram + Facebook postările programate din aplicație (Postare → Programează).
+   Le trimite la webhook-ul Make, ca butonul „Postează acum”. Logica: functions/social.js */
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const SOC = require("./social");
+exports.postariProgramate = onSchedule({
+  schedule: "every 10 minutes",
+  timeZone: "Europe/Bucharest",
+  region: "europe-west1",
+  maxInstances: 1,
+  memory: "256MiB",
+  timeoutSeconds: 300,
+  retryCount: 0,
+}, async () => {
+  const db = getFirestore(), acum = Date.now();
+  const snap = await db.collection("socialCoada").where("cand", "<=", acum).get();
+  const lista = SOC.deTrimis(snap.docs.map(d => ({ ...d.data(), id: d.id })), acum).slice(0, 10);
+  for (const d of lista) {
+    const ref = db.doc(`socialCoada/${d.id}`);
+    // o iau doar dacă nu a luat-o altcineva între timp
+    const luat = await db.runTransaction(async t => {
+      const x = await t.get(ref);
+      if (!x.exists || !["programat", "eroare"].includes(x.data().stare)) return false;
+      t.update(ref, { stare: "trimit" });
+      return true;
+    });
+    if (!luat) continue;
+    const poza = (await db.doc(`socialPoze/${d.id}`).get()).data();
+    const rez = await SOC.trimite(d.id, d, poza);
+    if (rez.ok) {
+      const b = db.batch();
+      b.set(db.doc(`socialPostate/${d.id}`), { cand: d.cand, caption: d.caption, mic: d.mic || "", postatLa: Date.now() });
+      b.delete(ref);
+      b.delete(db.doc(`socialPoze/${d.id}`));
+      await b.commit();
+      logger.info("postariProgramate: trimis", d.id);
+    } else {
+      await ref.update(SOC.dupaEroare(d, rez));
+      logger.warn("postariProgramate: nu a mers", d.id, rez.err);
+    }
+  }
+});

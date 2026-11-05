@@ -23,7 +23,7 @@ function seed(now = new Date()) {
   const docs = {
     [`${B}/config/evenimente`]: { json: JSON.stringify({ fileName, aoa }), at: ore(30) },
     [`${B}/oameni/uid-paul`]: { name: "Paul" },
-    [`${B}/privat/firma`]: { capBar: "2" },
+    [`${B}/privat/firma`]: { capBar: "2", socialHook: "https://hook.eu1.make.com/test-social" },
     [`${B}/disp/uid-andrei`]: { name: "Andrei", conf: { [`${ds}|1`]: "da" } },
     [`${B}/disp/uid-mihai`]: { name: "Mihai", conf: {} },
     // contracte: unul în săptămâna asta, semnat, fără avans; unul trecut, cu diferența neîncasată; unul viitor

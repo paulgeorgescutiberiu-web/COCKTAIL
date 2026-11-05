@@ -1,10 +1,14 @@
 # Publică pe Instagram + Facebook postările puse în social/coada/<id>/ (poza.jpg + text.txt).
-# Trimite poza (fișier) și textul la scenariul Make.com (secretul MAKE_WEBHOOK_URL), apoi mută dosarul în social/postate/.
+# <id> = AAAA-LL-ZZ_HHMM_nume (ora României) sau AAAA-LL-ZZ_nume (de la ora 10). Se publică doar când a venit ora;
+# rulează la fiecare push în coadă și la 30 de minute. Trimite poza și textul la scenariul Make.com (secretul MAKE_WEBHOOK_URL),
+# apoi mută dosarul în social/postate/.
 name: Postare social
 on:
   push:
     branches: [main]
     paths: ["social/coada/**"]
+  schedule:
+    - cron: "7,37 * * * *"
   workflow_dispatch:
 permissions:
   contents: write
@@ -22,9 +26,15 @@ jobs:
           if [ -z "$HOOK" ]; then echo "Lipsește secretul MAKE_WEBHOOK_URL"; exit 1; fi
           shopt -s nullglob
           done_any=0
+          acum=$(TZ=Europe/Bucharest date +%Y-%m-%d_%H%M)
           for d in social/coada/*/; do
             id=$(basename "$d"); img=$(ls "$d" | grep -iE '\.(jpe?g|png)$' | head -1)
             [ -z "$img" ] && continue
+            if [[ "$id" =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2})_([0-9]{4})_ ]]; then cand="${BASH_REMATCH[1]}_${BASH_REMATCH[2]}"
+            elif [[ "$id" =~ ^([0-9]{4}-[0-9]{2}-[0-9]{2})_ ]]; then cand="${BASH_REMATCH[1]}_1000"
+            else echo "Sar peste $id: numele trebuie să înceapă cu AAAA-LL-ZZ_"; continue; fi
+            if [[ "$cand" > "$acum" ]]; then echo "Încă nu: $id ($cand)"; continue; fi
+            git pull -q --rebase origin main
             mkdir -p social/postate && git mv "$d" "social/postate/$id"
             git config user.name "cocktail-bot"; git config user.email "bot@users.noreply.github.com"
             git commit -qm "Postat: $id [skip ci]"; git push -q

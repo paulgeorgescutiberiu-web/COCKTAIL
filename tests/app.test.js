@@ -162,6 +162,41 @@ test("aplicația salvează fișa și stocul pentru emailul de luni (privat/rezum
   assert.ok(Array.isArray(r.stoc.lipsa));
 });
 
+test("Postare: programează o poză, apare în „Programate”, se poate șterge; ideile se deschid", async () => {
+  await tab("postare");
+  await page.setInputFiles("#socFile", { name: "bar.png", mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAYAAAC56t6BAAAAEklEQVR4nGP4z8DwHwYZYQwAhp4D/U8RnIkAAAAASUVORK5CYII=", "base64") });
+  await page.waitForSelector("#socCv");
+  await page.check('input[name="socWhen"][value="plan"]');
+  await page.waitForSelector("#socAt");
+  const ms = await page.evaluate(() => { const d = new Date(Date.now() + 3 * 864e5); d.setHours(19, 30, 0, 0); return d.getTime(); });
+  const local = await page.evaluate(ms => { const d = new Date(ms), z = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; }, ms);
+  await page.fill("#socAt", local);
+  await page.dispatchEvent("#socAt", "change");
+  await page.fill("#socTxt", "Seară frumoasă 🍸 #cocktailphilosophy");
+  await page.click('[data-c="socpost"]');
+  assert.match(await page.textContent('[data-c="socpost"]'), /Sigur/);
+  await page.click('[data-c="socpost"]');
+  await page.waitForFunction(() => [...window.__STORE.keys()].some(k => k.startsWith("socialCoada/")), null, { timeout: 10000 });
+  const id = await page.evaluate(() => [...window.__STORE.keys()].find(k => k.startsWith("socialCoada/")).split("/")[1]);
+  const q = await store("socialCoada/" + id), p = await store("socialPoze/" + id);
+  assert.equal(q.cand, ms); assert.equal(q.stare, "programat"); assert.equal(q.hook, "https://hook.eu1.make.com/test-social");
+  assert.equal(q.caption, "Seară frumoasă 🍸 #cocktailphilosophy"); assert.match(q.mic, /^data:image\/jpeg/);
+  assert.ok(p.img.length > 100 && p.img.length < 900e3); assert.equal(Buffer.from(p.img, "base64")[0], 0xff, "JPEG");
+  await page.waitForSelector(".soc-it");
+  assert.match(await page.textContent(".soc-it"), /19:30/);
+  if (process.env.CP_SHOTS) {
+    await page.setViewportSize({ width: 430, height: 900 }); await page.click('[data-c="socidei"]');
+    await page.screenshot({ path: path.join(process.env.CP_SHOTS, "postare-telefon.png"), fullPage: true });
+    await page.click('[data-c="socidei"]'); await page.setViewportSize({ width: 1200, height: 900 });
+  }
+  await page.click('.soc-it [data-c="socdel"]'); await page.click('.soc-it [data-c="socdel"]');
+  await page.waitForFunction(id => !window.__STORE.get("socialCoada/" + id) && !window.__STORE.get("socialPoze/" + id), id, { timeout: 5000 });
+  await page.click('[data-c="socidei"]');
+  await page.waitForSelector(".soc-id li");
+  assert.ok((await page.$$(".soc-id li")).length >= 8);
+});
+
 test("nicio eroare în tot testul și nicio cerere spre servicii reale", async () => {
   assert.deepEqual(errors, [], errors.join("\n"));
   const allowed = [];
