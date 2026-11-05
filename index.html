@@ -5383,7 +5383,8 @@ function closePanel(){VS.open=false;stopLive();stopListen();shush();paint()}
 /* O întrebare scrisă sau apăsată: în conversația live merge direct în ea */
 function send(text,shown){text=String(text||"").trim();if(!text)return;if(VS.live)liveText(text,shown);else turn(text,shown)}
 async function turn(text,shown){
-  text=String(text||"").trim();if(!text||VS.busy)return;
+  text=String(text||"").trim();if(!text)return;
+  if(VS.busy){VS.next=[text,shown];setStatus("Am notat, îți răspund imediat după…");return}   // nu se pierde: pleacă după răspunsul curent
   shush();stopListen();
   add("eu",shown||text);VS.busy=true;VS.status="Mă gândesc…";paint();
   let b=null,buf="",full="";
@@ -5399,6 +5400,7 @@ async function turn(text,shown){
     if(b)b.text+=(b.text?" … ":"")+a;else add("ai",a);sayQ(a);full=a}
   if(b)b.streaming=false;
   VS.busy=false;VS.status="";paint();
+  if(VS.next){const n=VS.next;VS.next=null;turn(n[0],n[1]);return}
   await speechIdle();
   /* Conversație continuă: după răspuns ascultă din nou (sau doar când Sofia a pus o întrebare) */
   if(VS.open&&VS.talk&&SR&&!VS.ask&&!VS.busy&&!VS.listening&&!VS.live&&(VS.conv||/\?\s*$/.test(full.trim())))talkTurn({auto:true});

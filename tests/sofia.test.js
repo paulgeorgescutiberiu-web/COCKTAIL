@@ -110,8 +110,7 @@ test("Sofia cu vocea telefonului: „nu e bine” la confirmare înseamnă NU, �
   await page.waitForFunction(() => [...document.querySelectorAll("#vcLog .vc-ai")].some(x => /renunțat/.test(x.textContent)), null, { timeout: 8000 });
   assert.equal(await avans(page), false, "„nu e bine” nu trebuie să salveze");
   await page.evaluate(c => { window.__SCRIPT.push(c, { chunks: ["Gata, am marcat avansul."] }); window.__SAY.push("da"); }, call);
-  await page.fill("#vcIn", "Ba da, marchează-l");
-  await page.click("#vcF button[type=submit]");
+  await page.evaluate(() => { const i = document.getElementById("vcIn"); i.value = "Ba da, marchează-l"; document.getElementById("vcF").requestSubmit(); });   // imediat, cât Sofia încă termină tura
   await page.waitForFunction(() => [...document.querySelectorAll("#vcLog .vc-ai")].some(x => /am marcat/.test(x.textContent)), null, { timeout: 8000 });
   assert.equal(await avans(page), true);
   assert.deepEqual(errors, [], errors.join("\n"));
