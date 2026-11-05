@@ -405,7 +405,7 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .ct-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
 .ct-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .ct-rt{display:table!important;width:100%!important;border-collapse:collapse;margin:4px 0 12px}.ct-rt td{padding:7px 4px;border-bottom:1px solid var(--line)}.ct-rt td:last-child{text-align:right;font-variant-numeric:tabular-nums}.ct-rt .tot td{font-weight:800;font-size:1.1rem;border-bottom:0}
-.ct-note{margin:8px 0 0;line-height:1.45}.ct-sg{align-items:center}.ct-sg a.ct-chip{text-decoration:none}.ct-up{cursor:pointer}.soc-m{margin-bottom:12px}.vid-pv{display:block;width:100%;max-width:320px;max-height:60vh;border-radius:14px;background:#000;margin:10px 0}.vid-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:8px 0}.vid-bar i{display:block;height:100%;background:var(--accent,#f08a24)}.vid-opt{display:flex;flex-wrap:wrap;gap:8px 16px;margin:10px 0}.vid-opt label{display:flex;align-items:center;gap:6px;font-size:.92rem}.vid-h li{margin:4px 0}.soc-cv{display:block;width:100%;max-width:420px;height:auto;border-radius:12px;margin:12px 0;background:#000}.soc-r{margin-top:12px}.ct-up.busy{opacity:.6;pointer-events:none}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
+.ct-note{margin:8px 0 0;line-height:1.45}.ct-sg{align-items:center}.ct-sg a.ct-chip{text-decoration:none}.ct-up{cursor:pointer}.soc-m{margin-bottom:12px}.vid-pv{display:block;width:100%;max-width:320px;max-height:60vh;border-radius:14px;background:#000;margin:10px 0}.vid-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:8px 0}.vid-bar i{display:block;height:100%;background:var(--accent,#f08a24)}.vid-opt{display:flex;flex-wrap:wrap;gap:8px 16px;margin:10px 0}.vid-opt label{display:flex;align-items:center;gap:6px;font-size:.92rem}.vid-h li{margin:4px 0}.soc-cv{display:block;width:100%;max-width:420px;height:auto;border-radius:12px;margin:12px 0;background:#000}.soc-r{margin-top:12px}.soc-when{align-items:center}.soc-when input[type=datetime-local]{font:inherit;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit)}.soc-box{margin-top:22px;padding-top:14px;border-top:1.5px solid var(--line)}.soc-hd{display:flex;align-items:center;justify-content:space-between;gap:10px}.soc-it{display:flex;gap:12px;align-items:flex-start;margin:12px 0}.soc-it img{width:64px;height:auto;border-radius:8px;flex:none}.soc-it p{margin:4px 0}.soc-err{color:#c0392b}.soc-id{padding-left:18px}.soc-id li{margin:8px 0;line-height:1.4}.soc-id .ct-chip{margin-left:6px;padding:3px 10px}.soc-ai-h{margin-top:16px}.soc-ok{margin-top:12px}.ct-up.busy{opacity:.6;pointer-events:none}.ct-full{display:flex!important;flex-direction:column;align-items:stretch;gap:6px;margin:10px 0;font-weight:600;font-size:.9rem;color:var(--muted)}.ct-full textarea{box-sizing:border-box;width:100%!important;min-height:140px;font-size:1rem!important;font-family:inherit!important;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink,inherit);resize:vertical}
 .ct-bk-due{border-color:var(--accent,#c9822b)!important}
 .ct-h span,.ct-m{color:var(--muted);font-size:.9rem}
 .ct-b{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
@@ -3382,7 +3382,8 @@ async function payCheck(c,quiet){
 function payAuto(){if(!(firma&&firma.payHook))return;let n=0;list.forEach(c=>{if(n<6&&c.payOrder&&c.payOrder.id&&!c.avansPlatit&&!PAY.checked[c.id]){PAY.checked[c.id]=1;n++;payCheck(c,true)}})}
 
 /* ---------- Postare Instagram + Facebook ---------- */
-const SOC={mode:"foto",img:null,name:"",ratio:"45",pos:0.5,caption:"",busy:false,arm:false,msg:"",ai:false,aiMsg:"",ctx:""};
+const SOC={mode:"foto",img:null,name:"",ratio:"45",pos:0.5,caption:"",busy:false,arm:false,msg:"",ai:false,aiMsg:"",ctx:"",
+  when:"now",at:"",coada:null,postate:[],subQ:null,idei:null,ideiBusy:false,ideiMsg:"",ideiOpen:false,del:null};
 const socModes=()=>`<div class="ct-b soc-m">${[["foto","📷 Poză · Instagram + Facebook"],["video","🎬 Video · TikTok"]].map(([k,l])=>`<button class="ct-chip ${SOC.mode===k?"on":""}" data-sm="${k}">${l}</button>`).join("")}</div>`;
 const SOC_TPL=()=>{const t=today(),ev=list.filter(c=>c.dataEv&&c.dataEv<=t).sort((a,b)=>String(b.dataEv).localeCompare(a.dataEv))[0];
   const loc=ev&&ev.locatie?tcase(ev.locatie):"";
@@ -3411,9 +3412,11 @@ function viewSocial(){
     <label class="ct-full">Textul postării${SOC.ai?" · scriu textul după poză…":""}<textarea id="socTxt" rows="9"${SOC.ai?" disabled":""}>${esc(SOC.caption||SOC_TPL())}</textarea></label>
     ${SOC.aiMsg?`<p class="ev-alert ct-msg">${esc(SOC.aiMsg)}</p>`:""}
     <div class="ct-b">${SOC.img?`<button class="btn primary" data-c="socai"${SOC.ai?" disabled":""}>✨ ${SOC.caption&&SOC.caption!==SOC_TPL()?"Alt text după poză":"Scrie textul după poză"}</button>`:""}<button class="btn" data-c="soctpl">Pune textul gata scris</button></div>
+    <div class="vid-opt soc-when"><label><input type="radio" name="socWhen" value="now"${SOC.when!=="plan"?" checked":""}> Acum</label><label><input type="radio" name="socWhen" value="plan"${SOC.when==="plan"?" checked":""}> Programează</label>${SOC.when==="plan"?`<input type="datetime-local" id="socAt" value="${esc(SOC.at||socDefAt())}" min="${socLocal(Date.now()+5*60e3)}">`:""}</div>
+    ${SOC.when==="plan"?`<p class="ev-file">Se publică singură la ora aleasă, și dacă telefonul e închis. Orele bune: seara între 19 și 21, în weekend și la prânz.</p>`:""}
     ${SOC.msg?`<p class="ev-alert ct-msg">${esc(SOC.msg)}</p>`:""}
-    <div class="st-save"><button class="btn primary" data-c="socpost"${!SOC.img||!hook||SOC.busy||SOC.ai?" disabled":""}>${SOC.busy?"Se trimite…":SOC.arm?"Sigur? Apasă din nou ca să postezi":"Postează pe Instagram + Facebook"}</button></div>`;
-  return h;
+    <div class="st-save"><button class="btn primary" data-c="socpost"${!SOC.img||!hook||SOC.busy||SOC.ai?" disabled":""}>${socBtnTxt()}</button></div>`;
+  return h+socCoadaHTML()+socIdeiHTML();
 }
 function drawSoc(){const cv=$("#socCv"),d=socDims();if(!cv||!d)return;const w=1080,hh=Math.round(w*d.ch/d.cw);cv.width=w;cv.height=hh;
   cv.getContext("2d").drawImage(SOC.img,d.sx,d.sy,d.cw,d.ch,0,0,w,hh)}
@@ -3476,6 +3479,115 @@ async function aiCaption(src,prompt,again){
 function aiErrMsg(e,what){console.warn(e);const X=window.__cpAI||{},raw=String(e&&(e.message||e.code)||e).replace(/https?:\/\/\S+/g,"…").replace(/^AI: Error fetching from …:?\s*/,"").replace(/\s+/g," ").slice(0,220);
   const why=X.err?X.err(e).replace("Citirea facturii nu a reușit. Încearcă din nou sau completează manual.","Textul automat nu a mers."):"";
   return `Nu am putut scrie textul după ${what}. ${why} Poți folosi textul gata scris. (detaliu: ${raw})`}
+
+/* ---------- Postări programate ----------
+   Poza (JPEG, sub 900 KB) stă în socialPoze/{id}, restul în socialCoada/{id}. Funcția postariProgramate (functions/)
+   se uită la 10 minute, trimite la webhook-ul Make ce a ajuns la ora lui și mută postarea în socialPostate/{id}. */
+const socLocal=ms=>{const d=new Date(ms),z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
+const socDefAt=()=>{const d=new Date();d.setDate(d.getDate()+1);d.setHours([0,6].includes(d.getDay())?12:19,30,0,0);return socLocal(d.getTime())};
+const socZi=ms=>{const d=new Date(ms),z=n=>String(n).padStart(2,"0");return `${["dum","lun","mar","mie","joi","vin","sâm"][d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}, ${z(d.getHours())}:${z(d.getMinutes())}`};
+function socBtnTxt(){if(SOC.busy)return SOC.when==="plan"?"Se programează…":"Se trimite…";
+  if(SOC.when==="plan"){const ms=new Date(SOC.at||socDefAt()).getTime();return SOC.arm?`Sigur? Apasă din nou (${socZi(ms)})`:`Programează pe ${isFinite(ms)?socZi(ms):"…"}`}
+  return SOC.arm?"Sigur? Apasă din nou ca să postezi":"Postează pe Instagram + Facebook"}
+function socSubscribe(){if(SOC.subQ)return;
+  SOC.subQ=F.fs.collection("socialCoada").orderBy("cand").onSnapshot(s=>{SOC.coada=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(a.cand||0)-(b.cand||0));if(PV&&!PV.hidden&&SOC.mode==="foto")socRender()},
+    e=>{console.warn(e);SOC.coada=[];SOC.coadaErr=e&&e.code==="permission-denied"?"Postările programate nu se pot citi: pune regulile noi în Firebase (socialCoada, socialPoze, socialPostate).":"Postările programate nu se pot încărca. Verifică internetul.";if(PV&&!PV.hidden)socRender()});
+  F.fs.collection("socialPostate").orderBy("postatLa","desc").limit(5).onSnapshot(s=>{SOC.postate=s.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>(b.postatLa||0)-(a.postatLa||0)).slice(0,5);if(PV&&!PV.hidden&&SOC.mode==="foto")socRender()},()=>{});
+  F.fs.doc(`${F.base}/privat/socialIdei`).get().then(d=>{if(d.exists&&Array.isArray(d.data().lista))SOC.idei=d.data();if(PV&&!PV.hidden&&SOC.mode==="foto")socRender()}).catch(()=>{})}
+async function socJpeg(cv,max){let q=0.88,u=cv.toDataURL("image/jpeg",q);while(u.length>max&&q>0.4){q-=0.08;u=cv.toDataURL("image/jpeg",q)}
+  if(u.length>max){const c2=document.createElement("canvas"),k=Math.sqrt(max/u.length)*0.95;c2.width=Math.round(cv.width*k);c2.height=Math.round(cv.height*k);c2.getContext("2d").drawImage(cv,0,0,c2.width,c2.height);u=c2.toDataURL("image/jpeg",0.8)}
+  return u.split(",")[1]}
+function socMic(cv){const c=document.createElement("canvas"),k=160/cv.width;c.width=160;c.height=Math.round(cv.height*k);c.getContext("2d").drawImage(cv,0,0,c.width,c.height);return c.toDataURL("image/jpeg",0.7)}
+async function socPlan(){
+  const hook=(firma&&firma.socialHook||"").trim(),txt=($("#socTxt").value||"").trim();SOC.caption=txt;
+  if(!/^https:\/\/hook\.[a-z0-9]+\.make\.com\//.test(hook)){toast("Adresa webhook-ului din Make nu pare corectă.");return}
+  if(!txt){toast("Scrie un text pentru postare.");return}
+  if(txt.length>2200){toast(`Textul are ${txt.length} de caractere. Instagram primește cel mult 2200.`);return}
+  if(((txt.match(/#[\p{L}\p{N}_]+/gu)||[]).length)>30){toast("Instagram primește cel mult 30 de hashtag-uri.");return}
+  const at=($("#socAt")||{}).value||SOC.at,ms=new Date(at).getTime();
+  if(!isFinite(ms)){toast("Alege data și ora.");return}
+  if(ms<Date.now()+2*60e3){toast("Alege o oră din viitor (măcar peste 5 minute) sau „Acum”.");return}
+  SOC.at=at;if(!SOC.arm){SOC.arm=true;socRender();return}
+  SOC.busy=true;SOC.arm=false;socRender();
+  try{const cv=$("#socCv"),id=socLocal(ms).replace(/[T:]/g,"-")+"_"+Date.now().toString(36),img=await socJpeg(cv,900e3);
+    await F.fs.doc(`socialPoze/${id}`).set({img});
+    await F.fs.doc(`socialCoada/${id}`).set({cand:ms,caption:txt,hook,mic:socMic(cv),stare:"programat",incercari:0,creat:Date.now()});
+    SOC.img=null;SOC.caption="";SOC.msg="";SOC.ctx="";SOC.busy=false;SOC.when="now";SOC.aiMsg="";socRender();toast(`Programată: ${socZi(ms)} ✓`);
+  }catch(e){console.warn(e);SOC.busy=false;SOC.msg=e&&e.code==="permission-denied"?"Firebase nu a lăsat salvarea. Pune regulile noi (socialCoada, socialPoze, socialPostate) din src/reguli-firestore.txt.":"Nu am putut programa postarea. Verifică internetul și încearcă din nou.";socRender()}
+}
+async function socDel(id){try{await F.fs.doc(`socialCoada/${id}`).delete();await F.fs.doc(`socialPoze/${id}`).delete().catch(()=>{});toast("Postarea programată a fost ștearsă.")}
+  catch(e){toast("Nu am putut șterge. Verifică internetul.")}}
+function socCoadaHTML(){
+  const c=SOC.coada,serv=c&&c.some(x=>x.stare==="programat"&&x.cand<Date.now()-30*60e3);
+  let h=`<div class="soc-box"><p class="ev-sub">📅 Programate${c&&c.length?` (${c.length})`:""}</p>`;
+  if(SOC.coadaErr)h+=`<div class="ev-alert">${esc(SOC.coadaErr)}</div>`;
+  else if(!c)h+=`<p class="ev-file">Se încarcă…</p>`;
+  else if(!c.length)h+=`<p class="ev-file">Nimic programat. Alege o poză, scrie textul și apasă „Programează”.</p>`;
+  if(serv)h+=`<div class="ev-alert">Sunt postări care trebuiau publicate de peste o jumătate de oră. Verifică dacă funcția <b>postariProgramate</b> e publicată (functions/README.md).</div>`;
+  (c||[]).forEach(x=>{const st=x.stare==="eroare"?`<b class="soc-err">Nu a mers${x.incercari>=3?"":`, reîncerc (${x.incercari||0}/3)`}</b>${x.err?` · ${esc(String(x.err).slice(0,120))}`:""}`:x.stare==="trimit"?"Se trimite acum…":"";
+    h+=`<div class="soc-it">${x.mic?`<img src="${esc(x.mic)}" alt="">`:""}<div><b>${socZi(x.cand)}</b><p>${esc(String(x.caption||"").split("\n")[0].slice(0,110))}</p>${st?`<p class="ev-file">${st}</p>`:""}
+      <div class="ct-b">${x.stare==="eroare"?`<button class="ct-chip" data-c="socretry" data-id="${esc(x.id)}">Reîncearcă</button>`:x.stare==="programat"?`<button class="ct-chip" data-c="socnow" data-id="${esc(x.id)}">Publică acum</button>`:""}
+      <button class="ct-chip" data-c="socdel" data-id="${esc(x.id)}">${SOC.del===x.id?"Sigur? Apasă din nou":"Șterge"}</button></div></div></div>`});
+  if(SOC.postate.length)h+=`<p class="ev-file soc-ok">Publicate recent: ${SOC.postate.map(x=>`${socZi(x.postatLa)} · ${esc(String(x.caption||"").split("\n")[0].slice(0,40))}`).join(" · ")}</p>`;
+  return h+`</div>`}
+
+/* Idei: o listă pe lună, gata scrisă, plus un plan pe 4 săptămâni făcut de AI cu evenimentele tale. */
+const IDEI_LUNA={
+  0:["Logodnă de sărbători? Nunta se rezervă acum: datele din vară se ocupă primele","Cocktailul lunii: rețeta pe scurt, fără alcool (dry january)","Bilanțul anului: câte evenimente, câte cocktailuri, mulțumire clienților"],
+  1:["Valentine's: un cocktail pentru doi, pas cu pas","Târgurile de nunți: unde ne găsești","Cum alegi meniul de cocktailuri pentru nuntă (3 sfaturi)"],
+  2:["Primăvara în pahar: cocktailuri cu fructe proaspete","Ce înseamnă „bar mobil”: ce aducem, ce nu-ți faci griji","Rezervări pentru botezuri și cununii de primăvară"],
+  3:["Paște: cocktail de sărbătoare pentru masa în familie","Culisele: cum pregătim siropurile făcute în casă","Barul la cununia civilă: varianta mai mică, la fel de frumoasă"],
+  4:["Începe sezonul nunților: prima nuntă a anului, în poze","Echipa: prezintă un barman (cu acordul lui)","Mocktailuri pentru invitații care nu beau alcool"],
+  5:["Cocktailurile verii: răcoroase, cu gheață multă","Recenzia unui client (screenshot sau citat)","Barul la evenimente corporate: team building, lansări"],
+  6:["O seară la o nuntă, în 5 poze (carusel)","Spritz, mojito, margarita: ce se cere cel mai mult vara","Ce se întâmplă la bar înainte să vină invitații (montajul)"],
+  7:["Piramida de shoturi: momentul serii","Cele mai frumoase locații din Sibiu unde am fost","Ultimele date libere din sezon"],
+  8:["Toamna în pahar: scorțișoară, măr, pere","Mulțumire pentru sezonul de nunți","Petreceri de firmă de final de an: rezervările încep acum"],
+  9:["Halloween: cocktail fumuriu / colorat","Barul la aniversări: 18 ani, 30, 50","Culisele: garniturile, una câte una"],
+  10:["Petrecerea de Crăciun a firmei: barul vine la voi (Pachetul Final de An)","Cocktailuri calde de iarnă: vin fiert, hot toddy","Ultimele date libere în decembrie"],
+  11:["Cocktailul de Crăciun: rețeta noastră","Revelion: shoturi și cocktailuri pentru miezul nopții","Mulțumire pentru anul acesta + cele mai frumoase momente"]};
+const IDEI_MEREU=["Rețeta unui cocktail din meniu, în 3 pași","Înainte și după: locul gol, apoi barul gata","„Știai că…”: un lucru despre gheață, citrice sau siropuri","Întrebare pentru urmăritori: ce cocktail ați vrea la nuntă?","Un moment din spatele barului (mâini, shaker, turnare)"];
+function socIdeiHTML(){
+  const m=new Date().getMonth(),urm=(m+1)%12,ai=SOC.idei&&SOC.idei.lista||[];
+  let h=`<div class="soc-box"><div class="soc-hd"><p class="ev-sub">💡 Idei de postări</p><button class="ct-chip" data-c="socidei">${SOC.ideiOpen?"Ascunde":"Arată"}</button></div>`;
+  if(!SOC.ideiOpen)return h+`<p class="ev-file">Ce să postezi luna asta, plus un plan pe 4 săptămâni făcut după evenimentele tale. „Folosește” pune textul și ziua; tu alegi poza.</p></div>`;
+  const li=(k,arr)=>arr.map((t,i)=>`<li>${esc(t)} <button class="ct-chip" data-c="socidee" data-k="${k}" data-i="${i}">Folosește</button></li>`).join("");
+  h+=`<p class="ev-file"><b>${MONTHS[m]}</b></p><ul class="soc-id">${li("m",IDEI_LUNA[m])}</ul><p class="ev-file"><b>Pregătește pentru ${MONTHS[urm]}</b></p><ul class="soc-id">${li("u",IDEI_LUNA[urm])}</ul><p class="ev-file"><b>Merg oricând</b></p><ul class="soc-id">${li("x",IDEI_MEREU)}</ul>`;
+  h+=`<p class="ev-sub soc-ai-h">✨ Plan pe 4 săptămâni</p>`;
+  if(ai.length)h+=`<ul class="soc-id soc-plan">${ai.map((x,i)=>`<li><b>${esc(x.zi?shortDate(x.zi):"")} ${esc(x.ora||"")}</b> · ${esc(x.titlu||"")}<br><span class="ev-file">${esc(x.poza?"Poza: "+x.poza:"")}</span> <button class="ct-chip" data-c="socidee" data-k="a" data-i="${i}">Folosește</button></li>`).join("")}</ul>`;
+  if(SOC.ideiMsg)h+=`<p class="ev-alert ct-msg">${esc(SOC.ideiMsg)}</p>`;
+  return h+`<div class="ct-b"><button class="btn primary" data-c="socideiai"${SOC.ideiBusy?" disabled":""}>${SOC.ideiBusy?"Mă gândesc…":ai.length?"Alt plan":"Fă-mi un plan"}</button></div></div>`}
+function socIdeiPrompt(){
+  const t=today(),ev=list.filter(c=>c.dataEv&&c.dataEv>=addDaysS(t,-21)&&c.dataEv<=addDaysS(t,35)).sort((a,b)=>String(a.dataEv).localeCompare(b.dataEv))
+    .map(c=>`- ${c.dataEv}${c.dataEv<t?" (a fost)":""}: ${c.locatie?tcase(c.locatie):"locație necunoscută"}${c.invitati?", "+c.invitati+" invitați":""}`).join("\n");
+  return `Ești social media managerul Cocktail Philosophy, un bar mobil de cocktailuri pentru evenimente din Sibiu (nunți, petreceri private, evenimente corporate, Pachetul Final de An pentru petrecerile de firmă).
+Azi e ${t}. Fă un plan de postări pe Instagram și Facebook pentru următoarele 4 săptămâni: 8 postări (2 pe săptămână), fiecare cu o poză.
+Amestecă: momente de la evenimente reale, culise (siropuri făcute în casă, garnituri, montajul barului), rețete scurte, sezonul și sărbătorile din perioada asta, oferte de sezon (fără prețuri), recenzii, întrebări pentru urmăritori.
+Orele: în timpul săptămânii 19:00–20:30, în weekend 11:00–12:30. Prima postare cel mai devreme mâine.
+${ev?`Evenimentele din calendar (după un eveniment, postează poze de acolo în 1–3 zile; nu inventa nume de oameni):\n${ev}`:"Nu sunt evenimente în calendar în perioada asta."}
+Pentru fiecare postare scrie textul complet, în română: jucăuș dar profesionist, cald, 2–4 propoziții scurte, 1–3 emoji, apoi rândul „Ai un eveniment în plan? Scrie-ne pe WhatsApp: 0743 785 655” și un rând cu 8–12 hashtag-uri (mereu #cocktailphilosophy, plus câteva locale ca #sibiu, #evenimentesibiu). Nu da prețuri, nu pomeni flori comestibile, siropurile sunt „făcute în casă”.
+Răspunde DOAR cu JSON: {"lista":[{"zi":"AAAA-LL-ZZ","ora":"HH:MM","titlu":"ideea în câteva cuvinte","poza":"ce poză să aleagă Paul","text":"textul complet, cu rânduri noi ca \\n"}]}`}
+const addDaysS=(iso,n)=>{const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+async function socIdeiAI(){
+  const X=window.__cpAI;if(!X||!X.ready()){SOC.ideiMsg="AI-ul nu e disponibil acum. Folosește ideile de mai sus.";socRender();return}
+  SOC.ideiBusy=true;SOC.ideiMsg="";socRender();
+  try{const {aiM,ai}=await X.loadAI();let res,last;
+    for(const m of X.models){try{res=await aiM.getGenerativeModel(ai,{model:m,generationConfig:{responseMimeType:"application/json",temperature:0.9}}).generateContent(socIdeiPrompt());break}
+      catch(e){last=e;if(!/not.?found|404|unsupported|is not available|invalid.*model/i.test(String(e&&e.message)))throw e}}
+    if(!res)throw last;
+    const j=JSON.parse(res.response.text().replace(/^```(json)?|```$/g,"").trim()),t=today();
+    const lista=(Array.isArray(j.lista)?j.lista:[]).filter(x=>x&&x.text&&/^\d{4}-\d{2}-\d{2}$/.test(x.zi||"")&&x.zi>t).slice(0,12)
+      .map(x=>({zi:x.zi,ora:/^\d{2}:\d{2}$/.test(x.ora||"")?x.ora:"19:30",titlu:String(x.titlu||"").slice(0,120),poza:String(x.poza||"").slice(0,200),text:String(x.text).replace(/\\n/g,"\n").slice(0,2200)}));
+    if(!lista.length)throw new Error("planul a venit gol");
+    SOC.idei={lista,la:Date.now()};F.fs.doc(`${F.base}/privat/socialIdei`).set(SOC.idei).catch(()=>{});
+  }catch(e){SOC.ideiMsg=aiErrMsg(e,"idei").replace("Nu am putut scrie textul după idei.","Nu am putut face planul.").replace("Poți folosi textul gata scris.","Folosește ideile de mai sus.")}
+  finally{SOC.ideiBusy=false;socRender()}}
+function socFoloseste(k,i){
+  const m=new Date().getMonth();
+  if(k==="a"){const x=SOC.idei&&SOC.idei.lista[i];if(!x)return;SOC.caption=x.text;SOC.ctx=x.titlu;SOC.when="plan";SOC.at=`${x.zi}T${x.ora}`;
+    toast(x.poza?`Alege poza: ${x.poza}`:"Alege poza.")}
+  else{const t=(k==="m"?IDEI_LUNA[m]:k==="u"?IDEI_LUNA[(m+1)%12]:IDEI_MEREU)[i];if(!t)return;SOC.ctx=t;SOC.when="plan";if(!SOC.at)SOC.at=socDefAt();
+    if(SOC.img)socAI(true);else toast("Alege poza; textul îl scriu după poză și după idee.")}
+  SOC.arm=false;socRender();window.scrollTo({top:0,behavior:"smooth"})}
 
 /* ---------- Postare video (TikTok, opțional și Reel pe Instagram) ----------
    Clipul se urcă în Drive („TikTok Cocktail Philosophy / De postat”), apoi aplicația trimite la webhook-ul Make
@@ -3600,20 +3712,29 @@ if(PV){
   PV.addEventListener("change",e=>{const t=e.target;if(t.id==="socFile"){const fl=t.files&&t.files[0];if(fl)socLoad(fl)}
     if(t.id==="vidFile"){const fl=t.files&&t.files[0];if(fl)vidLoad(fl)}
     if(t.id==="vidReel"){VID.reel=t.checked;VID.arm=false;socRender()}
-    if(t.name==="vidWhen"){VID.when=t.value;VID.arm=false;socRender()}});
+    if(t.name==="vidWhen"){VID.when=t.value;VID.arm=false;socRender()}
+    if(t.name==="socWhen"){const x=$("#socTxt");if(x)SOC.caption=x.value;SOC.when=t.value;SOC.arm=false;if(SOC.when==="plan"&&!SOC.at)SOC.at=socDefAt();socRender()}
+    if(t.id==="socAt"){SOC.at=t.value;SOC.arm=false;socRender()}});
   PV.addEventListener("input",e=>{const t=e.target;
     if(t.id==="socPos"){SOC.pos=t.value/100;drawSoc();return}
     if(t.id==="socCtx"){SOC.ctx=t.value;return}
     if(t.id==="vidCtx"){VID.ctx=t.value;return}
     if(t.id==="vidTxt"){VID.caption=t.value;if(VID.arm){VID.arm=false;const b=PV.querySelector('[data-c="vidpost"]');if(b)b.textContent=vidBtnTxt()}return}
-    if(t.id==="socTxt"){SOC.caption=t.value;if(SOC.arm){SOC.arm=false;const b=PV.querySelector('[data-c="socpost"]');if(b)b.textContent="Postează pe Instagram + Facebook"}}});
+    if(t.id==="socTxt"){SOC.caption=t.value;if(SOC.arm){SOC.arm=false;const b=PV.querySelector('[data-c="socpost"]');if(b)b.textContent=socBtnTxt()}}
+    if(t.id==="socAt"){SOC.at=t.value;if(SOC.arm){SOC.arm=false;const b=PV.querySelector('[data-c="socpost"]');if(b)b.textContent=socBtnTxt()}}});
   PV.addEventListener("click",e=>{const t=e.target;
     const sm=t.closest("[data-sm]");if(sm){if(SOC.mode==="video"){const x=$("#vidTxt");if(x)VID.caption=x.value}else{const x=$("#socTxt");if(x)SOC.caption=x.value}SOC.mode=sm.dataset.sm;socRender();return}
     const sr=t.closest("[data-sr]");if(sr){SOC.ratio=sr.dataset.sr;SOC.pos=0.5;SOC.arm=false;SOC.caption=($("#socTxt")||{}).value||SOC.caption;socRender();return}
     const b=t.closest("[data-c]");if(!b)return;const a=b.dataset.c;
     if(a==="soctpl"){SOC.caption=SOC_TPL();SOC.arm=false;socRender();return}
     if(a==="socai"){const cx=$("#socCtx");if(cx)SOC.ctx=cx.value.trim();socAI(true);return}
-    if(a==="socpost"){socPost(b);return}
+    if(a==="socpost"){if(SOC.when==="plan")socPlan();else socPost(b);return}
+    if(a==="socdel"){const id=b.dataset.id;if(SOC.del!==id){SOC.del=id;socRender();return}SOC.del=null;socDel(id);return}
+    if(a==="socretry"){F.fs.doc(`socialCoada/${b.dataset.id}`).set({stare:"programat",incercari:0,err:""},{merge:true}).then(()=>toast("Se reîncearcă în cel mult 10 minute.")).catch(()=>toast("Nu am putut salva. Verifică internetul."));return}
+    if(a==="socnow"){F.fs.doc(`socialCoada/${b.dataset.id}`).set({cand:Date.now()},{merge:true}).then(()=>toast("Se publică în cel mult 10 minute.")).catch(()=>toast("Nu am putut salva. Verifică internetul."));return}
+    if(a==="socidei"){SOC.ideiOpen=!SOC.ideiOpen;socRender();return}
+    if(a==="socideiai"){socIdeiAI();return}
+    if(a==="socidee"){socFoloseste(b.dataset.k,+b.dataset.i);return}
     if(a==="vidtpl"){VID.caption=VID_TPL();VID.arm=false;socRender();return}
     if(a==="vidai"){const cx=$("#vidCtx");if(cx)VID.ctx=cx.value.trim();vidAI(true);return}
     if(a==="vidclear"){vidReset();socRender();return}
@@ -3910,7 +4031,7 @@ V.addEventListener("click",async e=>{
 
 let started=false;
 function start(){if(started)return;started=true;if(!F.isAdmin){V.innerHTML=`<div class="ev-ok">Contractele le vede doar administratorul.</div>`;return}V.innerHTML=`<p class="ev-file">Se încarcă…</p>`;const had=!!sub;subscribe();if(had)render()}
-function startPost(){if(F.isAdmin&&!sub)subscribe();socRender()}
+function startPost(){if(F.isAdmin&&!sub)subscribe();if(F.isAdmin)socSubscribe();socRender()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="contracte")start();if(b.dataset.view==="postare")startPost()}));
 if(store.get("tab","evenimente")==="contracte")start();
 if(store.get("tab","evenimente")==="postare")startPost();

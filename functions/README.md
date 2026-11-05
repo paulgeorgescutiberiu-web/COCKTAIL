@@ -94,3 +94,24 @@ firebase functions:secrets:set GEMINI_API_KEY
 ```bash
 firebase deploy --only functions
 ```
+
+## Postările programate (Instagram + Facebook)
+
+Funcția `postariProgramate` rulează singură la fiecare 10 minute. Ia postările programate din aplicație
+(**Postare → Programează**) care au ajuns la ora lor și le trimite la scenariul din Make („Postare Instagram + Facebook”),
+exact ca butonul „Postează acum”. Dacă Make nu răspunde, mai încearcă de două ori, la 10 minute; după aceea
+postarea apare în aplicație cu **Nu a mers** și butonul **Reîncearcă**.
+
+Se publică împreună cu `sofiaLive`, cu aceeași comandă (`firebase deploy --only functions`). Prima dată, Firebase poate cere
+să activeze **Cloud Scheduler**: răspunzi **y**.
+
+Înainte, pune în Firebase Console → Firestore → **Rules** regulile noi din `src/reguli-firestore.txt`
+(`socialCoada`, `socialPoze`, `socialPostate`); fără ele, aplicația nu poate salva postările programate.
+
+Jurnalul:
+
+```bash
+firebase functions:log --only postariProgramate
+```
+
+Costul: cam 4.300 de rulări pe lună, în partea gratuită (Cloud Scheduler dă 3 programări gratuite pe cont).

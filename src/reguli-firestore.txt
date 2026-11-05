@@ -51,6 +51,16 @@ service cloud.firestore {
                 && request.resource.data.resp.sig == resource.data.resp.sig
                 && request.resource.data.resp.nume == resource.data.resp.nume)));
     }
+    // Postările programate pe Instagram + Facebook (Postare → Programează); le publică funcția postariProgramate
+    match /socialCoada/{id} {
+      allow read, write: if paul();
+    }
+    match /socialPoze/{id} {
+      allow read, write: if paul();
+    }
+    match /socialPostate/{id} {
+      allow read, write: if paul();
+    }
     match /bar/{doc} {
       allow get: if true;
       allow list: if false;
