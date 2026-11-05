@@ -6,7 +6,9 @@ echo ""
 echo "=== Cocktail Philosophy · pornesc funcțiile Firebase ==="
 echo "Înainte: proiectul cocktail-philosophy-dc34b trebuie să fie pe planul Blaze (Firebase Console → Upgrade)."
 echo ""
-if command -v node >/dev/null 2>&1; then
+if command -v firebase >/dev/null 2>&1; then
+  FB="firebase"
+elif command -v node >/dev/null 2>&1; then
   FB="npx -y firebase-tools@latest"
 elif [ -f ./firebase-mac ]; then
   chmod +x ./firebase-mac; xattr -d com.apple.quarantine ./firebase-mac 2>/dev/null
