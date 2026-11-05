@@ -35,11 +35,11 @@ p{margin:0}
 .top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:14px;padding-bottom:14px}
 .logo img{height:42px;width:auto}
 .nav{display:flex;gap:26px;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase}
-.nav a{color:var(--ink);text-decoration:none;padding:6px 0}.nav a:hover{color:var(--green-dark)}
+.nav a{color:var(--ink);text-decoration:none;padding:6px 0;white-space:nowrap}.nav a:hover{color:var(--green-dark)}
 .nav a[aria-current=page]{color:var(--green-dark);border-bottom:2px solid var(--gold)}
-.top .btn{padding:12px 20px;font-size:16px}
+.top .btn{padding:12px 20px;font-size:16px;white-space:nowrap}
 .burger{display:none}
-@media (max-width:900px){
+@media (max-width:1180px){
   .nav,.top .btn-gold{display:none}
   .burger{display:block;position:relative}
   .burger summary{list-style:none;cursor:pointer;font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.08em;text-transform:uppercase;border:2px solid var(--ink);padding:10px 14px;min-height:44px}
@@ -123,7 +123,7 @@ p{margin:0}
 .filters .wrap{display:flex;flex-wrap:wrap;gap:10px;padding-top:14px;padding-bottom:14px}
 .filters button{font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.08em;text-transform:uppercase;padding:10px 18px;min-height:44px;border:2px solid var(--ink);background:var(--cream);color:var(--ink);cursor:pointer}
 .filters button[aria-pressed=true]{background:var(--ink);color:var(--cream)}
-@media (max-width:900px){.filters{top:64px}}
+@media (max-width:1180px){.filters{top:64px}}
 
 /* oferte */
 .offer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px}
@@ -234,6 +234,15 @@ p{margin:0}
   .mbar a{width:60px;height:60px;border-radius:50%}
   .mbar a span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .mbar a svg{width:28px;height:28px}
+}
+/* text lângă poză, până la marginea ecranului: loc pentru butoanele plutitoare */
+@media (min-width:901px){.split-text{padding-right:100px !important}}
+/* ecrane medii: butoane mai mici și loc lăsat pentru ele, ca să nu acopere textul */
+@media (min-width:901px) and (max-width:1439px){
+  .mbar{right:16px;bottom:16px}
+  .mbar a{width:52px;height:52px}
+  .mbar a svg{width:24px;height:24px}
+  main .wrap,.foot .wrap{padding-left:84px;padding-right:84px}
 }
 /* telefon: două pastile jos, peste pagină */
 @media (max-width:900px){
