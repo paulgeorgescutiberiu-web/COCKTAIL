@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Semnal BTC</title>
+<meta name="theme-color" content="#0f1115">
+<style>
+:root{--bg:#0f1115;--card:#171a21;--line:#262b36;--txt:#e7e9ee;--mut:#8b93a5;--up:#1fbf75;--dn:#f0545c;--wait:#e0a93b;--acc:#6aa8ff}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f5f6f8;--card:#fff;--line:#e3e6ec;--txt:#141820;--mut:#5f6878;--up:#0f9a5c;--dn:#d23a43;--wait:#b07b0f;--acc:#2f6fdb}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:14px}
+h1{font-size:18px;margin:0;font-weight:650}
+.pret{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.mut{color:var(--mut)}.up{color:var(--up)}.dn{color:var(--dn)}.wait{color:var(--wait)}
+.small{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 10px;font-weight:600}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.grid .card{margin-bottom:0}
+.dec{font-size:34px;font-weight:800;letter-spacing:.02em}
+.bar{position:relative;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--dn),var(--wait) 50%,var(--up));margin:10px 0 4px}
+.bar i{position:absolute;top:-4px;width:4px;height:20px;border-radius:2px;background:var(--txt);transform:translateX(-2px)}
+.ax{display:flex;justify-content:space-between;font-size:12px;color:var(--mut)}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid currentColor;margin-left:6px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:3px 0;vertical-align:top}td:last-child{text-align:right}
+ul{margin:6px 0 0;padding-left:18px}li{margin:2px 0}
+button,input,select{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+button{cursor:pointer;background:var(--card)}button:hover{border-color:var(--acc)}
+button.b{border-color:var(--up);color:var(--up)}button.s{border-color:var(--dn);color:var(--dn)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row input{width:120px}
+.tabs button.on{border-color:var(--acc);color:var(--acc)}
+canvas{width:100%;height:260px;display:block}
+.err{color:var(--dn);font-size:13px}
+footer{font-size:12px;color:var(--mut);margin:20px 0 30px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Semnal BTC</h1>
+    <span class="pret" id="pret">—</span>
+    <span id="var24" class="small"></span>
+    <span class="small mut" id="stare">se încarcă…</span>
+    <button id="reimprospat" class="small" style="margin-left:auto">↻ Actualizează</button>
+  </header>
+
+  <section class="card" id="consens">
+    <h2>Sugestia de acum (toate intervalele)</h2>
+    <div class="dec" id="decizie">…</div>
+    <div class="bar"><i id="ac" style="left:50%"></i></div>
+    <div class="ax"><span>vânzare</span><span id="ptxt">P(creștere) —</span><span>cumpărare</span></div>
+    <p id="explicatie" class="small" style="margin:10px 0 0"></p>
+  </section>
+
+  <div class="grid" id="intervale"></div>
+
+  <div class="grid" style="margin-top:14px">
+    <section class="card">
+      <h2>Plan de risc</h2>
+      <div class="row small" style="margin-bottom:8px">
+        <label>Capital (USDT) <input id="capital" type="number" min="0" step="100"></label>
+        <label>Risc / tranzacție (%) <input id="risc" type="number" min="0.1" max="10" step="0.1" style="width:80px"></label>
+      </div>
+      <div id="plan" class="small"></div>
+    </section>
+    <section class="card">
+      <h2>Grafic <span class="tabs" id="tabs"></span></h2>
+      <canvas id="grafic"></canvas>
+      <div class="small mut">Lumânări + EMA20 (albastru) și EMA50 (galben)</div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:14px">
+    <h2>Portofoliu de exercițiu (bani virtuali)</h2>
+    <div id="port" class="small"></div>
+    <div class="row" style="margin-top:8px">
+      <input id="suma" type="number" min="1" step="10" placeholder="USDT">
+      <button class="b" id="cumpar">Cumpără</button>
+      <button class="s" id="vand">Vinde</button>
+      <button id="vandTot" class="small">Vinde tot</button>
+      <button id="resetPort" class="small" style="margin-left:auto">Resetează la 10.000</button>
+    </div>
+    <div id="istoric" class="small mut" style="margin-top:8px"></div>
+  </section>
+
+  <footer>
+    Cum lucrează: pentru fiecare interval aduce până la 1000–2000 de lumânări publice BTC/USDT (Binance; rezervă Coinbase), calculează 12 indicatori
+    (EMA, RSI, MACD, Bollinger, ATR, volum), antrenează în browser o regresie logistică și o verifică „walk-forward”: de 5 ori învață doar din trecut și e testată pe perioada următoare.
+    Sugestia CUMPĂRĂ/VINDE apare doar dacă modelul a fost mai bun decât ghicitul din frecvență pe datele nevăzute <b>și</b> probabilitatea se abate destul de la 50%.
+    Consum mic: un preț la 30 s, lumânările la 5–15 min, totul se oprește cât fila nu e vizibilă; nicio cheie, niciun server, nimic trimis nicăieri.<br>
+    <b>Nu e sfat financiar.</b> Prețul BTC e foarte aproape de aleator pe termen scurt; rezultatele trecute nu garantează nimic. Nu risca bani pe care nu-ți permiți să-i pierzi.
+  </footer>
+</main>
+
+<script src="semnal.js"></script>
+<script>
+'use strict';
+const TF = [
+  { id: '1h', nume: '1 oră', H: 12, orizont: '12 ore', pagini: 2, reimprospat: 5 * 60e3, cb: 3600 },
+  { id: '4h', nume: '4 ore', H: 6, orizont: '24 de ore', pagini: 1, reimprospat: 15 * 60e3, cb: 21600 },
+  { id: '1d', nume: '1 zi', H: 5, orizont: '5 zile', pagini: 1, reimprospat: 15 * 60e3, cb: 86400 }
+];
+const BINANCE = ['https://data-api.binance.vision', 'https://api.binance.com'];
+const st = { pret: NaN, rez: {}, kl: {}, ultim: {}, sursa: '', grafic: '4h' };
+const $ = id => document.getElementById(id);
+const fmt = (x, d = 0) => isFinite(x) ? x.toLocaleString('ro-RO', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—';
+const pct = (x, d = 1) => isFinite(x) ? (x >= 0 ? '+' : '') + (x * 100).toLocaleString('ro-RO', { maximumFractionDigits: d }) + '%' : '—';
+const cls = d => d === 'CUMPĂRĂ' ? 'up' : d === 'VINDE' ? 'dn' : 'wait';
+const ls = {
+  get(k, def) { try { const v = localStorage.getItem('btc.' + k); return v == null ? def : JSON.parse(v); } catch { return def; } },
+  set(k, v) { try { localStorage.setItem('btc.' + k, JSON.stringify(v)); } catch {} }
+};
+
+async function getJSON(url) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+  try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+  finally { clearTimeout(t); }
+}
+
+// Lumânarea curentă e încă deschisă: volumul ei e „scalat” după cât a trecut din ea, ca să nu pară volum mic.
+function corecteazaUltima(k, durMs) {
+  const u = k[k.length - 1], f = (Date.now() - u.t) / durMs;
+  if (f > 0 && f < 1) u.v = u.v / Math.max(f, 0.1);
+  return k;
+}
+
+async function lumanari(tf) {
+  const dur = { '1h': 36e5, '4h': 144e5, '1d': 864e5 }[tf.id];
+  for (const host of BINANCE) {
+    try {
+      let tot = [], end = '';
+      for (let p = 0; p < tf.pagini; p++) {
+        const a = await getJSON(`${host}/api/v3/klines?symbol=BTCUSDT&interval=${tf.id}&limit=1000${end}`);
+        tot = a.map(x => ({ t: x[0], o: +x[1], h: +x[2], l: +x[3], c: +x[4], v: +x[5] })).concat(tot);
+        if (a.length < 1000) break;
+        end = '&endTime=' + (a[0][0] - 1);
+      }
+      st.sursa = 'Binance';
+      return corecteazaUltima(tot, dur);
+    } catch (e) { /* încearcă următoarea sursă */ }
+  }
+  // Rezervă: Coinbase (max 300 pe cerere; la „4h” folosește lumânări de 6 ore)
+  const g = tf.cb, map = new Map();
+  let end = Math.floor(Date.now() / 1000);
+  for (let p = 0; p < 4; p++) {
+    const start = end - g * 300;
+    const a = await getJSON(`https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=${g}&start=${new Date(start * 1000).toISOString()}&end=${new Date(end * 1000).toISOString()}`);
+    for (const x of a) map.set(x[0], { t: x[0] * 1000, l: x[1], h: x[2], o: x[3], c: x[4], v: x[5] });
+    end = start;
+  }
+  st.sursa = 'Coinbase';
+  return corecteazaUltima([...map.values()].sort((a, b) => a.t - b.t), g * 1000);
+}
+
+async function ticker() {
+  try {
+    const a = await getJSON(BINANCE[0] + '/api/v3/ticker/24hr?symbol=BTCUSDT');
+    return { pret: +a.lastPrice, var: +a.priceChangePercent / 100 };
+  } catch {
+    const a = await getJSON('https://api.exchange.coinbase.com/products/BTC-USD/stats');
+    return { pret: +a.last, var: a.last / a.open - 1 };
+  }
+}
+
+// ---------- afișare ----------
+function randeazaPret(t) {
+  st.pret = t.pret;
+  $('pret').textContent = '$' + fmt(t.pret, 0);
+  $('var24').innerHTML = `<span class="${t.var >= 0 ? 'up' : 'dn'}">${pct(t.var, 2)}</span> <span class="mut">24h</span>`;
+}
+
+function cardInterval(tf, r) {
+  if (!r) return `<section class="card"><h2>${tf.nume}</h2><div class="mut small">se calculează…</div></section>`;
+  if (r.eroare) return `<section class="card"><h2>${tf.nume}</h2><div class="err">${r.eroare}</div></section>`;
+  const v = r.verificare, s = r.simulare;
+  const fcls = r.fiabilitate === 'bună' ? 'up' : r.fiabilitate === 'modestă' ? 'wait' : 'dn';
+  const mot = r.motive.map(m => `<li>${m.nume}: împinge spre <b class="${m.contributie > 0 ? 'up' : 'dn'}">${m.contributie > 0 ? 'creștere' : 'scădere'}</b></li>`).join('');
+  return `<section class="card">
+    <h2>${tf.nume} · orizont ${tf.orizont}</h2>
+    <div style="font-size:22px;font-weight:750" class="${cls(r.decizie)}">${r.decizie}
+      <span class="badge ${fcls}">fiabilitate ${r.fiabilitate}</span></div>
+    <div class="small">P(creștere în ${tf.orizont}) = <b>${fmt(r.p * 100, 1)}%</b></div>
+    <table class="small" style="margin-top:8px">
+      <tr><td class="mut">Acuratețe pe date nevăzute</td><td>${fmt(v.acuratete * 100, 1)}% <span class="mut">vs ${fmt(v.referinta * 100, 1)}% referință</span></td></tr>
+      <tr><td class="mut">Câștig față de ghicit (Brier skill)</td><td class="${v.skill > 0 ? 'up' : 'dn'}">${pct(v.skill, 1)}</td></tr>
+      <tr><td class="mut">Simulare (${s.tranzactii} tranz., cu comision)</td><td class="${s.randament >= 0 ? 'up' : 'dn'}">${pct(s.randament)} <span class="mut">vs ${pct(s.cumparaSiTine)} ține</span></td></tr>
+      <tr><td class="mut">RSI · tendință</td><td>${fmt(r.rsi, 0)} · ${r.pret > r.ema200 ? '<span class="up">peste EMA200</span>' : '<span class="dn">sub EMA200</span>'}</td></tr>
+    </table>
+    <div class="small mut" style="margin-top:6px">Ce cântărește cel mai mult acum:</div><ul class="small">${mot}</ul>
+  </section>`;
+}
+
+function randeazaTot() {
+  const rez = TF.map(t => st.rez[t.id]);
+  $('intervale').innerHTML = TF.map((t, i) => cardInterval(t, rez[i])).join('');
+  if (rez.some(r => !r)) return;
+  const c = Semnal.consens(rez);
+  $('decizie').textContent = c.decizie;
+  $('decizie').className = 'dec ' + cls(c.decizie);
+  $('ac').style.left = Math.max(0, Math.min(100, c.p * 100)) + '%';
+  $('ptxt').textContent = c.valide ? `P(creștere) ${fmt(c.p * 100, 1)}%` : 'P(creștere) — fără model valid';
+  let e;
+  if (!c.valide) e = 'Pe niciun interval modelul n-a bătut ghicitul pe datele pe care nu le-a văzut. Asta înseamnă că acum nu există un avantaj statistic măsurabil — cea mai bună decizie e să nu forțezi o tranzacție.';
+  else if (c.decizie === 'AȘTEAPTĂ') e = `${c.valide} din 3 intervale au model valid, dar semnalele lor sunt prea aproape de 50% sau se contrazic. Așteaptă un semnal mai clar.`;
+  else e = `Intervalele cu model valid (${c.valide} din 3) indică aceeași direcție. Folosește planul de risc de mai jos: stop-loss obligatoriu, poziție mică.`;
+  $('explicatie').textContent = e;
+  randeazaPlan();
+  randeazaGrafic();
+}
+
+function randeazaPlan() {
+  // nivelurile din intervalul valid cu cel mai puternic semnal, altfel 4h
+  const val = TF.map(t => [t, st.rez[t.id]]).filter(([, r]) => r && !r.eroare && r.decizie !== 'AȘTEAPTĂ')
+    .sort((a, b) => Math.abs(b[1].p - 0.5) - Math.abs(a[1].p - 0.5));
+  const [tf, r] = val[0] || [TF[1], st.rez['4h']];
+  if (!r || r.eroare) { $('plan').textContent = '—'; return; }
+  const pret = isFinite(st.pret) ? st.pret : r.pret;
+  const dir = r.decizie === 'VINDE' ? -1 : 1;
+  const n = Semnal.niveluri(pret, r.atr, dir);
+  const cap = +$('capital').value || 0, risc = +$('risc').value || 1;
+  const poz = Semnal.marimePozitie(cap, risc, n.intrare, n.stop);
+  const titlu = val[0] ? `${dir > 0 ? 'Cumpărare' : 'Vânzare'} pe ${tf.nume}` : `Fără semnal — niveluri orientative (${tf.nume}, pentru o cumpărare)`;
+  $('plan').innerHTML = `<b>${titlu}</b>
+    <table style="margin-top:6px">
+      <tr><td class="mut">Intrare</td><td>$${fmt(n.intrare, 0)}</td></tr>
+      <tr><td class="mut">Stop-loss (1,5 × ATR)</td><td class="dn">$${fmt(n.stop, 0)} <span class="mut">${pct(n.stop / n.intrare - 1)}</span></td></tr>
+      <tr><td class="mut">Țintă 1 (1,5 × ATR)</td><td class="up">$${fmt(n.tinta1, 0)} <span class="mut">${pct(n.tinta1 / n.intrare - 1)}</span></td></tr>
+      <tr><td class="mut">Țintă 2 (3 × ATR)</td><td class="up">$${fmt(n.tinta2, 0)} <span class="mut">${pct(n.tinta2 / n.intrare - 1)}</span></td></tr>
+      <tr><td class="mut">Mărimea poziției</td><td><b>${fmt(poz.btc, 5)} BTC</b> ≈ $${fmt(poz.valoare, 0)}</td></tr>
+      <tr><td class="mut">Pierdere maximă la stop</td><td>$${fmt(poz.risc, 0)} (${fmt(risc, 1)}% din capital)</td></tr>
+    </table>
+    <div class="mut" style="margin-top:6px">Ia jumătate la ținta 1 și mută stop-ul la intrare. „Vânzare” pe spot = ieși din BTC / nu cumpăra.</div>`;
+}
+
+function randeazaGrafic() {
+  $('tabs').innerHTML = TF.map(t => `<button class="small ${t.id === st.grafic ? 'on' : ''}" data-tf="${t.id}" style="padding:2px 8px;margin-left:4px">${t.id}</button>`).join('');
+  const k = st.kl[st.grafic];
+  const cv = $('grafic');
+  if (!k) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, Hh = cv.clientHeight;
+  cv.width = W * dpr; cv.height = Hh * dpr;
+  const g = cv.getContext('2d'); g.scale(dpr, dpr);
+  const css = getComputedStyle(document.documentElement), col = n => css.getPropertyValue(n).trim();
+  const c = k.map(x => x.c), e20 = Semnal.ema(c, 20), e50 = Semnal.ema(c, 50);
+  const n = Math.min(120, k.length), s = k.length - n, v = k.slice(s);
+  let lo = Infinity, hi = -Infinity;
+  v.forEach(x => { lo = Math.min(lo, x.l); hi = Math.max(hi, x.h); });
+  const pad = 46, y = p => 8 + (hi - p) / (hi - lo) * (Hh - 16), bw = (W - pad) / n;
+  g.fillStyle = col('--mut'); g.font = '11px system-ui';
+  for (let i = 0; i <= 4; i++) { const p = lo + (hi - lo) * i / 4; g.fillText(fmt(p / 1000, 1) + 'k', W - pad + 4, y(p) + 4); }
+  v.forEach((x, i) => {
+    const X = i * bw + bw / 2;
+    g.strokeStyle = g.fillStyle = x.c >= x.o ? col('--up') : col('--dn');
+    g.beginPath(); g.moveTo(X, y(x.h)); g.lineTo(X, y(x.l)); g.stroke();
+    g.fillRect(X - bw * 0.35, Math.min(y(x.o), y(x.c)), bw * 0.7, Math.max(1, Math.abs(y(x.o) - y(x.c))));
+  });
+  for (const [arr, cl] of [[e20, '--acc'], [e50, '--wait']]) {
+    g.strokeStyle = col(cl); g.lineWidth = 1.5; g.beginPath();
+    for (let i = 0; i < n; i++) { const X = i * bw + bw / 2, Y = y(arr[s + i]); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+    g.stroke();
+  }
+}
+
+// ---------- portofoliu de exercițiu ----------
+const PORT0 = { usdt: 10000, btc: 0, ist: [] };
+let port = ls.get('port', PORT0);
+function randeazaPort() {
+  const val = port.usdt + port.btc * (st.pret || 0);
+  $('port').innerHTML = `USDT: <b>${fmt(port.usdt, 2)}</b> · BTC: <b>${fmt(port.btc, 6)}</b> · Valoare totală: <b>$${fmt(val, 2)}</b>
+    <span class="${val >= 10000 ? 'up' : 'dn'}">(${pct(val / 10000 - 1, 2)})</span>`;
+  $('istoric').innerHTML = port.ist.slice(-8).reverse().map(t =>
+    `${new Date(t.t).toLocaleString('ro-RO')} — ${t.tip} ${fmt(t.btc, 6)} BTC la $${fmt(t.pret, 0)}${t.semnal ? ' · semnal: ' + t.semnal : ''}`).join('<br>');
+}
+function tranzactie(tip, usd) {
+  const p = st.pret, fee = 0.001;
+  if (!(p > 0) || !(usd > 0)) return;
+  const sem = $('decizie').textContent;
+  if (tip === 'cumpărat') {
+    usd = Math.min(usd, port.usdt); if (usd <= 0) return;
+    const btc = usd * (1 - fee) / p; port.usdt -= usd; port.btc += btc;
+    port.ist.push({ t: Date.now(), tip, btc, pret: p, semnal: sem });
+  } else {
+    const btc = Math.min(usd / p, port.btc); if (btc <= 0) return;
+    port.btc -= btc; port.usdt += btc * p * (1 - fee);
+    port.ist.push({ t: Date.now(), tip, btc, pret: p, semnal: sem });
+  }
+  port.ist = port.ist.slice(-100);
+  ls.set('port', port); randeazaPort();
+}
+
+// ---------- bucla (economică) ----------
+let ocupat = false;
+async function actualizeaza(fortat) {
+  if (ocupat || document.hidden) return;
+  ocupat = true;
+  const erori = [];
+  try { randeazaPret(await ticker()); } catch (e) { erori.push('preț'); }
+  for (const tf of TF) {
+    if (!fortat && st.ultim[tf.id] && Date.now() - st.ultim[tf.id] < tf.reimprospat) continue;
+    try {
+      const k = await lumanari(tf);
+      st.kl[tf.id] = k; st.ultim[tf.id] = Date.now();
+      st.rez[tf.id] = Semnal.analizeaza(k, { H: tf.H });
+    } catch (e) { erori.push(tf.id); if (!st.rez[tf.id]) st.rez[tf.id] = { eroare: 'Datele nu s-au putut aduce. Verifică internetul.' }; }
+    await new Promise(r => setTimeout(r, 0)); // lasă pagina să respire între calcule
+  }
+  randeazaTot(); randeazaPort();
+  $('stare').textContent = (erori.length ? '⚠ ' + erori.join(', ') + ' · ' : '') + 'actualizat ' + new Date().toLocaleTimeString('ro-RO') + (st.sursa ? ' · ' + st.sursa : '');
+  ocupat = false;
+}
+
+$('capital').value = ls.get('capital', 1000);
+$('risc').value = ls.get('risc', 1);
+for (const id of ['capital', 'risc']) $(id).addEventListener('input', () => { ls.set(id, +$(id).value); randeazaPlan(); });
+$('reimprospat').onclick = () => actualizeaza(true);
+$('tabs').onclick = e => { const b = e.target.closest('button[data-tf]'); if (b) { st.grafic = b.dataset.tf; randeazaGrafic(); } };
+$('cumpar').onclick = () => tranzactie('cumpărat', +$('suma').value);
+$('vand').onclick = () => tranzactie('vândut', +$('suma').value);
+$('vandTot').onclick = () => tranzactie('vândut', port.btc * st.pret + 1);
+$('resetPort').onclick = () => { if (confirm('Resetezi portofoliul de exercițiu?')) { port = structuredClone(PORT0); ls.set('port', port); randeazaPort(); } };
+addEventListener('resize', () => randeazaGrafic());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) actualizeaza(false); });
+randeazaTot(); randeazaPort();
+actualizeaza(true);
+setInterval(() => actualizeaza(false), 30e3);
+</script>
+</body>
+</html>
