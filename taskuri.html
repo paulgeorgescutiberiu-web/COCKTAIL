@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#14432F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Taskuri">
+<title>Taskuri · Cocktail Philosophy</title>
+<link rel="manifest" href="taskuri.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFFEF1;--panel:#FFFFFF;--side:#F6F1E1;--line:#E2D9BF;--fg:#1A1A18;--mut:#5E6359;--ac:#C2862D;--ac-fg:#1A1A18;--brand:#14432F;--chip:#F3EBD6;--red:#C0392B;--blue:#2F6FB0;--yel:#D9A21B;--ok:#2E8B57;--sh:0 10px 30px rgba(20,30,20,.14);
+--d:"Barlow Condensed","Arial Narrow",Arial,sans-serif;--b:"Barlow",system-ui,Arial,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C1A14;--panel:#12261D;--side:#0F2119;--line:#24402F;--fg:#F2EEDF;--mut:#9DA89C;--ac:#E3B25C;--ac-fg:#1A1A18;--chip:#1B3327;--red:#FF7A6B;--blue:#7DB3F0;--yel:#F2C94C;--ok:#5FD08F;--sh:0 10px 30px rgba(0,0,0,.45);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0C1A14;--panel:#12261D;--side:#0F2119;--line:#24402F;--fg:#F2EEDF;--mut:#9DA89C;--ac:#E3B25C;--ac-fg:#1A1A18;--chip:#1B3327;--red:#FF7A6B;--blue:#7DB3F0;--yel:#F2C94C;--ok:#5FD08F;--sh:0 10px 30px rgba(0,0,0,.45);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--b);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.app{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh;min-height:100dvh}
+/* navigația */
+.side{background:var(--side);border-right:1px solid var(--line);padding:20px 12px;position:sticky;top:0;height:100vh;height:100dvh;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 15px var(--d);letter-spacing:.1em;color:var(--mut);padding:0 10px 14px}.brand b{color:var(--fg)}
+.nv{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 10px;border-radius:10px;text-align:left;font-weight:500}
+.nv:hover{background:var(--chip)}
+.nv.on{background:var(--chip);font-weight:600}
+.nv .ic{width:22px;text-align:center;flex:none}
+.nv .c{margin-left:auto;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
+.nv .c.hot{background:var(--ac);color:var(--ac-fg);border-radius:999px;padding:0 8px;font-weight:600}
+.sep{height:1px;background:var(--line);margin:10px 6px}
+.lbl{font:700 13px var(--d);letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:6px 10px 2px}
+.side .foot{margin-top:auto;padding-top:12px}
+/* conținut */
+main{min-width:0;padding:0 max(16px,env(safe-area-inset-right)) 120px max(16px,env(safe-area-inset-left))}
+.inner{max-width:760px;margin:0 auto}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:16px 0 10px}
+.hd{display:flex;align-items:center;gap:10px;min-height:44px}
+.hd h1{font:700 30px/1.1 var(--d);margin:0;letter-spacing:.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hd h1 small{font:500 15px var(--b);color:var(--mut);margin-left:8px}
+.ib{border:1px solid var(--line);background:var(--panel);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;font-size:17px}
+.ib.on{border-color:var(--ac);background:var(--chip)}
+.search{margin-top:8px}
+.search input{width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel)}
+.cap{margin-top:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--sh);padding:6px 6px 6px 14px;display:flex;align-items:center;gap:6px}
+.cap:focus-within{border-color:var(--ac)}
+.cap input{flex:1;min-width:0;border:0;background:none;padding:10px 0;outline:none;font-size:17px}
+.cap .ib{border:0;background:none}
+.cap .add{background:var(--ac);color:var(--ac-fg);border:0;border-radius:12px;height:40px;padding:0 16px;font:700 17px var(--d);letter-spacing:.03em}
+.mic.rec{background:var(--red)!important;color:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.pv{display:flex;flex-wrap:wrap;gap:6px;min-height:0;margin-top:8px;font-size:13px}
+.pv:empty{display:none}
+.pv span{background:var(--chip);border-radius:999px;padding:2px 10px;color:var(--fg)}
+.pv span.to{background:none;color:var(--mut);padding-left:2px}
+.hint{color:var(--mut);font-size:14px;margin:4px 2px 0}
+.banner{margin:12px 0 0;background:var(--chip);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner p{margin:0;flex:1;min-width:200px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px}
+.btn.pri{background:var(--ac);color:var(--ac-fg);border-color:var(--ac)}
+.btn.dan{color:var(--red)}
+/* listă */
+.grp{font:700 15px var(--d);letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:22px 4px 6px;display:flex;gap:8px;align-items:baseline}
+.grp.late{color:var(--red)}
+.grp small{font:500 13px var(--b);text-transform:none;letter-spacing:0}
+ul.list{list-style:none;margin:0;padding:0}
+.it{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 6px;border-bottom:1px solid var(--line);transition:opacity .25s,transform .25s}
+.it.leaving{opacity:0;transform:translateX(24px)}
+.ck{width:24px;height:24px;margin-top:1px;border-radius:50%;border:2px solid var(--mut);background:none;display:grid;place-items:center;padding:0;flex:none;font-size:13px;line-height:1}
+.ck:hover{background:var(--chip)}
+.p1 .ck{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent)}
+.p2 .ck{border-color:var(--red);background:color-mix(in srgb,var(--red) 14%,transparent)}
+.k-idea .ck{border-radius:8px;border-color:var(--yel)}
+.k-idea .ck::before{content:"💡";font-size:12px}
+.k-note .ck{border-radius:7px;border-color:var(--blue)}
+.k-note .ck::before{content:"📌";font-size:11px}
+.done .ck{background:var(--ok);border-color:var(--ok)}
+.done .ck::before{content:"✓";color:#fff;font-weight:700;font-size:14px}
+.bd{cursor:pointer;min-width:0}
+.tx{overflow-wrap:anywhere}
+.tx a{color:var(--blue)}
+.done .tx{text-decoration:line-through;color:var(--mut)}
+.fl{color:var(--red);font-weight:700;margin-right:4px}.p1 .fl{color:var(--ac)}
+.meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:3px;font-size:13px;color:var(--mut)}
+.meta .late{color:var(--red);font-weight:600}
+.meta .today{color:var(--ok);font-weight:600}
+.meta .tag{border:0;background:none;padding:0;color:var(--mut);font-size:13px}
+.meta .tag:hover{color:var(--fg);text-decoration:underline}
+.tri{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tri button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 11px;font-size:13px;font-weight:500}
+.tri button:hover{border-color:var(--ac)}
+.empty{text-align:center;color:var(--mut);padding:44px 10px}
+.empty .big{font-size:42px}
+.empty h3{font:700 22px var(--d);color:var(--fg);margin:8px 0 4px}
+.empty p{margin:4px auto;max-width:440px}
+.tips{text-align:left;max-width:460px;margin:18px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;font-size:14px}
+.tips code,.help code{background:var(--chip);border-radius:6px;padding:1px 6px;font-size:13px;color:var(--fg)}
+.rv{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.rv .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:center}
+.rv .n{width:30px;height:30px;border-radius:50%;background:var(--chip);display:grid;place-items:center;font-weight:700;flex:none}
+.rv .n.ok{background:var(--ok);color:#fff}
+.rv .step div{flex:1;min-width:0}
+.rv b{display:block}
+.rv span{color:var(--mut);font-size:14px}
+/* mobil */
+.bnav{display:none}
+@media (max-width:860px){
+ .app{display:block}
+ .side{display:none}
+ .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--side);border-top:1px solid var(--line);padding:4px max(4px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left))}
+ .bnav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px;font-size:11.5px;color:var(--mut);position:relative;min-width:0}
+ .bnav button .ic{font-size:20px;line-height:1.2}
+ .bnav button.on{color:var(--fg);font-weight:600}
+ .bnav .bdg{position:absolute;top:2px;left:calc(50% + 8px);background:var(--ac);color:var(--ac-fg);border-radius:999px;font-size:10.5px;font-weight:700;padding:0 6px;line-height:16px}
+ .hd h1{font-size:27px}
+}
+/* ferestre */
+dialog{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:20px;padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:var(--sh)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.dlg{padding:18px;display:flex;flex-direction:column;gap:14px}
+.dlg h2{font:700 24px var(--d);margin:0;display:flex;align-items:center;gap:8px}
+.dlg h2 .x{margin-left:auto}
+.f{display:flex;flex-direction:column;gap:6px}
+.f>label,.f>.l{font-size:13px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.f textarea,.f input,.f select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg)}
+.f textarea{resize:vertical}
+#e-text{font-size:18px;font-weight:500}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{position:relative}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer;background:var(--bg)}
+.seg input:checked+span{background:var(--ac);border-color:var(--ac);color:var(--ac-fg);font-weight:600}
+.seg input:focus-visible+span{outline:2px solid var(--ac);outline-offset:2px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qd{display:flex;flex-wrap:wrap;gap:6px}
+.qd button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 11px;font-size:13px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:14px}
+.acts .sp{flex:1}
+.small{font-size:13px;color:var(--mut)}
+.menu{display:flex;flex-direction:column;gap:2px}
+.help table{border-collapse:collapse;width:100%;font-size:14px}
+.help td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.help td:first-child{white-space:nowrap;padding-right:10px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,40px);opacity:0;pointer-events:none;background:var(--fg);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;gap:12px;align-items:center;z-index:50;transition:.2s;max-width:calc(100vw - 32px);box-shadow:var(--sh)}
+.toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{border:0;background:none;color:var(--ac);font-weight:700;padding:4px 6px}
+@media (max-width:860px){.toast{bottom:84px}}
+@media (max-width:420px){.two{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side" aria-label="Liste"></aside>
+  <main>
+    <div class="inner">
+      <div class="top">
+        <div class="hd">
+          <h1 id="title">Inbox</h1>
+          <button class="ib" id="b-search" title="Caută (/)" aria-label="Caută">🔍</button>
+          <button class="ib" id="b-help" title="Cum se scrie rapid" aria-label="Ajutor">?</button>
+        </div>
+        <div class="search hide" id="searchbox"><input id="q" type="search" placeholder="Caută în tot ce ai notat…" autocomplete="off"></div>
+        <form class="cap" id="cap" autocomplete="off">
+          <input id="in" type="text" enterkeyhint="done" placeholder="Ce ai în minte? (ex: sun furnizorul mâine la 10 #stoc)" aria-label="Notează rapid">
+          <button type="button" class="ib mic hide" id="mic" title="Dictează" aria-label="Dictează">🎤</button>
+          <button type="submit" class="add">Notează</button>
+        </form>
+        <div class="pv" id="pv" aria-live="polite"></div>
+      </div>
+      <div id="banner"></div>
+      <div id="list"></div>
+    </div>
+  </main>
+</div>
+<nav class="bnav" id="bnav" aria-label="Liste"></nav>
+
+<dialog id="ed" aria-labelledby="ed-h">
+  <form class="dlg" id="ed-f" method="dialog">
+    <h2 id="ed-h">Editează <button type="button" class="ib x" data-close aria-label="Închide">✕</button></h2>
+    <div class="f"><textarea id="e-text" rows="2" aria-label="Text"></textarea></div>
+    <div class="f"><span class="l">Ce este</span>
+      <div class="seg" id="e-kind">
+        <label><input type="radio" name="kind" value="task"><span>☐ De făcut</span></label>
+        <label><input type="radio" name="kind" value="note"><span>📌 De ținut minte</span></label>
+        <label><input type="radio" name="kind" value="idea"><span>💡 Idee</span></label>
+      </div>
+    </div>
+    <div class="f"><span class="l">Când</span>
+      <div class="qd" id="e-qd">
+        <button type="button" data-q="0">Azi</button><button type="button" data-q="1">Mâine</button><button type="button" data-q="wk">Weekend</button><button type="button" data-q="7">Peste o săptămână</button><button type="button" data-q="someday">🌙 Cândva</button><button type="button" data-q="none">Fără dată</button>
+      </div>
+      <div class="two"><input type="date" id="e-due" aria-label="Data"><input type="time" id="e-time" aria-label="Ora"></div>
+      <span class="small" id="e-when"></span>
+    </div>
+    <div class="two">
+      <div class="f"><span class="l">Prioritate</span>
+        <div class="seg" id="e-pri">
+          <label><input type="radio" name="pri" value="0"><span>Normal</span></label>
+          <label><input type="radio" name="pri" value="1"><span>! Important</span></label>
+          <label><input type="radio" name="pri" value="2"><span>!! Urgent</span></label>
+        </div>
+      </div>
+      <div class="f"><label for="e-rep">Se repetă</label>
+        <select id="e-rep"><option value="">Nu</option><option value="zi">Zilnic</option><option value="sapt">Săptămânal</option><option value="luna">Lunar</option><option value="an">Anual</option></select>
+      </div>
+    </div>
+    <div class="f"><label for="e-tags">Etichete</label><input id="e-tags" placeholder="ex: eveniment stoc nuntă-maria"></div>
+    <div class="f"><label for="e-notes">Detalii</label><textarea id="e-notes" rows="4" placeholder="Orice în plus: linkuri, numere de telefon, pași…"></textarea></div>
+    <div class="acts">
+      <button type="button" class="btn dan" id="e-del">Șterge</button>
+      <a class="btn" id="e-cal" target="_blank" rel="noopener">📆 În Google Calendar</a>
+      <span class="sp"></span>
+      <button type="submit" class="btn pri" id="e-save">Salvează</button>
+    </div>
+    <span class="small" id="e-info"></span>
+  </form>
+</dialog>
+
+<dialog id="more" aria-label="Toate listele"><div class="dlg"><h2>Liste <button type="button" class="ib x" data-close aria-label="Închide">✕</button></h2><div class="menu" id="more-nav"></div></div></dialog>
+
+<dialog id="set" aria-labelledby="set-h"><div class="dlg">
+  <h2 id="set-h">Setări <button type="button" class="ib x" data-close aria-label="Închide">✕</button></h2>
+  <div class="f"><span class="l">Mementouri</span>
+    <p class="small" style="margin:0">Când un task are oră, primești o notificare la ora lui cât timp aplicația e deschisă. Pentru mementouri sigure pe telefon, folosește butonul „În Google Calendar” din task.</p>
+    <div><button class="btn" id="s-notif">Pornește notificările</button></div>
+  </div>
+  <div class="f"><span class="l">Temă</span>
+    <div class="seg" id="s-theme">
+      <label><input type="radio" name="theme" value=""><span>Ca telefonul</span></label>
+      <label><input type="radio" name="theme" value="light"><span>Luminoasă</span></label>
+      <label><input type="radio" name="theme" value="dark"><span>Întunecată</span></label>
+    </div>
+  </div>
+  <div class="f"><span class="l">Copie de siguranță</span>
+    <p class="small" style="margin:0">Totul se păstrează doar pe acest dispozitiv, în browser. Descarcă o copie din când în când sau ca să muți taskurile pe alt telefon/laptop.</p>
+    <div class="qd"><button class="btn" id="s-exp">⬇ Descarcă copia</button><button class="btn" id="s-imp">⬆ Încarcă o copie</button><input type="file" id="s-file" accept="application/json,.json" class="hide"></div>
+  </div>
+  <p class="small" id="s-stats" style="margin:0"></p>
+</div></dialog>
+
+<dialog id="help" aria-labelledby="help-h"><div class="dlg help">
+  <h2 id="help-h">Scrie cum gândești <button type="button" class="ib x" data-close aria-label="Închide">✕</button></h2>
+  <p class="small" style="margin:0">Scrii o singură linie și apeși Enter. Aplicația înțelege singură data, ora, eticheta și tipul. Ce n-are dată ajunge în <b>Inbox</b>, unde îi faci ordine o dată pe zi.</p>
+  <table>
+    <tr><td><code>mâine</code> <code>poimâine</code> <code>vineri</code></td><td>data (cea mai apropiată vineri)</td></tr>
+    <tr><td><code>15.11</code> <code>15 nov</code> <code>peste 3 zile</code></td><td>o dată anume</td></tr>
+    <tr><td><code>la 10</code> <code>la 14:30</code> <code>diseară</code></td><td>ora; „la 3” înseamnă 15:00</td></tr>
+    <tr><td><code>mâine dimineață</code> <code>weekend</code></td><td>9:00 a doua zi / sâmbăta asta</td></tr>
+    <tr><td><code>#stoc</code> <code>#nunta-ana</code></td><td>etichete, ca să grupezi pe proiecte sau evenimente</td></tr>
+    <tr><td><code>!</code> &nbsp; <code>!!</code> sau <code>urgent</code></td><td>important / urgent</td></tr>
+    <tr><td><code>idee: …</code> sau începi cu „idee”</td><td>💡 merge la Idei</td></tr>
+    <tr><td><code>notă: …</code> „ține minte …”</td><td>📌 ceva de reținut, nu de făcut</td></tr>
+    <tr><td><code>zilnic</code> <code>în fiecare luni</code> <code>lunar</code></td><td>se repetă: după ce-l bifezi, revine la data următoare</td></tr>
+    <tr><td><code>cândva</code></td><td>🌙 nu acum, dar nu vreau să uit</td></tr>
+  </table>
+  <p class="small" style="margin:0"><b>Scurtături pe laptop:</b> <code>N</code> notează, <code>/</code> caută, <code>1</code>–<code>7</code> schimbă lista, <code>Esc</code> închide.</p>
+  <p class="small" style="margin:0"><b>Metoda:</b> 1) Notezi orice imediat, fără să te gândești unde. 2) Seara golești Inbox-ul: azi, altă zi, cândva, idee sau șterge. 3) Dimineața te uiți doar la <b>Azi</b>. 4) O dată pe săptămână faci <b>Revizuirea</b> (5 minute).</p>
+</div></dialog>
+
+<div class="toast" id="toast" role="status"><span id="toast-t"></span><button id="toast-u" class="hide">Anulează</button></div>
+
+<script>
+(function(){
+"use strict";
+const KEY="cp-taskuri-v1";
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const fromIso=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const today=()=>iso(new Date());
+const addDays=(s,n)=>{const d=fromIso(s);d.setDate(d.getDate()+n);return iso(d)};
+const addMonths=(s,n)=>{const d=fromIso(s),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return iso(d)};
+const dayDiff=(a,b)=>Math.round((fromIso(b)-fromIso(a))/864e5);
+const WDN=["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"];
+const MN=["ian","feb","mar","apr","mai","iun","iul","aug","sep","oct","nov","dec"];
+const MNL=["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+const REP={zi:"zilnic",sapt:"săptămânal",luna:"lunar",an:"anual"};
+const KIND={task:"☐ De făcut",note:"📌 De ținut minte",idea:"💡 Idee"};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const linkify=s=>s.replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)"']/g,u=>`<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\/(www\.)?/,"").slice(0,40)}${u.length>48?"…":""}</a>`);
+const cap1=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+function fmtDue(d,long){
+  const T=today(),k=dayDiff(T,d),dt=fromIso(d);
+  if(!long){
+    if(k===0)return"Azi";if(k===1)return"Mâine";if(k===-1)return"Ieri";
+    if(k>1&&k<7)return cap1(WDN[dt.getDay()]);
+  }
+  const base=(long?cap1(WDN[dt.getDay()])+", ":"")+dt.getDate()+" "+(long?MNL:MN)[dt.getMonth()];
+  return base+(dt.getFullYear()!==new Date().getFullYear()?" "+dt.getFullYear():"");
+}
+
+/* ---------- Înțelegerea textului scris liber ---------- */
+const MON={ianuarie:1,ian:1,februarie:2,feb:2,martie:3,mar:3,aprilie:4,apr:4,mai:5,iunie:6,iun:6,iulie:7,iul:7,august:8,aug:8,septembrie:9,sept:9,sep:9,octombrie:10,oct:10,noiembrie:11,nov:11,noi:11,decembrie:12,dec:12};
+const WD={duminica:0,luni:1,marti:2,miercuri:3,joi:4,vineri:5,sambata:6};
+const NUMW={o:1,un:1,una:1,doi:2,doua:2,trei:3,patru:4,cinci:5,sase:6,sapte:7,opt:8,noua:9,zece:10};
+const MONRE="ianuarie|februarie|martie|aprilie|iunie|iulie|august|septembrie|octombrie|noiembrie|decembrie|sept|ian|feb|mar|apr|mai|iun|iul|aug|sep|oct|nov|noi|dec";
+const PARTS={dimineata:"09:00","la pranz":"13:00","dupa-amiaza":"16:00","dupa amiaza":"16:00",seara:"19:00"};
+function normStr(t){let o="";for(const ch of t){let c=ch.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");if(c.length!==ch.length)c=ch;o+=c}return o}
+function nextWd(T,wd){return addDays(T,(wd-fromIso(T).getDay()+7)%7)}
+function parse(raw){
+  const text=String(raw).normalize("NFC").replace(/\s+/g," ").trim();
+  let n=normStr(text);
+  const T=today(),now=new Date();
+  const r={kind:null,due:null,time:null,pri:0,tags:[],rep:null,someday:false,text:""};
+  const cuts=[];
+  const rule=(re,fn)=>{
+    const g=new RegExp(re.source,"g"+re.flags.replace("g",""));let m;
+    while((m=g.exec(n))){if(fn(m)!==false){const s=m.index+(m.lead||0);cuts.push([s,m.index+m[0].length])}if(!m[0].length)g.lastIndex++}
+    for(const[a,b]of cuts)n=n.slice(0,a)+" ".repeat(b-a)+n.slice(b);
+  };
+  // tipul
+  rule(/^(?:idee|idea|💡)\s*[:\-–]\s*|^💡\s*/,()=>{r.kind="idea"});
+  rule(/^(?:nota|notita|notă|de retinut|tine minte|info)\s*[:\-–]\s*/,()=>{r.kind="note"});
+  rule(/^(?:task|todo|de facut)\s*[:\-–]\s*/,()=>{r.kind="task"});
+  if(!r.kind){if(/^\s*(?:idee|o idee)\b/.test(n))r.kind="idea";else if(/^\s*(?:tine minte|de retinut|retine)\b/.test(n))r.kind="note"}
+  // etichete și prioritate
+  rule(/(^|\s)#([^\s#]+)/,m=>{m.lead=m[1].length;const t=text.slice(m.index+m[1].length+1,m.index+m[0].length).replace(/[.,;:!?]+$/,"");if(t&&!r.tags.includes(t.toLowerCase()))r.tags.push(t.toLowerCase())});
+  rule(/(^|\s)(!{1,3})(?=\s|$)/,m=>{m.lead=m[1].length;r.pri=Math.max(r.pri,Math.min(2,m[2].length))});
+  rule(/\b(?:foarte\s+)?urgent\b/,()=>{r.pri=2});
+  // repetare
+  rule(/\b(?:zilnic|in fiecare zi|in fiecare dimineata|in fiecare seara)\b/,m=>{if(r.rep)return false;r.rep="zi";if(/dimineata/.test(m[0]))r.time=r.time||"09:00";if(/seara/.test(m[0]))r.time=r.time||"19:00"});
+  rule(/\b(?:saptamanal|in fiecare saptamana|o data pe saptamana)\b/,()=>{if(r.rep)return false;r.rep="sapt"});
+  rule(/\b(?:lunar|in fiecare luna|o data pe luna)\b/,()=>{if(r.rep)return false;r.rep="luna"});
+  rule(/\b(?:anual|in fiecare an|o data pe an)\b/,()=>{if(r.rep)return false;r.rep="an"});
+  // date relative
+  rule(/\b(?:peste|in)\s+(\d+|o|un|una|doi|doua|trei|patru|cinci|sase|sapte|opt|noua|zece)\s+(zile|zi|saptamani|saptamana|luni|luna|ore|ora)\b/,m=>{
+    if(r.due)return false;const k=/^\d+$/.test(m[1])?+m[1]:NUMW[m[1]],u=m[2];
+    if(u.startsWith("or")){const d=new Date(now.getTime()+k*36e5);r.due=iso(d);r.time=pad(d.getHours())+":"+pad(d.getMinutes())}
+    else if(u.startsWith("z"))r.due=addDays(T,k);else if(u.startsWith("s"))r.due=addDays(T,7*k);else r.due=addMonths(T,k);
+  });
+  rule(/\b(azi|astazi|maine|poimaine)\s+(dimineata|la pranz|dupa-amiaza|dupa amiaza|seara)\b/,m=>{
+    if(r.due)return false;r.due=m[1]==="maine"?addDays(T,1):m[1]==="poimaine"?addDays(T,2):T;r.part=PARTS[m[2]];
+  });
+  rule(/\b(?:de\s+)?(azi|astazi|diseara|deseara|maine|poimaine)\b/,m=>{
+    if(r.due)return false;const w=m[1];r.due=w==="maine"?addDays(T,1):w==="poimaine"?addDays(T,2):T;if(w.startsWith("d"))r.part="19:00";
+  });
+  rule(/\b(?:(?:pe|in|din|de)\s+)?saptamana\s+viitoare\b/,()=>{if(r.due)return false;r.due=addDays(nextWd(addDays(T,1),1),0)});
+  rule(/\b(?:(?:in|la|pe)\s+)?weekend(?:ul)?(?:\s+(?:asta|acesta|viitor))?\b/,()=>{if(r.due)return false;const wd=fromIso(T).getDay();r.due=wd===6||wd===0?T:nextWd(T,6)});
+  rule(/\b(?:(?:pe|in|de|din)\s+)?(in fiecare\s+|fiecare\s+)?(luni|marti|miercuri|joi|vineri|sambata|duminica)(\s+(?:viitoare|viitor|asta))?\b/,m=>{
+    if(r.due)return false;let d=nextWd(T,WD[m[2]]);if(m[3]&&/viito/.test(m[3])&&d===T)d=addDays(d,7);r.due=d;if(m[1])r.rep="sapt";
+  });
+  // ora
+  const NOTTIME="(?:lei|ron|euro|eur|€|kg|g|gr|l|ml|cl|buc|bucati|sticle|sticla|persoane|pers|oameni|invitati|minute|min|km|ani|zile|luni|cocktailuri|cocktail|bauturi|%|"+MONRE+")";
+  rule(new RegExp("\\b(?:pe la|la ora|in jur de|la|ora|de la)\\s+(\\d{1,2})(?:[:.](\\d{2}))?\\b(?![.,/]\\d)(?!\\s*"+NOTTIME+"(?![a-z]))"),m=>{
+    if(r.time)return false;let h=+m[1];const mi=m[2]?+m[2]:0;if(h>23||mi>59)return false;
+    if(!m[2]&&h>=1&&h<=7)h+=12;r.time=pad(h)+":"+pad(mi);
+  });
+  rule(/\b(\d{1,2}):(\d{2})\b/,m=>{if(r.time)return false;const h=+m[1],mi=+m[2];if(h>23||mi>59)return false;r.time=pad(h)+":"+pad(mi)});
+  // date fixe
+  const fix=(d,mo,y)=>{if(d<1||d>31||mo<1||mo>12)return null;let yy=y?(y<100?2000+y:y):fromIso(T).getFullYear();let s=yy+"-"+pad(mo)+"-"+pad(d);const t=fromIso(s);if(t.getDate()!==d)return null;if(!y&&s<T)s=(yy+1)+"-"+pad(mo)+"-"+pad(d);return s};
+  rule(/(?:\b(?:pe|din|la|de)\s+)?\b(\d{1,2})[./](\d{1,2})(?:[./](\d{4}|\d{2}))?\b(?![.,/]\d)/,m=>{if(r.due)return false;const s=fix(+m[1],+m[2],m[3]?+m[3]:0);if(!s)return false;r.due=s});
+  rule(new RegExp("(?:\\b(?:pe|din|la|de)\\s+)?\\b(\\d{1,2})\\s+("+MONRE+")\\.?(?![a-z])(?:\\s+(\\d{4}))?"),m=>{if(r.due)return false;const s=fix(+m[1],MON[m[2]],m[3]?+m[3]:0);if(!s)return false;r.due=s});
+  rule(/\b(?:candva|cand am timp|intr-o zi|cand se poate)\b/,()=>{if(r.due)return false;r.someday=true});
+  if(!r.time&&r.part)r.time=r.part;
+  delete r.part;
+  if(r.time&&!r.due){const nowHM=pad(now.getHours())+":"+pad(now.getMinutes());r.due=r.time>=nowHM?T:addDays(T,1)}
+  if(r.rep&&!r.due)r.due=T;
+  if(r.due)r.someday=false;
+  // textul rămas
+  const mask=new Uint8Array(text.length);for(const[a,b]of cuts)for(let i=a;i<b;i++)mask[i]=1;
+  let out="";for(let i=0;i<text.length;i++)out+=mask[i]?" ":text[i];
+  out=out.replace(/\s+/g," ").replace(/\s+([,.;:!?])/g,"$1").replace(/^[\s,;:\-–]+|[\s,;:\-–]+$/g,"");
+  for(let k=0;k<2;k++)out=out.replace(/\s+(?:pe|la|de|in|în|din|si|și|ora|pana|până)$/i,"").trim();
+  r.text=cap1(out||text);
+  return r;
+}
+
+/* ---------- Date ---------- */
+let S={items:[],view:"inbox",tag:null,q:"",lastReview:null,theme:"",undo:null};
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v&&Array.isArray(v.items)){S.items=v.items;S.lastReview=v.lastReview||null;S.theme=v.theme||""}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({v:1,items:S.items,lastReview:S.lastReview,theme:S.theme}))}catch(e){toast("Nu am putut salva pe acest dispozitiv. Descarcă o copie din Setări.")}}
+function snap(){S.undo=JSON.stringify(S.items)}
+function get(id){return S.items.find(i=>i.id===id)}
+
+function newItem(p,extra){
+  return Object.assign({id:uid(),text:p.text,kind:p.kind||"task",notes:"",due:p.due||null,time:p.time||null,pri:p.pri||0,tags:p.tags||[],rep:p.rep||null,someday:!!p.someday,triaged:false,done:false,doneAt:null,created:Date.now()},extra||{});
+}
+function addFromText(v,opts){
+  v=String(v||"").trim();if(!v)return null;
+  const p=parse(v),view=(opts&&opts.view)||S.view;
+  if(!p.kind)p.kind=view==="idei"?"idea":view==="note"?"note":"task";
+  if(p.kind==="task"&&!p.due&&!p.someday){if(view==="azi")p.due=today();else if(view==="curand")p.due=addDays(today(),1);else if(view==="candva")p.someday=true}
+  if(view==="tag"&&S.tag&&!p.tags.includes(S.tag))p.tags.push(S.tag);
+  const it=newItem(p);
+  it.triaged=it.kind!=="task"||!!it.due||it.someday||["oricand","azi","curand","candva"].includes(view)||(view==="tag");
+  snap();S.items.push(it);save();
+  return it;
+}
+function whereLabel(it){
+  if(it.kind==="idea")return"Idei";if(it.kind==="note"&&!it.due)return"De ținut minte";
+  if(it.due)return it.due<=today()?"Azi":"Curând";if(it.someday)return"Cândva";if(!it.triaged)return"Inbox";return"De făcut";
+}
+function nextRep(d,rep){return rep==="zi"?addDays(d,1):rep==="sapt"?addDays(d,7):rep==="luna"?addMonths(d,1):addMonths(d,12)}
+
+/* ---------- Liste ---------- */
+const open=i=>!i.done;
+const VIEWS={
+  inbox:{t:"Inbox",ic:"📥",f:i=>open(i)&&!i.triaged},
+  azi:{t:"Azi",ic:"☀️",f:i=>open(i)&&i.due&&i.due<=today()},
+  curand:{t:"Curând",ic:"📅",f:i=>open(i)&&i.due&&i.due>today()},
+  oricand:{t:"De făcut",ic:"☐",f:i=>open(i)&&i.triaged&&i.kind==="task"&&!i.due&&!i.someday},
+  candva:{t:"Cândva",ic:"🌙",f:i=>open(i)&&i.someday&&!i.due&&i.kind==="task"},
+  idei:{t:"Idei",ic:"💡",f:i=>open(i)&&i.kind==="idea"},
+  note:{t:"De ținut minte",ic:"📌",f:i=>open(i)&&i.kind==="note"},
+  revizuire:{t:"Revizuire",ic:"🔄",f:()=>false},
+  gata:{t:"Gata",ic:"✓",f:i=>i.done},
+};
+const ORDER=["inbox","azi","curand","oricand","candva","idei","note"];
+const count=v=>S.items.filter(VIEWS[v].f).length;
+function allTags(){const m=new Map();for(const i of S.items)if(!i.done)for(const t of i.tags||[])m.set(t,(m.get(t)||0)+1);return[...m.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ro"))}
+
+function navHTML(){
+  const nv=(v,label,ic,c,hot)=>`<button class="nv${S.view===v&&!(v==="tag")?" on":""}" data-view="${v}"><span class="ic">${ic}</span>${esc(label)}${c?`<span class="c${hot?" hot":""}">${c}</span>`:""}</button>`;
+  let h=`<div class="brand">COCKTAIL <b>PHILOSOPHY</b> · TASKURI</div>`;
+  for(const v of ORDER){const c=count(v);h+=nv(v,VIEWS[v].t,VIEWS[v].ic,c||"",(v==="inbox"||v==="azi")&&c>0)}
+  h+=`<div class="sep"></div>`+nv("revizuire","Revizuire săptămânală","🔄",reviewDue()?"!":"",reviewDue())+nv("gata","Gata","✓","");
+  const tg=allTags();
+  if(tg.length){h+=`<div class="sep"></div><div class="lbl">Etichete</div>`;for(const[t,c]of tg)h+=`<button class="nv${S.view==="tag"&&S.tag===t?" on":""}" data-view="tag" data-tag="${esc(t)}"><span class="ic">#</span>${esc(t)}<span class="c">${c}</span></button>`}
+  h+=`<div class="foot"><button class="nv" data-act="settings"><span class="ic">⚙️</span>Setări și copie</button></div>`;
+  return h;
+}
+function bnavHTML(){
+  const b=(v,label,ic,c)=>`<button class="${S.view===v?"on":""}" data-view="${v}"><span class="ic">${ic}</span>${label}${c?`<span class="bdg">${c}</span>`:""}</button>`;
+  const inMore=!["inbox","azi","curand","idei"].includes(S.view);
+  return b("inbox","Inbox","📥",count("inbox"))+b("azi","Azi","☀️",count("azi"))+b("curand","Curând","📅","")+b("idei","Idei","💡","")+`<button class="${inMore?"on":""}" data-act="more"><span class="ic">☰</span>Mai mult${reviewDue()?'<span class="bdg">!</span>':""}</button>`;
+}
+function reviewDue(){if(S.items.length<5)return false;const since=S.lastReview||iso(new Date(Math.min(...S.items.map(i=>i.created))));return dayDiff(since,today())>=7}
+
+function sorter(view){
+  const byDue=(a,b)=>(a.due||"9").localeCompare(b.due||"9")||(a.time||"99").localeCompare(b.time||"99")||b.pri-a.pri||a.created-b.created;
+  if(view==="azi"||view==="curand")return byDue;
+  if(view==="gata")return(a,b)=>(b.doneAt||0)-(a.doneAt||0);
+  if(view==="inbox")return(a,b)=>b.created-a.created;
+  return(a,b)=>b.pri-a.pri||(a.due&&b.due?byDue(a,b):(a.due?-1:b.due?1:0))||b.created-a.created;
+}
+function itemHTML(i,view){
+  const T=today(),late=i.due&&i.due<T&&!i.done,meta=[];
+  if(i.due&&!(view==="azi"&&i.due===T&&!i.time))meta.push(`<span class="${late?"late":i.due===T?"today":""}">📅 ${fmtDue(i.due)}${i.time?" · "+i.time:""}</span>`);
+  if(i.rep)meta.push(`<span>↻ ${REP[i.rep]}</span>`);
+  if(i.someday&&!i.due&&view!=="candva")meta.push(`<span>🌙 Cândva</span>`);
+  if(i.kind!=="task"&&!["idei","note"].includes(view))meta.push(`<span>${KIND[i.kind]}</span>`);
+  for(const t of i.tags||[])meta.push(`<button class="tag" data-act="tag" data-tag="${esc(t)}">#${esc(t)}</button>`);
+  if(i.notes)meta.push(`<span title="Are detalii">📝 ${esc(i.notes.split("\n")[0].slice(0,50))}${i.notes.length>50?"…":""}</span>`);
+  if(view==="gata"&&i.doneAt)meta.push(`<span>✓ ${fmtDue(iso(new Date(i.doneAt)))}</span>`);
+  const fl=i.pri&&!i.done?`<span class="fl">${i.pri===2?"!!":"!"}</span>`:"";
+  const tri=view==="inbox"?`<div class="tri"><button data-act="tri" data-to="azi">☀️ Azi</button><button data-act="tri" data-to="maine">Mâine</button><button data-act="tri" data-to="oricand">☐ De făcut</button><button data-act="tri" data-to="candva">🌙 Cândva</button><button data-act="tri" data-to="idea">💡 Idee</button><button data-act="tri" data-to="note">📌 Reține</button><button data-act="tri" data-to="del" aria-label="Șterge">🗑</button></div>`:"";
+  return `<li class="it k-${i.kind} p${i.done?0:i.pri}${i.done?" done":""}" data-id="${i.id}"><button class="ck" data-act="toggle" aria-label="${i.done?"Redeschide":i.kind==="task"?"Bifează ca făcut":"Arhivează"}"></button><div class="bd" data-act="edit"><div class="tx">${fl}${linkify(esc(i.text))}</div>${meta.length?`<div class="meta">${meta.join("")}</div>`:""}</div>${tri}</li>`;
+}
+const ul=(arr,view)=>`<ul class="list">${arr.map(i=>itemHTML(i,view)).join("")}</ul>`;
+
+const EMPTY={
+  inbox:["📥","Inbox gol. Minte limpede.","Orice îți trece prin cap — un telefon de dat, o idee de cocktail, ceva de cumpărat — scrie-l sus și apasă Enter. Îi faci ordine mai târziu."],
+  azi:["☀️","Nimic pentru azi.","Ia ceva din „De făcut” sau scrie aici ce vrei să rezolvi azi."],
+  curand:["📅","Nimic programat.","Scrie cu o dată: „comandă gheață vineri”, „ofertă Ana 20.11 la 12”."],
+  oricand:["☐","Nicio sarcină fără dată.","Aici stau lucrurile de făcut „când pot”, ordonate după prioritate."],
+  candva:["🌙","Nimic pus deoparte.","Scrie „cândva” în text pentru lucrurile care nu sunt pentru acum."],
+  idei:["💡","Încă nicio idee notată.","Începe cu „idee:” oriunde ai fi. Ex: „idee: cocktail cu cătină pentru iarnă #meniu”."],
+  note:["📌","Nimic de ținut minte.","Pentru informații, nu acțiuni: „notă: codul de la depozit e 4821”."],
+  gata:["✓","Nimic terminat încă.","Ce bifezi apare aici. Poți să le redeschizi oricând."],
+  tag:["#","Nimic cu eticheta asta.",""],
+};
+function emptyHTML(v){const e=EMPTY[v]||EMPTY.tag;let h=`<div class="empty"><div class="big">${e[0]}</div><h3>${e[1]}</h3><p>${e[2]}</p>`;
+  if(v==="inbox"&&S.items.length<3)h+=`<div class="tips"><b>Încearcă:</b><br>• <code>sun la furnizor mâine la 10 #stoc</code><br>• <code>idee: bar cu ceai cald la nunțile de iarnă</code><br>• <code>notă: Ana vrea fără alcool pentru copii #nunta-ana</code><br>• <code>plătesc chiria lunar 5.12 !</code><br><br>Apasă <b>?</b> sus pentru tot ce înțelege aplicația.</div>`;
+  return h+"</div>"}
+
+function render(){
+  document.documentElement.toggleAttribute("data-theme",!!S.theme);if(S.theme)document.documentElement.setAttribute("data-theme",S.theme);
+  $("#side").innerHTML=navHTML();$("#more-nav").innerHTML=navHTML().replace(/<div class="brand">.*?<\/div>/,"");$("#bnav").innerHTML=bnavHTML();
+  const v=S.view,T=today();let title,html="",items;
+  const q=S.q.trim();
+  $("#cap").classList.toggle("hide",v==="revizuire"||v==="gata"||!!q);$("#pv").classList.toggle("hide",v==="revizuire"||v==="gata"||!!q);
+  $("#banner").innerHTML="";
+  if(q){
+    const nq=normStr(q);items=S.items.filter(i=>normStr(i.text+" "+(i.notes||"")+" "+(i.tags||[]).join(" ")).includes(nq));
+    title=`Caută <small>${items.length} rezultate</small>`;
+    const o=items.filter(open).sort(sorter("oricand")),d=items.filter(i=>i.done).sort(sorter("gata"));
+    html=items.length?(o.length?ul(o,"search"):"")+(d.length?`<div class="grp">Terminate</div>`+ul(d,"gata"):""):`<div class="empty"><div class="big">🔍</div><h3>Nimic găsit</h3><p>Caut în text, detalii și etichete.</p></div>`;
+  }else if(v==="revizuire"){title="Revizuire";html=reviewHTML()}
+  else{
+    const f=v==="tag"?(i=>open(i)&&(i.tags||[]).includes(S.tag)):VIEWS[v].f;
+    items=S.items.filter(f).sort(sorter(v==="tag"?"oricand":v));
+    if(v==="gata")items=items.slice(0,300);
+    title=v==="tag"?"#"+esc(S.tag):VIEWS[v].t;
+    if(items.length&&v!=="gata")title+=` <small>${items.length}</small>`;
+    if(!items.length)html=emptyHTML(v);
+    else if(v==="azi"){
+      const late=items.filter(i=>i.due<T),now=items.filter(i=>i.due===T);
+      if(late.length)html+=`<div class="grp late">Întârziate <small>${late.length}</small> <button class="btn" data-act="allToday" style="margin-left:auto">Mută-le pe azi</button></div>`+ul(late,v);
+      if(now.length)html+=`<div class="grp">${fmtDue(T,true)}</div>`+ul(now,v);
+    }else if(v==="curand"){
+      let cur=null,buf=[];const flush=()=>{if(buf.length){html+=`<div class="grp">${dayDiff(T,cur)===1?"Mâine · ":""}${fmtDue(cur,true)}</div>`+ul(buf,v)}buf=[]};
+      for(const i of items){if(i.due!==cur){flush();cur=i.due}buf.push(i)}flush();
+    }else if(v==="gata"){
+      html=`<div class="grp">Ultimele terminate <button class="btn dan" data-act="clearDone" style="margin-left:auto">Șterge-le definitiv</button></div>`+ul(items,v);
+    }else html=ul(items,v);
+    if(v==="azi"&&reviewDue())$("#banner").innerHTML=`<div class="banner"><p>🔄 A trecut o săptămână. Fă revizuirea: 5 minute ca să nu-ți scape nimic.</p><button class="btn pri" data-view="revizuire">Începe</button></div>`;
+    if(v==="inbox"&&items.length>=8)$("#banner").innerHTML=`<div class="banner"><p>Ai ${items.length} lucruri în Inbox. Ia-le pe rând: azi, altă zi, cândva, idee — sau șterge.</p></div>`;
+  }
+  $("#title").innerHTML=title;
+  document.title=(v==="inbox"&&count("inbox")?`(${count("inbox")}) `:"")+"Taskuri · Cocktail Philosophy";
+  $("#list").innerHTML=html;
+  $("#in").placeholder=v==="idei"?"O idee nouă… (ex: cocktail cu cătină #meniu)":v==="note"?"Ce vrei să ții minte?":v==="azi"?"Ce mai ai de făcut azi?":"Ce ai în minte? (ex: sun furnizorul mâine la 10 #stoc)";
+  preview();
+}
+function reviewHTML(){
+  const T=today(),stale=S.items.filter(i=>open(i)&&i.kind==="task"&&!i.due&&i.triaged&&!i.someday&&Date.now()-i.created>14*864e5);
+  const steps=[
+    [count("inbox"),"Golește Inbox-ul","Fiecare lucru: azi, altă zi, cândva, idee sau șterge.","inbox"],
+    [S.items.filter(i=>open(i)&&i.due&&i.due<T).length,"Întârziatele","Reprogramează-le realist sau renunță la ele.","azi"],
+    [S.items.filter(i=>open(i)&&i.due&&i.due>T&&dayDiff(T,i.due)<=7).length,"Săptămâna care vine","Ce evenimente, plăți, comenzi vin? Lipsește ceva?","curand"],
+    [stale.length,"De făcut uitate","Sarcini fără dată mai vechi de 2 săptămâni: le dai o zi sau le muți la Cândva.","oricand"],
+    [count("candva")+count("idei"),"Cândva și Idei","Vreuna e gata să devină task? Șterge ce nu te mai atrage.","idei"],
+  ];
+  let h=`<p class="hint">O dată pe săptămână (ex: duminică seara sau luni dimineață). ${S.lastReview?"Ultima revizuire: "+fmtDue(S.lastReview,true)+".":"N-ai făcut încă nicio revizuire."}</p><div class="rv">`;
+  steps.forEach((s,k)=>{const ok=s[0]===0&&k<2;h+=`<div class="step"><span class="n${ok?" ok":""}">${ok?"✓":k+1}</span><div><b>${s[1]}${s[0]?` · ${s[0]}`:""}</b><span>${s[2]}</span></div><button class="btn" data-view="${s[3]}">Deschide</button></div>`});
+  h+=`</div>`;
+  if(stale.length)h+=`<div class="grp">Sarcini vechi fără dată</div>`+ul(stale.sort((a,b)=>a.created-b.created),"oricand");
+  h+=`<div style="margin-top:20px;text-align:center"><button class="btn pri" data-act="reviewDone">✓ Am terminat revizuirea</button></div>`;
+  return h;
+}
+
+/* ---------- Previzualizare la scriere ---------- */
+function preview(){
+  const v=$("#in").value.trim(),pv=$("#pv");
+  if(!v){pv.innerHTML="";return}
+  const p=parse(v),c=[];
+  if(p.kind&&p.kind!=="task")c.push(KIND[p.kind]);
+  if(p.due)c.push("📅 "+fmtDue(p.due)+(p.time?" · "+p.time:""));
+  if(p.rep)c.push("↻ "+REP[p.rep]);
+  if(p.someday)c.push("🌙 Cândva");
+  if(p.pri)c.push(p.pri===2?"!! Urgent":"! Important");
+  for(const t of p.tags)c.push("#"+t);
+  if(!c.length){pv.innerHTML="";return}
+  const fake=newItem(p);fake.kind=p.kind||(S.view==="idei"?"idea":S.view==="note"?"note":"task");
+  pv.innerHTML=`<span class="to">„${esc(p.text.slice(0,60))}”</span>`+c.map(x=>`<span>${esc(x)}</span>`).join("");
+}
+
+/* ---------- Acțiuni ---------- */
+let toastTimer;
+function toast(msg,undo){
+  const t=$("#toast");$("#toast-t").textContent=msg;$("#toast-u").classList.toggle("hide",!undo);t.classList.add("on");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("on"),undo?5000:2800);
+}
+function doUndo(){if(!S.undo)return;try{S.items=JSON.parse(S.undo)}catch(e){}S.undo=null;save();render();$("#toast").classList.remove("on")}
+function animateOut(id,then){const li=document.querySelector(`li[data-id="${id}"]`);if(li){li.classList.add("leaving");setTimeout(then,220)}else then()}
+function toggle(id){
+  const i=get(id);if(!i)return;snap();
+  if(!i.done&&i.rep){
+    let nx=nextRep(i.due||today(),i.rep);while(nx<=today())nx=nextRep(nx,i.rep);
+    i.due=nx;i.notified=null;i.count=(i.count||0)+1;save();
+    animateOut(id,()=>{render();toast(`↻ Bifat. Revine ${fmtDue(nx).toLowerCase()==="mâine"?"mâine":"pe "+fmtDue(nx)}.`,true)});return;
+  }
+  i.done=!i.done;i.doneAt=i.done?Date.now():null;save();
+  animateOut(id,()=>{render();toast(i.done?"✓ "+(i.kind==="task"?"Gata":"Arhivat")+": "+i.text.slice(0,40):"Redeschis",true)});
+}
+function triage(id,to){
+  const i=get(id);if(!i)return;snap();const T=today();
+  if(to==="del"){S.items=S.items.filter(x=>x!==i);save();animateOut(id,()=>{render();toast("Șters",true)});return}
+  i.triaged=true;
+  if(to==="azi"){i.due=T;i.someday=false}else if(to==="maine"){i.due=addDays(T,1);i.someday=false}
+  else if(to==="candva"){i.someday=true;i.due=null;i.time=null}else if(to==="idea")i.kind="idea";else if(to==="note")i.kind="note";
+  save();animateOut(id,()=>{render();toast("→ "+whereLabel(i),true)});
+}
+function setView(v,tag){S.view=v;S.tag=tag||null;S.q="";$("#q").value="";$("#searchbox").classList.add("hide");$("#b-search").classList.remove("on");
+  try{localStorage.setItem(KEY+":view",JSON.stringify({v,tag:S.tag}))}catch(e){}
+  render();window.scrollTo(0,0)}
+
+/* ---------- Editare ---------- */
+let editing=null;
+function openEdit(id){
+  const i=get(id);if(!i)return;editing=id;
+  $("#e-text").value=i.text;$("#e-notes").value=i.notes||"";$("#e-due").value=i.due||"";$("#e-time").value=i.time||"";$("#e-rep").value=i.rep||"";
+  $("#e-tags").value=(i.tags||[]).join(" ");
+  document.querySelector(`#e-kind input[value="${i.kind}"]`).checked=true;
+  document.querySelector(`#e-pri input[value="${i.pri||0}"]`).checked=true;
+  $("#ed").dataset.someday=i.someday?"1":"";
+  $("#e-info").textContent="Notat "+fmtDue(iso(new Date(i.created)),true).toLowerCase()+(i.count?` · făcut de ${i.count} ori`:"");
+  edWhen();$("#ed").showModal();
+  setTimeout(()=>{const t=$("#e-text");t.focus();t.setSelectionRange(t.value.length,t.value.length)},30);
+}
+function edWhen(){
+  const d=$("#e-due").value,t=$("#e-time").value,sd=$("#ed").dataset.someday==="1";
+  $("#e-when").textContent=d?fmtDue(d,true)+(t?" la "+t:""):sd?"🌙 Cândva — nu acum":"Fără dată";
+  const cal=$("#e-cal");
+  if(d){
+    const txt=$("#e-text").value,det=$("#e-notes").value;let dates;
+    if(t){const s=d.replace(/-/g,"")+"T"+t.replace(":","")+"00",e0=new Date(fromIso(d).getTime());const[h,m]=t.split(":").map(Number);e0.setHours(h,m+30);dates=s+"/"+iso(e0).replace(/-/g,"")+"T"+pad(e0.getHours())+pad(e0.getMinutes())+"00"}
+    else dates=d.replace(/-/g,"")+"/"+addDays(d,1).replace(/-/g,"");
+    const rr=$("#e-rep").value?"&recur="+encodeURIComponent("RRULE:FREQ="+{zi:"DAILY",sapt:"WEEKLY",luna:"MONTHLY",an:"YEARLY"}[$("#e-rep").value]):"";
+    cal.href="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(txt)+"&dates="+dates+"&ctz=Europe/Bucharest&details="+encodeURIComponent(det)+rr;
+    cal.classList.remove("hide");
+  }else cal.classList.add("hide");
+}
+function saveEdit(){
+  const i=get(editing);if(!i)return;snap();
+  const txt=$("#e-text").value.replace(/\s+/g," ").trim();if(txt)i.text=txt;
+  i.notes=$("#e-notes").value.trim();i.kind=document.querySelector("#e-kind input:checked").value;i.pri=+document.querySelector("#e-pri input:checked").value;
+  const nd=$("#e-due").value||null,nt=$("#e-time").value||null;if(nd!==i.due||nt!==i.time)i.notified=null;
+  i.due=nd;i.time=nd?nt:null;i.rep=$("#e-rep").value||null;if(i.rep&&!i.due)i.due=today();
+  i.someday=!i.due&&$("#ed").dataset.someday==="1";
+  i.tags=[...new Set($("#e-tags").value.split(/[\s,]+/).map(t=>t.replace(/^#+/,"").toLowerCase()).filter(Boolean))];
+  if(i.due||i.someday||i.kind!=="task")i.triaged=true;
+  i.upd=Date.now();save();editing=null;$("#ed").close();render();
+}
+
+/* ---------- Notificări ---------- */
+function checkReminders(){
+  if(!("Notification"in window)||Notification.permission!=="granted")return;
+  const T=today(),now=new Date(),hm=pad(now.getHours())+":"+pad(now.getMinutes());let ch=false;
+  for(const i of S.items){if(i.done||!i.due||!i.time)continue;const key=i.due+" "+i.time;if(i.notified===key)continue;
+    if(i.due===T&&i.time<=hm){try{new Notification("⏰ "+i.text,{body:(i.notes||"").slice(0,120)||"Taskuri · Cocktail Philosophy",tag:i.id,icon:"icons/icon-192.png"})}catch(e){}i.notified=key;ch=true}}
+  if(ch)save();
+}
+
+/* ---------- Evenimente ---------- */
+document.addEventListener("click",e=>{
+  const a=e.target.closest("a");if(a&&a.closest(".tx"))return;
+  const v=e.target.closest("[data-view]");
+  if(v){e.preventDefault();if($("#more").open)$("#more").close();setView(v.dataset.view,v.dataset.tag);return}
+  const c=e.target.closest("[data-close]");if(c){c.closest("dialog").close();return}
+  const el=e.target.closest("[data-act]");if(!el)return;
+  const act=el.dataset.act,li=el.closest("li[data-id]"),id=li&&li.dataset.id;
+  if(act==="toggle")toggle(id);
+  else if(act==="edit")openEdit(id);
+  else if(act==="tri")triage(id,el.dataset.to);
+  else if(act==="tag"){if($("#more").open)$("#more").close();setView("tag",el.dataset.tag)}
+  else if(act==="more")$("#more").showModal();
+  else if(act==="settings"){if($("#more").open)$("#more").close();openSettings()}
+  else if(act==="allToday"){snap();const T=today();S.items.forEach(i=>{if(open(i)&&i.due&&i.due<T)i.due=T});save();render();toast("Mutate pe azi",true)}
+  else if(act==="clearDone"){if(confirm("Ștergi definitiv toate lucrurile terminate?")){snap();S.items=S.items.filter(i=>!i.done);save();render();toast("Șterse",true)}}
+  else if(act==="reviewDone"){S.lastReview=today();save();toast("🔄 Revizuire gata. Bravo!");setView("azi")}
+});
+$("#toast-u").addEventListener("click",doUndo);
+$("#cap").addEventListener("submit",e=>{
+  e.preventDefault();const it=addFromText($("#in").value);if(!it)return;$("#in").value="";
+  render();
+  const where=whereLabel(it),here=document.querySelector(`li[data-id="${it.id}"]`);
+  toast(here?"Notat ✓":"Notat → "+where,true);
+});
+$("#in").addEventListener("input",preview);
+$("#b-search").addEventListener("click",()=>{const sb=$("#searchbox"),on=sb.classList.toggle("hide");$("#b-search").classList.toggle("on",!on);if(!on)$("#q").focus();else{S.q="";$("#q").value="";render()}});
+$("#q").addEventListener("input",()=>{S.q=$("#q").value;render()});
+$("#b-help").addEventListener("click",()=>$("#help").showModal());
+$("#ed-f").addEventListener("submit",e=>{e.preventDefault();saveEdit()});
+$("#ed").addEventListener("close",()=>{editing=null});
+$("#e-del").addEventListener("click",()=>{const i=get(editing);if(!i)return;snap();S.items=S.items.filter(x=>x!==i);save();$("#ed").close();render();toast("Șters",true)});
+$("#e-qd").addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;const q=b.dataset.q,T=today();$("#ed").dataset.someday="";
+  if(q==="none"){$("#e-due").value="";$("#e-time").value=""}else if(q==="someday"){$("#e-due").value="";$("#e-time").value="";$("#ed").dataset.someday="1"}
+  else if(q==="wk"){const wd=fromIso(T).getDay();$("#e-due").value=wd===6||wd===0?T:nextWd(T,6)}else $("#e-due").value=addDays(T,+q);edWhen()});
+["#e-due","#e-time","#e-rep","#e-text","#e-notes"].forEach(s=>$(s).addEventListener("input",()=>{if(s==="#e-due"&&$(s).value)$("#ed").dataset.someday="";edWhen()}));
+$("#e-text").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();saveEdit()}});
+$("#ed-f").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();saveEdit()}});
+document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{if(e.target===d)d.close()}));
+
+function openSettings(){
+  const n=$("#s-notif");
+  if(!("Notification"in window)){n.textContent="Browserul nu suportă notificări";n.disabled=true}
+  else if(Notification.permission==="granted"){n.textContent="✓ Notificările sunt pornite";n.disabled=true}
+  else if(Notification.permission==="denied"){n.textContent="Notificările sunt blocate din browser";n.disabled=true}
+  document.querySelector(`#s-theme input[value="${S.theme}"]`).checked=true;
+  const o=S.items.filter(open).length,d=S.items.length-o;
+  $("#s-stats").textContent=`${o} deschise · ${d} terminate · ${S.items.filter(i=>i.kind==="idea").length} idei în total.`;
+  $("#set").showModal();
+}
+$("#s-notif").addEventListener("click",async()=>{try{const p=await Notification.requestPermission();if(p==="granted"){toast("Notificările sunt pornite");checkReminders()}openSettings()}catch(e){}});
+$("#s-theme").addEventListener("change",e=>{S.theme=e.target.value;save();render()});
+$("#s-exp").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify({app:"cp-taskuri",v:1,exported:new Date().toISOString(),items:S.items,lastReview:S.lastReview},null,1)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="taskuri-"+today()+".json";document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+});
+$("#s-imp").addEventListener("click",()=>$("#s-file").click());
+$("#s-file").addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const d=JSON.parse(await f.text());if(!Array.isArray(d.items))throw 0;
+    const ids=new Set(S.items.map(i=>i.id));let add=0;snap();
+    for(const i of d.items){if(i&&i.id&&typeof i.text==="string"&&!ids.has(i.id)){S.items.push(i);add++}}
+    save();render();toast(`Am adăugat ${add} din copie`,true);$("#set").close();
+  }catch(err){toast("Fișierul nu e o copie validă")}
+  e.target.value="";
+});
+
+document.addEventListener("keydown",e=>{
+  if(document.querySelector("dialog[open]"))return;
+  const tg=e.target.tagName;if(tg==="INPUT"||tg==="TEXTAREA"||tg==="SELECT"){if(e.key==="Escape"){e.target.blur();if(e.target.id==="q"){$("#b-search").click()}}return}
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  if(e.key==="n"||e.key==="N"){e.preventDefault();$("#in").focus()}
+  else if(e.key==="/"){e.preventDefault();if($("#searchbox").classList.contains("hide"))$("#b-search").click();else $("#q").focus()}
+  else if(/^[1-7]$/.test(e.key))setView(ORDER[+e.key-1]);
+  else if(e.key==="?")$("#help").showModal();
+});
+
+/* dictare */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  const mic=$("#mic");mic.classList.remove("hide");let rec=null;
+  mic.addEventListener("click",()=>{
+    if(rec){rec.stop();return}
+    rec=new SR();rec.lang="ro-RO";rec.interimResults=true;rec.continuous=false;
+    const base=$("#in").value?$("#in").value.trim()+" ":"";
+    rec.onresult=ev=>{let s="";for(const r of ev.results)s+=r[0].transcript;$("#in").value=base+s;preview()};
+    rec.onend=()=>{mic.classList.remove("rec");rec=null;$("#in").focus()};
+    rec.onerror=ev=>{if(ev.error==="not-allowed")toast("Permite microfonul ca să dictezi")};
+    mic.classList.add("rec");try{rec.start()}catch(err){mic.classList.remove("rec");rec=null}
+  });
+}
+
+/* pornire */
+load();
+try{const lv=JSON.parse(localStorage.getItem(KEY+":view")||"null");if(lv&&(VIEWS[lv.v]||lv.v==="tag")){S.view=lv.v;S.tag=lv.tag||null;if(S.view==="tag"&&!S.tag)S.view="inbox"}}catch(e){}
+// adăugare din scurtătură: taskuri.html?add=textul
+try{const u=new URL(location.href),a=u.searchParams.get("add");if(a){const it=addFromText(a,{view:"inbox"});u.searchParams.delete("add");history.replaceState(null,"",u.pathname+u.search+u.hash);if(it)setTimeout(()=>toast("Notat → "+whereLabel(it)),300)}}catch(e){}
+render();
+let lastDay=today();
+setInterval(()=>{if(today()!==lastDay){lastDay=today();render()}checkReminders()},30000);
+setTimeout(checkReminders,1500);
+window.addEventListener("storage",e=>{if(e.key===KEY){load();render()}});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){checkReminders();if(today()!==lastDay){lastDay=today();render()}}});
+window.__taskuri={parse,addFromText,state:()=>S};
+})();
+</script>
+</body>
+</html>
