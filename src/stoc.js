@@ -74,6 +74,7 @@ function parseJSON(t){
 }
 function aiErr(e){
   const m=String(e&&(e.message||e.code)||e).replace(/https?:\/\/\S+/g," ");
+  if(/prepayment|credits are depleted|insufficient.?(funds|credit)/i.test(m))return "S-au terminat creditele plătite în avans pentru Gemini. Adaugă credit în Google AI Studio → Billing (proiectul cocktail-philosophy-dc34b).";
   if(/billing|API has not been used|disabled|SERVICE_DISABLED|not enabled/i.test(m))return "Serviciul Gemini nu e activat în proiectul Firebase (AI Logic → Get started).";
   if(/app.?check|appcheck|recaptcha|403|permission/i.test(m))return "Google a refuzat cererea: protecția App Check nu e încă activă. Verifică pașii de configurare din Firebase.";
   if(/\b429\b|quota|exhausted|rate.?limit/i.test(m))return "S-a atins limita gratuită de citiri pentru moment. Încearcă peste câteva minute sau mâine.";
