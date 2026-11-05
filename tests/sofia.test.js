@@ -32,20 +32,39 @@ function fakes() {
   const resp = r => ({ functionCalls: () => r.calls || [], text: () => (r.chunks || []).join("") });
   const chat = { async sendMessageStream(msg) { window.__SENT.push(msg); const r = window.__SCRIPT.shift() || { chunks: ["Gata."] };
     return { stream: (async function* () { for (const c of r.chunks || []) { await new Promise(z => setTimeout(z, 60)); yield { text: () => c }; } })(), response: Promise.resolve().then(async () => { await new Promise(z => setTimeout(z, 60 * ((r.chunks || []).length + 1))); return resp(r); }) }; } };
-  /* Gemini Live: window.__LIVE.push(mesaj) trimite un mesaj de la server */
-  const L = window.__LIVE = { q: [], w: null, audio: 0, texts: [], fr: [], closed: false, cfg: null,
-    push(m) { this.q.push(m); if (this.w) { const w = this.w; this.w = null; w(); } } };
-  const session = { isClosed: false,
-    async *receive() { while (!L.closed) { if (!L.q.length) await new Promise(r => L.w = r); while (L.q.length) yield L.q.shift(); } },
-    async sendAudioRealtime(b) { if (b && b.data) L.audio++; }, async sendTextRealtime(t) { L.texts.push(t); },
-    async sendFunctionResponses(r) { L.fr.push(JSON.parse(JSON.stringify(r))); }, async close() { L.closed = true; session.isClosed = true; if (L.w) L.w(); } };
-  const aiM = { ResponseModality: { AUDIO: "AUDIO" },
-    getGenerativeModel: () => ({ startChat: () => chat }),
-    getLiveGenerativeModel: (ai, cfg) => { return { connect: async () => { L.cfg = cfg; L.closed = false; L.q = []; session.isClosed = false; return session; } }; } };
-  window.__fakeAI = { loadAI: async () => ({ aiM, ai: {} }), models: ["m"], ready: () => true, err: e => String(e && e.message) };
+  /* Gemini Live: WebSocket simulat (doar pentru adresa Gemini). window.__LIVE.push(mesaj) trimite un mesaj de la server;
+     __LIVE.reject = motiv face ca serverul să închidă conexiunea la pornire */
+  const L = window.__LIVE = { q: [], audio: 0, texts: [], fr: [], closed: false, cfg: null, url: "", ws: null, reject: null,
+    push(m) { const { type, ...rest } = m; if (this.ws) this.ws._msg(type === "toolCall" ? { toolCall: rest } : { serverContent: rest }); } };
+  const RealWS = window.WebSocket;
+  class FakeWS {
+    constructor(url) {
+      if (!/generativelanguage\.googleapis\.com/.test(url)) return new RealWS(url);
+      this.url = url; this.readyState = 0; L.url = url; L.ws = this;
+      setTimeout(() => { this.readyState = 1; this.onopen && this.onopen(); }, 10);
+    }
+    send(s) {
+      const m = JSON.parse(s);
+      if (m.setup) { L.cfg = m.setup; L.closed = false;
+        const r = (L.rejects || []).shift(); if (r) { setTimeout(() => this._close(1008, r), 5); return; }
+        setTimeout(() => this._msg({ setupComplete: {} }), 5); }
+      else if (m.realtimeInput && m.realtimeInput.audio) { if (m.realtimeInput.audio.data) L.audio++; }
+      else if (m.realtimeInput && m.realtimeInput.text) L.texts.push(m.realtimeInput.text);
+      else if (m.toolResponse) L.fr.push(JSON.parse(JSON.stringify(m.toolResponse.functionResponses)));
+    }
+    _msg(o) { this.onmessage && this.onmessage({ data: new TextEncoder().encode(JSON.stringify(o)).buffer }); }
+    close() { this._close(1000, ""); }
+    _close(code, reason) { if (this.readyState === 3) return; this.readyState = 3; L.closed = true; setTimeout(() => this.onclose && this.onclose({ code, reason }), 0); }
+  }
+  FakeWS.OPEN = 1; window.WebSocket = FakeWS;
+  const aiM = { getGenerativeModel: () => ({ startChat: () => chat }) };
+  const acM = { getToken: async () => ({ token: "appcheck-test" }) };
+  window.__fakeAI = { loadAI: async () => ({ aiM, ai: {}, acM, appCheck: {} }), models: ["m"], ready: () => true, err: e => String(e && e.message) };
 }
 
-async function open(mode) {
+/* fn = cum răspunde serverul de bilete: implicit dă un bilet; {status:404} = neinstalat */
+async function open(mode, fn) {
+  const tickets = [];
   const S = seed();
   const ctx = await browser.newContext({ viewport: { width: 420, height: 860 }, locale: "ro-RO", timezoneId: "Europe/Bucharest", serviceWorkers: "block", permissions: ["microphone"] });
   await ctx.addInitScript(s => { window.__SEED = s; }, { docs: S.docs, user: S.user });
@@ -63,6 +82,14 @@ async function open(mode) {
     if (/firebasejs\/[\d.]+\/firebase-[a-z-]+-compat\.js/.test(url)) return route.fulfill({ contentType: "text/javascript", body: "" });
     if (/xlsx(\.full)?\.min\.js/.test(url)) return route.fulfill({ contentType: "text/javascript", body: "window.XLSX={utils:{},read(){return{SheetNames:[],Sheets:{}}},writeFile(){}};" });
     if (/fonts\.(googleapis|gstatic)\.com/.test(url)) return route.fulfill({ contentType: "text/css", body: "" });
+    if (/cloudfunctions\.net\/sofiaLive$/.test(url)) {
+      const req = route.request(), h = req.headers(), d = JSON.parse(req.postData() || "{}").data || {};
+      tickets.push({ auth: h.authorization, appcheck: h["x-firebase-appcheck"], data: d });
+      const cors = { "access-control-allow-origin": "*" };
+      if (fn && fn.status) return route.fulfill({ status: fn.status, headers: cors, contentType: "application/json", body: JSON.stringify(fn.body || {}) });
+      const model = d.motor === "expresiv" ? "gemini-9-flash-native-audio-test" : "gemini-9-live-test";
+      return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ result: { token: "auth_tokens/bilet-" + tickets.length, model } }) });
+    }
     return route.abort();
   });
   const page = await ctx.newPage(), errors = [];
@@ -70,7 +97,7 @@ async function open(mode) {
   await page.goto(ORIGIN + "index.html#k=" + S.TEAM);
   await page.waitForFunction(() => window.CPFS && window.__cpAI && document.getElementById("vcBtn"), null, { timeout: 15000 });
   await page.evaluate(() => { window.__cpAI = window.__fakeAI; });
-  return { page, errors, ctx };
+  return { page, errors, ctx, tickets };
 }
 const log = page => page.$$eval("#vcLog .vc-m", m => m.map(x => x.className.replace("vc-m vc-", "") + ": " + x.textContent));
 const avans = page => page.evaluate(() => { const d = window.__STORE.get([...window.__STORE.keys()].find(k => k.endsWith("/contracte/c1"))); return d && d.avansPlatit; });
@@ -118,13 +145,22 @@ test("Sofia cu vocea telefonului: „nu e bine” la confirmare înseamnă NU, �
 });
 
 test("Sofia cu Gemini Live: sunet în ambele sensuri, funcții, confirmare doar după „da”, închidere", async () => {
-  const { page, errors, ctx } = await open("live");
+  const { page, errors, ctx, tickets } = await open("live");
   await page.click("#vcBtn");
   await page.waitForFunction(() => window.__LIVE.cfg && window.__LIVE.audio > 2, null, { timeout: 8000 });
   const cfg = await page.evaluate(() => ({ voice: window.__LIVE.cfg.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName, mod: window.__LIVE.cfg.generationConfig.responseModalities, fn: window.__LIVE.cfg.tools[0].functionDeclarations.map(f => f.name), conf: !!window.__LIVE.cfg.tools[0].functionDeclarations.find(f => f.name === "marcheaza_incasare").parameters.properties.confirmat }));
   assert.equal(cfg.voice, "Sulafat");
   assert.deepEqual(cfg.mod, ["AUDIO"]);
   assert.ok(cfg.fn.includes("inchide_conversatia") && cfg.conf);
+  // biletul se cere cu contul și App Check; conexiunea merge direct la Gemini, cu biletul, pe modelul dat de server
+  assert.equal(tickets.length, 1);
+  assert.equal(tickets[0].auth, "Bearer fake");
+  assert.equal(tickets[0].appcheck, "appcheck-test");
+  assert.ok(tickets[0].data.echipa.length >= 20, "trimite codul echipei");
+  const live = await page.evaluate(() => ({ url: window.__LIVE.url, model: window.__LIVE.cfg.model, sys: window.__LIVE.cfg.systemInstruction.parts[0].text }));
+  assert.match(live.url, /BidiGenerateContentConstrained\?access_token=auth_tokens%2Fbilet-1$/);
+  assert.equal(live.model, "models/gemini-9-live-test");
+  assert.match(live.sys, /Ești Sofia/);
   assert.match(await page.textContent("#vcMic"), /Încheie conversația/);
   assert.equal((await page.evaluate(() => window.__sofia.state())).loop, true, "vocea Sofiei trece prin legătura WebRTC (anularea ecoului)");
   if (process.env.CP_SHOTS) await page.screenshot({ path: path.join(process.env.CP_SHOTS, "sofia-live.png") });
@@ -197,7 +233,7 @@ test("ecoul pe difuzor: cât vorbește Sofia, microfonul rămâne închis la eco
 });
 
 test("pe laptop: ⌥S deschide Sofia, Space încheie, „Ascult-o” pornește cu vocea și motorul alese", async () => {
-  const { page, errors, ctx } = await open("live");
+  const { page, errors, ctx, tickets } = await open("live");
   await page.keyboard.press("Alt+KeyS");
   await page.waitForFunction(() => window.__sofia.state().live, null, { timeout: 8000 });
   const st = await page.evaluate(() => window.__sofia.state());
@@ -209,10 +245,39 @@ test("pe laptop: ⌥S deschide Sofia, Space încheie, „Ascult-o” pornește c
   await page.click("#vcCfgB");
   await page.selectOption("#vcEng", "expresiv");
   await page.waitForFunction(() => window.__sofia.state().live && window.__LIVE.texts.some(x => /Salută-mă/.test(x)), null, { timeout: 8000 });
-  assert.match(await page.evaluate(() => window.__LIVE.cfg.model), /2\.5-flash-native-audio/);
+  assert.equal(tickets[tickets.length - 1].data.motor, "expresiv");
+  assert.equal(await page.evaluate(() => window.__LIVE.cfg.model), "models/gemini-9-flash-native-audio-test");
   if (process.env.CP_SHOTS) { await page.setViewportSize({ width: 1440, height: 900 }); await page.screenshot({ path: path.join(process.env.CP_SHOTS, "sofia-laptop.png") }); }
   await page.selectOption("#vcLVoice", "Aoede");
   await page.waitForFunction(() => window.__LIVE.cfg.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName === "Aoede", null, { timeout: 8000 });
+  assert.deepEqual(errors, [], errors.join("\n"));
+  await ctx.close();
+});
+
+test("serverul de bilete nu e instalat: Sofia spune de ce, trece imediat pe vocea telefonului și nu mai încearcă 6 ore", async () => {
+  const { page, errors, ctx, tickets } = await open("live", { status: 404 });
+  await page.click("#vcBtn");
+  await page.waitForFunction(() => /serverul pentru conversația live nu e încă instalat/.test(document.getElementById("vcLog").textContent), null, { timeout: 8000 });
+  await page.waitForFunction(() => window.__REC >= 1, null, { timeout: 5000 });   // a trecut pe ascultarea telefonului
+  assert.doesNotMatch(await page.textContent("#vcLog"), /nu e activat/);
+  assert.ok(await page.evaluate(() => JSON.parse(localStorage.getItem("cp-voce-live-off")).motiv));
+  // redeschis (ca după o reîncărcare): nu mai cere bilet, spune o dată de ce
+  await page.evaluate(() => { window.__REC = 0; });
+  await page.click("#vcX"); await page.click("#vcBtn");
+  await page.waitForFunction(() => window.__REC >= 1, null, { timeout: 5000 });
+  assert.equal(tickets.length, 1, "nu încearcă din nou Live");
+  assert.match(await page.textContent("#vcLog"), /Conversația live e oprită/);
+  assert.deepEqual(errors, [], errors.join("\n"));
+  await ctx.close();
+});
+
+test("Gemini nu are modelul dat: Sofia cere un bilet pentru alt model și pornește", async () => {
+  const { page, errors, ctx, tickets } = await open("live");
+  await page.evaluate(() => { window.__LIVE.rejects = ["models/gemini-9-live-test is not found for API version v1beta, or is not supported for bidiGenerateContent"]; });
+  await page.click("#vcBtn");
+  await page.waitForFunction(() => window.__sofia.state().live, null, { timeout: 8000 });
+  assert.equal(tickets.length, 2);
+  assert.deepEqual(tickets[1].data.fara, ["gemini-9-live-test"]);
   assert.deepEqual(errors, [], errors.join("\n"));
   await ctx.close();
 });

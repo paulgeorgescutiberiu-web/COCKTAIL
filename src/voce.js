@@ -401,17 +401,21 @@ function liveConfirm(q){
 }
 
 /* ---------- Conversația live: Gemini Live, voce naturală, în timp real ---------- */
-const LIVE_MODELS=["gemini-3.1-flash-live-preview","gemini-2.5-flash-native-audio-preview-12-2025","gemini-2.5-flash-native-audio-preview-09-2025"];
-/* „Motorul” vocii: 3.1 e cel mai nou și rapid; 2.5 audio nativ e foarte expresiv. Celelalte rămân de rezervă. */
-const ENGINES={nou:"Gemini 3.1 Live · rapid",expresiv:"Gemini 2.5 audio nativ · expresiv"};
-const liveModels=()=>VS.engine==="expresiv"?[LIVE_MODELS[1],LIVE_MODELS[2],LIVE_MODELS[0]]:LIVE_MODELS;
+/* „Motorul” vocii: serverul alege modelul Live cel mai nou („rapid”) sau unul cu audio nativ („expresiv”) */
+const ENGINES={nou:"Cel mai nou Gemini Live · rapid",expresiv:"Gemini audio nativ · expresiv"};
 const LIVE_VOICES={Sulafat:"Sulafat · caldă",Aoede:"Aoede · lejeră",Kore:"Kore · fermă",Leda:"Leda · tânără",Despina:"Despina · catifelată",Achernar:"Achernar · blândă",Zephyr:"Zephyr · luminoasă",Vindemiatrix:"Vindemiatrix · delicată"};
 VS.mode=LS.get("cp-voce-mod","live");
 VS.duplex=LS.get("cp-voce-dup","auto");
 VS.engine=LS.get("cp-voce-motor","nou");if(!ENGINES[VS.engine])VS.engine="nou";
 VS.lvoice=LS.get("cp-voce-live","Sulafat");if(!LIVE_VOICES[VS.lvoice])VS.lvoice="Sulafat";
 const liveOK=()=>!!((window.AudioContext||window.webkitAudioContext)&&window.AudioWorkletNode&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.WebSocket);
-const useLive=()=>VS.mode==="live"&&liveOK()&&!VS.liveBroken;
+/* Când Live nu poate porni din cauza configurării (server neinstalat, acces, cheie), nu mai încearcă 6 ore:
+   Sofia pornește direct pe vocea telefonului și spune o dată de ce. „🔊 Ascult-o” sau schimbarea vocii încearcă din nou. */
+const OFF_MS=6*3600e3;
+function liveOff(){try{const o=JSON.parse(LS.get("cp-voce-live-off","null"));return o&&Date.now()-o.at<OFF_MS?o:null}catch(e){return null}}
+const setLiveOff=motiv=>LS.set("cp-voce-live-off",JSON.stringify({at:Date.now(),motiv}));
+const clearLiveOff=()=>{VS.liveBroken=false;try{localStorage.removeItem("cp-voce-live-off")}catch(e){}};
+const useLive=()=>VS.mode==="live"&&liveOK()&&!VS.liveBroken&&!liveOff();
 const IDLE_MS=45000;   // după 45 de secunde de liniște conversația se închide singură (microfonul deschis costă)
 /* Microfonul: 16 kHz, PCM pe 16 biți, bucăți de 100 ms (media pe fereastră ca filtru simplu înainte de reeșantionare) */
 const WK=`class P extends AudioWorkletProcessor{constructor(){super();this.r=sampleRate/16000;this.b=new Int16Array(1600);this.n=0;this.a=0;this.s=0;this.c=0;this.q=0}
@@ -485,18 +489,77 @@ function play(L,data){
   L.srcs.push(s);s.onended=()=>{L.srcs=L.srcs.filter(x=>x!==s)};
 }
 function flushPlay(L){L.srcs.forEach(s=>{try{s.stop(0)}catch(e){}});L.srcs=[];L.playEnd=0}
-async function connectLive(aiM,ai){
-  let last;
-  for(const m of (VS.liveModel?[VS.liveModel]:liveModels())){
-    try{
-      const model=aiM.getLiveGenerativeModel(ai,{model:m,systemInstruction:sysPrompt(true),tools:[{functionDeclarations:decls(true)}],
-        generationConfig:{temperature:0.9,responseModalities:[aiM.ResponseModality?aiM.ResponseModality.AUDIO:"AUDIO"],
-          speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:VS.lvoice}}},inputAudioTranscription:{},outputAudioTranscription:{}}});
-      const s=await model.connect();VS.liveModel=m;return s;
-    }catch(e){last=e;console.warn("Sofia live",m,e)}
+/* ---------- Biletul și conexiunea Live ---------- */
+/* Biblioteca Firebase pentru web nu trimite App Check pe conexiunea Live (firebase-js-sdk#10018), iar proiectul îl cere.
+   Așa că funcția sofiaLive (functions/) dă un bilet Gemini Live de unică folosință, cerut cu App Check și contul tău,
+   iar Sofia se conectează direct la Gemini cu el. */
+const LIVE_WS="wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained";
+const fnURL=()=>`https://europe-west1-${F.cfg.projectId}.cloudfunctions.net/sofiaLive`;
+const liveErr=(kind,detail)=>Object.assign(new Error(detail||kind),{kind});
+async function ticket(fara){
+  const X=window.__cpAI;
+  if(!X||!X.ready())throw liveErr("acces","serviciul AI al aplicației nu e configurat");
+  const {acM,appCheck}=await X.loadAI();
+  const u=window.firebase&&firebase.auth().currentUser;if(!u)throw liveErr("acces","nu ești conectat");
+  const [idt,ac]=await Promise.all([u.getIdToken(),acM&&appCheck?acM.getToken(appCheck,false).catch(()=>null):null]);
+  const h={"Content-Type":"application/json",Authorization:"Bearer "+idt};if(ac&&ac.token)h["X-Firebase-AppCheck"]=ac.token;
+  let r;
+  try{r=await fetch(fnURL(),{method:"POST",headers:h,body:JSON.stringify({data:{echipa:String(F.base||"").split("/")[1]||"",motor:VS.engine,fara}})})}
+  catch(e){throw liveErr(navigator.onLine===false?"retea":"neinstalat")}   // funcția lipsă răspunde fără CORS: fetch eșuează
+  const j=await r.json().catch(()=>({}));
+  if(r.ok&&j.result&&j.result.token)return j.result;
+  const st=j.error&&j.error.status||"",m=j.error&&j.error.message||String(r.status);
+  if(r.status===404||st==="NOT_FOUND"&&!/model/i.test(m))throw liveErr("neinstalat");
+  if(st==="UNAUTHENTICATED"||st==="PERMISSION_DENIED"||r.status===401||r.status===403)throw liveErr(/app.?check/i.test(m)?"appcheck":"acces",m);
+  if(st==="RESOURCE_EXHAUSTED")throw liveErr("limita",m);
+  if(st==="FAILED_PRECONDITION")throw liveErr("cheie",m);
+  throw liveErr("google",m);
+}
+/* O sesiune Live pe WebSocket, cu aceleași metode ca cea din biblioteca Firebase (le folosesc liveLoop și liveTools) */
+function rawLive(url,setup){
+  return new Promise((res,rej)=>{
+    const ws=new WebSocket(url);ws.binaryType="arraybuffer";
+    const q=[],td=new TextDecoder();let w=null,closed=false,ready=false;
+    const wake=()=>{if(w){const f=w;w=null;f()}};
+    const snd=o=>{if(ws.readyState!==1)return Promise.reject(new Error("închis"));ws.send(JSON.stringify(o));return Promise.resolve()};
+    const S={isClosed:false,
+      async *receive(){for(;;){if(q.length){yield q.shift();continue}if(closed)return;await new Promise(r=>w=r)}},
+      sendAudioRealtime:b=>snd({realtimeInput:{audio:b}}),
+      sendTextRealtime:t=>snd({realtimeInput:{text:t}}),
+      sendFunctionResponses:r=>snd({toolResponse:{functionResponses:r}}),
+      close:async()=>{S.isClosed=true;try{ws.close(1000)}catch(e){}}};
+    ws.onopen=()=>ws.send(JSON.stringify({setup}));
+    ws.onmessage=e=>{let m;try{m=JSON.parse(typeof e.data==="string"?e.data:td.decode(e.data))}catch(x){return}
+      if(!ready){if(m.setupComplete){ready=true;res(S)}return}
+      if(m.serverContent)q.push({type:"serverContent",...m.serverContent});
+      else if(m.toolCall)q.push({type:"toolCall",...m.toolCall});
+      else if(m.goAway)q.push({type:"goAway",...m.goAway});
+      wake()};
+    ws.onerror=()=>{};
+    ws.onclose=e=>{closed=true;S.isClosed=true;
+      if(!ready){const why=e.reason||("conexiune închisă, cod "+e.code);rej(liveErr(/app.?check/i.test(why)?"appcheck":/model|not found|not supported|unsupported/i.test(why)?"model":/api.?key/i.test(why)?"cheie":"google",why))}
+      wake()};
+  });
+}
+const liveSetup=model=>({model:"models/"+model,
+  generationConfig:{temperature:0.9,responseModalities:["AUDIO"],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:VS.lvoice}}}},
+  systemInstruction:{parts:[{text:sysPrompt(true)}]},tools:[{functionDeclarations:decls(true)}],
+  inputAudioTranscription:{},outputAudioTranscription:{}});
+async function connectLive(){
+  const fara=[];let last;
+  for(let i=0;i<3;i++){
+    const b=await ticket(fara);
+    try{const s=await rawLive(LIVE_WS+"?access_token="+encodeURIComponent(b.token),liveSetup(b.model));VS.liveModel=b.model;return s}
+    catch(e){last=e;console.warn("Sofia live",b.model,e);if(e.kind!=="model")break;fara.push(b.model)}   // model nepotrivit: cere bilet pentru altul
   }
   throw last;
 }
+/* Motivul pe înțeles și dacă e de configurare (atunci nu mai încearcă 6 ore) */
+const LIVE_WHY={neinstalat:["serverul pentru conversația live nu e încă instalat (functions/README.md)",true],
+  acces:["contul ăsta nu are acces la conversația live",true],appcheck:["Google a refuzat verificarea App Check",true],
+  cheie:["cheia Gemini de pe server lipsește sau nu e bună",true],limita:["s-a atins limita de conversații live, pentru moment",false],
+  retea:["nu e internet",false],model:["Google nu are acum un model live potrivit",false],google:["Google a refuzat conexiunea",false]};
+function liveWhy(e){const [t,cfg]=LIVE_WHY[e&&e.kind]||["eroare neașteptată",false];return {text:t+(e&&e.kind&&e.message&&e.message!==e.kind&&!["neinstalat","retea"].includes(e.kind)?": "+String(e.message).slice(0,140):""),cfg}}
 async function startLive(){
   if(VS.live||VS.liveStarting)return;
   const X=window.__cpAI;
@@ -511,9 +574,9 @@ async function startLive(){
     if(ctx.state==="suspended")await ctx.resume();
     if(pctx&&pctx.state==="suspended")await pctx.resume().catch(()=>{});
     const micP=navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
-    const [{aiM,ai},stream]=await Promise.all([X.loadAI(),micP]);
-    L.stream=stream;
-    L.session=await connectLive(aiM,ai);
+    const [sess,stream]=await Promise.allSettled([connectLive(),micP]).then(r=>{
+      if(r[1].status==="fulfilled")L.stream=r[1].value;if(r[0].status==="fulfilled")L.session=r[0].value;
+      if(r[1].status==="rejected")throw r[1].reason;if(r[0].status==="rejected")throw r[0].reason;return [r[0].value,r[1].value]});
     await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([WK],{type:"application/javascript"})));
     L.src=ctx.createMediaStreamSource(stream);L.node=new AudioWorkletNode(ctx,"cp-mic");
     const mute=ctx.createGain();mute.gain.value=0;L.src.connect(L.node);L.node.connect(mute);mute.connect(ctx.destination);
@@ -530,7 +593,8 @@ async function startLive(){
     if(mic){add("act","Nu am acces la microfon. Permite microfonul pentru această pagină din setările browserului.");paint();return}
     if(e&&e.message==="oprit"){paint();return}
     console.warn("Sofia live",e);VS.liveBroken=true;
-    add("act","Conversația live nu a pornit ("+(window.__cpAI?window.__cpAI.err(e).replace("Citirea facturii","Conversația"):errMsg(e))+"). Folosesc vocea telefonului.");paint();
+    const w=liveWhy(e);if(w.cfg)setLiveOff(w.text);
+    add("act","Conversația live nu a pornit: "+w.text+". Folosesc vocea telefonului.");paint();
     if(SR)talkTurn();
   }
 }
@@ -669,7 +733,7 @@ async function talkTurn(o={}){
 /* Ascultă vocea aleasă: repornește conversația cu ea (păstrând ce s-a vorbit) și Sofia se prezintă scurt */
 async function tryVoice(){
   if(!useLive()){add("act","Vocea nouă se aude în conversația live.");return}
-  if(VS.live){stopLive();VS.liveModel=null}
+  clearLiveOff();if(VS.live){stopLive();VS.liveModel=null}
   await startLive();
   if(VS.live)liveText("Salută-mă într-o singură propoziție scurtă, caldă, ca să aud cum îți sună vocea acum.","🔊 Ascult vocea");
 }
@@ -678,6 +742,8 @@ function micPress(){
   if(VS.live&&playing(VS.live)){interrupt(VS.live);return}
   if(VS.live||VS.liveStarting){stopLive();return}
   if(useLive()){startLive();return}
+  const off=VS.mode==="live"&&liveOff();
+  if(off&&!VS.offShown){VS.offShown=true;add("act","Conversația live e oprită ("+off.motiv+"). Folosesc vocea telefonului. Din ⚙︎ → 🔊 Ascult-o încerci din nou.")}
   if(VS.listening){stopListen();return}
   if(SQ.run)shush();
   talkTurn();
@@ -727,9 +793,9 @@ function mount(){
   const dp=$("#vcDup");dp.value=VS.duplex;dp.onchange=()=>{VS.duplex=dp.value;LS.set("cp-voce-dup",VS.duplex)};
   const lv=$("#vcLVoice");lv.value=VS.lvoice;
   lv.onchange=()=>{VS.lvoice=lv.value;LS.set("cp-voce-live",VS.lvoice);tryVoice()};
-  const en=$("#vcEng");en.value=VS.engine;en.onchange=()=>{VS.engine=en.value;LS.set("cp-voce-motor",VS.engine);VS.liveModel=null;VS.liveBroken=false;tryVoice()};
+  const en=$("#vcEng");en.value=VS.engine;en.onchange=()=>{VS.engine=en.value;LS.set("cp-voce-motor",VS.engine);VS.liveModel=null;clearLiveOff();tryVoice()};
   $("#vcTry").onclick=tryVoice;
-  $("#vcMode").onchange=e=>{VS.mode=e.target.value;LS.set("cp-voce-mod",VS.mode);VS.liveBroken=false;stopLive();stopListen();shush();
+  $("#vcMode").onchange=e=>{VS.mode=e.target.value;LS.set("cp-voce-mod",VS.mode);clearLiveOff();stopLive();stopListen();shush();
     if(VS.mode==="live"&&!liveOK())add("act","Telefonul ăsta nu poate face conversația live. Folosesc vocea telefonului.");paint()};
   $("#vcTalk").onchange=e=>{VS.talk=e.target.checked;LS.set("cp-voce-talk",VS.talk?"1":"0");if(!VS.talk)shush()};
   $("#vcConv").onchange=e=>{VS.conv=e.target.checked;LS.set("cp-voce-conv",VS.conv?"1":"0")};
