@@ -41,7 +41,7 @@ function fakes() {
     async sendFunctionResponses(r) { L.fr.push(JSON.parse(JSON.stringify(r))); }, async close() { L.closed = true; session.isClosed = true; if (L.w) L.w(); } };
   const aiM = { ResponseModality: { AUDIO: "AUDIO" },
     getGenerativeModel: () => ({ startChat: () => chat }),
-    getLiveGenerativeModel: (ai, cfg) => { L.cfg = cfg; return { connect: async () => session }; } };
+    getLiveGenerativeModel: (ai, cfg) => { return { connect: async () => { L.cfg = cfg; L.closed = false; L.q = []; session.isClosed = false; return session; } }; } };
   window.__fakeAI = { loadAI: async () => ({ aiM, ai: {} }), models: ["m"], ready: () => true, err: e => String(e && e.message) };
 }
 
@@ -194,5 +194,26 @@ test("ecoul pe difuzor: cât vorbește Sofia, microfonul rămâne închis la eco
   });
   assert.deepEqual(r, ["off", "off", "off", "off", "off", "off", "off", "off", "flush", "on", "on"]);
   assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test("pe laptop: ⌥S deschide Sofia, Space încheie, „Ascult-o” pornește cu vocea și motorul alese", async () => {
+  const { page, errors, ctx } = await open("live");
+  await page.keyboard.press("Alt+KeyS");
+  await page.waitForFunction(() => window.__sofia.state().live, null, { timeout: 8000 });
+  const st = await page.evaluate(() => window.__sofia.state());
+  assert.equal(st.rate, 24000, "vocea se redă la 24 kHz, fără reeșantionare pe bucăți");
+  assert.equal(st.loop, true, "legătura pentru ecou merge și cu Opus la calitate mare");
+  assert.match(await page.textContent("#vcLog"), /Space/);
+  await page.keyboard.press("Space");
+  await page.waitForFunction(() => !window.__sofia.state().live);
+  await page.click("#vcCfgB");
+  await page.selectOption("#vcEng", "expresiv");
+  await page.waitForFunction(() => window.__sofia.state().live && window.__LIVE.texts.some(x => /Salută-mă/.test(x)), null, { timeout: 8000 });
+  assert.match(await page.evaluate(() => window.__LIVE.cfg.model), /2\.5-flash-native-audio/);
+  if (process.env.CP_SHOTS) { await page.setViewportSize({ width: 1440, height: 900 }); await page.screenshot({ path: path.join(process.env.CP_SHOTS, "sofia-laptop.png") }); }
+  await page.selectOption("#vcLVoice", "Aoede");
+  await page.waitForFunction(() => window.__LIVE.cfg.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName === "Aoede", null, { timeout: 8000 });
+  assert.deepEqual(errors, [], errors.join("\n"));
   await ctx.close();
 });

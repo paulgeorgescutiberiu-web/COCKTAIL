@@ -516,6 +516,8 @@ a.btn.primary{color:var(--on-leaf)}
 @keyframes vcBlink{50%{opacity:.25}}
 .vc-chips{display:flex;flex-wrap:wrap;gap:6px}.vc-chip{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}
 .vc-f{display:flex;gap:8px}.vc-f input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
+.vc-try{align-self:flex-start}.vc-keys{font-size:.8rem}.vc-keys kbd{font:inherit;font-size:.78rem;padding:1px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--card)}
+@media (min-width:900px) and (pointer:fine){#vcPanel{width:460px;max-height:min(78vh,680px);right:20px}#vcBtn{right:24px;bottom:24px}}
 @media print{#vcBtn,#vcPanel{display:none!important}}
 .nc-r{grid-template-columns:1fr 96px}.nc-r.off{opacity:.5}
 .nc-r .lbl{display:grid;grid-template-columns:22px 1fr;gap:4px 8px;align-items:center}.nc-r .lbl small{grid-column:2;padding:0}
@@ -4961,7 +4963,9 @@ function sysPrompt(live){
 Vorbești cu ${F.NAME||"un coleg"}${F.isAdmin?", administratorul (Paul)":", un membru al echipei"}. Azi este ${z} (${iso(new Date())}).
 Reguli:
 - Răspunzi DOAR în limba română, scurt și natural, ca într-o conversație la telefon: una-trei propoziții, vorbite, cu cuvinte de zi cu zi („gata”, „am pus”, „mai ai”), fără formulări de robot ca „Am efectuat operațiunea”. Fără markdown, liste cu steluțe sau emoji; textul tău e citit cu voce tare.${live?`
-- Vorbești ca un vorbitor nativ de română, cu accent românesc, cald și relaxat, în ritm normal. Numele cocktailurilor le spui cum se spun la bar. Nu trece în altă limbă.
+- Vorbești ca un vorbitor nativ de română, cu accent românesc. Vocea ta e caldă, zâmbitoare și relaxată, ca a unei colege prietenoase care te ajută la telefon: fluent, legat, în ritm firesc de conversație, cu intonație vie, fără pauze lungi și fără ton de robot sau de prezentator.
+- Vorbești ca un om, nu citești: „deci”, „perfect”, „aha, stai să văd”, „uite”; nu începi fiecare răspuns la fel și nu repeți întrebarea. Cifrele și datele le spui cum le-ar spune cineva la telefon („pe sâmbătă, 14”, „vreo douăzeci de sticle”).
+- Numele cocktailurilor le spui cum se spun la bar. Nu trece în altă limbă.
 - Dacă utilizatorul te întrerupe, te oprești și asculți. Nu repeta ce ai spus deja.`:""}
 - Pentru orice întrebare despre rețete, evenimente, stoc sau contracte chemi funcțiile; nu inventa date. Dacă o funcție dă eroare, spui pe scurt de ce.
 - Când ți se cere o acțiune, o faci direct cu funcția potrivită, apoi confirmi într-o propoziție ce ai făcut.
@@ -5147,11 +5151,15 @@ function liveConfirm(q){
 
 /* ---------- Conversația live: Gemini Live, voce naturală, în timp real ---------- */
 const LIVE_MODELS=["gemini-3.1-flash-live-preview","gemini-2.5-flash-native-audio-preview-12-2025","gemini-2.5-flash-native-audio-preview-09-2025"];
+/* „Motorul” vocii: 3.1 e cel mai nou și rapid; 2.5 audio nativ e foarte expresiv. Celelalte rămân de rezervă. */
+const ENGINES={nou:"Gemini 3.1 Live · rapid",expresiv:"Gemini 2.5 audio nativ · expresiv"};
+const liveModels=()=>VS.engine==="expresiv"?[LIVE_MODELS[1],LIVE_MODELS[2],LIVE_MODELS[0]]:LIVE_MODELS;
 const LIVE_VOICES={Sulafat:"Sulafat · caldă",Aoede:"Aoede · lejeră",Kore:"Kore · fermă",Leda:"Leda · tânără",Despina:"Despina · catifelată",Achernar:"Achernar · blândă",Zephyr:"Zephyr · luminoasă",Vindemiatrix:"Vindemiatrix · delicată"};
 VS.mode=LS.get("cp-voce-mod","live");
 VS.duplex=LS.get("cp-voce-dup","auto");
+VS.engine=LS.get("cp-voce-motor","nou");if(!ENGINES[VS.engine])VS.engine="nou";
 VS.lvoice=LS.get("cp-voce-live","Sulafat");if(!LIVE_VOICES[VS.lvoice])VS.lvoice="Sulafat";
-const liveOK=()=>!!(window.AudioContext&&window.AudioWorkletNode&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.WebSocket);
+const liveOK=()=>!!((window.AudioContext||window.webkitAudioContext)&&window.AudioWorkletNode&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.WebSocket);
 const useLive=()=>VS.mode==="live"&&liveOK()&&!VS.liveBroken;
 const IDLE_MS=45000;   // după 45 de secunde de liniște conversația se închide singură (microfonul deschis costă)
 /* Microfonul: 16 kHz, PCM pe 16 biți, bucăți de 100 ms (media pe fereastră ca filtru simplu înainte de reeșantionare) */
@@ -5161,7 +5169,8 @@ for(let k=0;k<ch.length;k++){this.s+=ch[k];this.c++;this.a+=1;if(this.a>=this.r)
 this.q+=v*v;this.b[this.n++]=v<0?v*32768:v*32767;if(this.n===1600){this.port.postMessage({b:this.b.buffer,r:Math.sqrt(this.q/1600)},[this.b.buffer]);this.b=new Int16Array(1600);this.n=0;this.q=0}}}
 return true}}registerProcessor("cp-mic",P)`;
 function b64(buf){const u=new Uint8Array(buf);let s="";for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)}
-const playing=L=>!!L&&L.ctx.currentTime<L.playEnd-0.05;
+const pnow=L=>(L.pctx||L.ctx).currentTime;
+const playing=L=>!!L&&pnow(L)<L.playEnd-0.05;
 /* Ecoul pe difuzor: telefonul anulează ecoul doar pentru sunetul „de apel”. Vocea Sofiei trece deci printr-o legătură WebRTC
    locală (două RTCPeerConnection în pagină) și se aude dintr-un <audio>, ca un apel; dacă nu merge, se aude direct. */
 async function loopback(ctx){
@@ -5173,8 +5182,15 @@ async function loopback(ctx){
     b.onicecandidate=e=>e.candidate&&a.addIceCandidate(e.candidate).catch(()=>{});
     const got=new Promise(r=>b.ontrack=e=>r(e.streams[0]||new MediaStream([e.track])));
     dest.stream.getTracks().forEach(t=>a.addTrack(t,dest.stream));
-    const o=await a.createOffer();await a.setLocalDescription(o);await b.setRemoteDescription(o);
-    const an=await b.createAnswer();await b.setLocalDescription(an);await a.setRemoteDescription(an);
+    const hq=d=>{const m=d.sdp.match(/a=rtpmap:(\d+) opus\/48000/i);if(!m)return d;
+      const want={maxaveragebitrate:"128000",maxplaybackrate:"48000",useinbandfec:"1",usedtx:"0",stereo:"0"},re=new RegExp("a=fmtp:"+m[1]+" ([^\\r\\n]*)");
+      const merge=old=>{const o={};String(old||"").split(";").forEach(x=>{const [k,v]=x.split("=");if(k&&k.trim())o[k.trim()]=v});Object.assign(o,want);return Object.entries(o).map(([k,v])=>v==null?k:k+"="+v).join(";")};
+      const sdp=re.test(d.sdp)?d.sdp.replace(re,(_,old)=>"a=fmtp:"+m[1]+" "+merge(old)):d.sdp.replace(m[0],m[0]+"\r\na=fmtp:"+m[1]+" "+merge("minptime=10"));
+      return {type:d.type,sdp}};
+    const setL=async(pc,d)=>{try{await pc.setLocalDescription(hq(d))}catch(e){await pc.setLocalDescription(d)}return pc.localDescription};
+    const o=await setL(a,await a.createOffer());await b.setRemoteDescription(o);
+    const an=await setL(b,await b.createAnswer());await a.setRemoteDescription(an);
+    try{const snd=a.getSenders()[0],pr=snd.getParameters();if(pr.encodings&&pr.encodings[0]){pr.encodings[0].maxBitrate=128000;await snd.setParameters(pr)}}catch(e){}
     const late=ms=>new Promise((_,j)=>setTimeout(()=>j(new Error("loopback")),ms));
     el.srcObject=await Promise.race([got,late(2500)]);el.autoplay=true;
     await Promise.race([new Promise(r=>{const ok=()=>a.connectionState==="connected"&&r();a.onconnectionstatechange=ok;ok()}),late(2500)]);
@@ -5187,7 +5203,7 @@ async function loopback(ctx){
    În modul „doar prin atingere” rămâne închis până termină ea sau apeși „Întrerupe-o”. */
 const ECHO_TAIL=0.5,SIL=b64(new Int16Array(1600).buffer);
 function gate(L,r){
-  const t=L.ctx.currentTime;
+  const t=pnow(L);
   if(t>=L.playEnd+ECHO_TAIL){L.open=false;L.hot=0;L.pre=[];L.t0=null;return "on"}
   if(L.open)return "on";
   if(L.t0==null)L.t0=t;
@@ -5210,19 +5226,20 @@ function micChunk(L,d){
 function interrupt(L){flushPlay(L);L.drop=true;L.open=true;paintState()}
 function play(L,data){
   const bin=atob(data),n=bin.length>>1;if(!n)return;
-  const buf=L.ctx.createBuffer(1,n,24000),ch=buf.getChannelData(0);
+  const P=L.pctx||L.ctx,buf=P.createBuffer(1,n,24000),ch=buf.getChannelData(0);
   for(let i=0;i<n;i++){let v=bin.charCodeAt(2*i)|(bin.charCodeAt(2*i+1)<<8);if(v>=32768)v-=65536;ch[i]=v/32768}
-  const s=L.ctx.createBufferSource();s.buffer=buf;s.connect(L.out||L.ctx.destination);
-  const at=Math.max(L.ctx.currentTime+0.02,L.playEnd);s.start(at);L.playEnd=at+buf.duration;
+  const s=P.createBufferSource();s.buffer=buf;s.connect(L.out||P.destination);
+  const now=P.currentTime,at=L.playEnd>now+0.01?L.playEnd:now+0.12;   // la începutul frazei, 120 ms de rezervă: bucățile care întârzie nu mai fac goluri
+  s.start(at);L.playEnd=at+buf.duration;
   L.srcs.push(s);s.onended=()=>{L.srcs=L.srcs.filter(x=>x!==s)};
 }
 function flushPlay(L){L.srcs.forEach(s=>{try{s.stop(0)}catch(e){}});L.srcs=[];L.playEnd=0}
 async function connectLive(aiM,ai){
   let last;
-  for(const m of (VS.liveModel?[VS.liveModel]:LIVE_MODELS)){
+  for(const m of (VS.liveModel?[VS.liveModel]:liveModels())){
     try{
       const model=aiM.getLiveGenerativeModel(ai,{model:m,systemInstruction:sysPrompt(true),tools:[{functionDeclarations:decls(true)}],
-        generationConfig:{responseModalities:[aiM.ResponseModality?aiM.ResponseModality.AUDIO:"AUDIO"],
+        generationConfig:{temperature:0.9,responseModalities:[aiM.ResponseModality?aiM.ResponseModality.AUDIO:"AUDIO"],
           speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:VS.lvoice}}},inputAudioTranscription:{},outputAudioTranscription:{}}});
       const s=await model.connect();VS.liveModel=m;return s;
     }catch(e){last=e;console.warn("Sofia live",m,e)}
@@ -5234,11 +5251,14 @@ async function startLive(){
   const X=window.__cpAI;
   if(!X||!X.ready()){add("act","Asistentul are nevoie de serviciul AI al aplicației (cel de la facturi), care nu e configurat.");return}
   shush();stopListen();
-  const ctx=new AudioContext();   // creat chiar în atingere, altfel telefonul nu dă voie la sunet
-  const L={ctx,srcs:[],playEnd:0,last:Date.now(),uB:null,aB:null,stopped:false,pre:[],hot:0,open:false};
+  const AC=window.AudioContext||window.webkitAudioContext;
+  const ctx=new AC();   // creat chiar în atingere, altfel telefonul / Safari nu dau voie la sunet
+  let pctx=null;try{pctx=new AC({sampleRate:24000})}catch(e){}   // vocea Sofiei vine la 24 kHz: o redăm exact așa
+  const L={ctx,pctx,srcs:[],playEnd:0,last:Date.now(),uB:null,aB:null,stopped:false,pre:[],hot:0,open:false};
   VS.liveStarting=true;setStatus("Pornesc conversația…");paint();
   try{
     if(ctx.state==="suspended")await ctx.resume();
+    if(pctx&&pctx.state==="suspended")await pctx.resume().catch(()=>{});
     const micP=navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
     const [{aiM,ai},stream]=await Promise.all([X.loadAI(),micP]);
     L.stream=stream;
@@ -5247,7 +5267,7 @@ async function startLive(){
     L.src=ctx.createMediaStreamSource(stream);L.node=new AudioWorkletNode(ctx,"cp-mic");
     const mute=ctx.createGain();mute.gain.value=0;L.src.connect(L.node);L.node.connect(mute);mute.connect(ctx.destination);
     L.node.port.onmessage=e=>micChunk(L,e.data);
-    L.loop=await loopback(ctx);if(L.loop)L.out=L.loop.dest;
+    L.loop=await loopback(pctx||ctx);if(L.loop)L.out=L.loop.dest;
     if(!VS.liveStarting)throw new Error("oprit");
     VS.live=L;VS.liveStarting=false;VS.status="";
     L.tick=setInterval(()=>liveTick(L),500);
@@ -5269,7 +5289,7 @@ function stopLive(msg){
   L.stopped=true;VS.live=null;VS.pend=null;VS.ask=null;VS.status="";clearInterval(L.tick);
   try{L.node.port.onmessage=null;L.node.disconnect()}catch(e){}try{L.src.disconnect()}catch(e){}
   try{L.stream.getTracks().forEach(t=>t.stop())}catch(e){}
-  flushPlay(L);try{L.loop&&L.loop.close()}catch(e){}try{L.ctx.close()}catch(e){}try{L.session.close()}catch(e){}
+  flushPlay(L);try{L.loop&&L.loop.close()}catch(e){}try{L.ctx.close()}catch(e){}try{L.pctx&&L.pctx.close()}catch(e){}try{L.session.close()}catch(e){}
   if(msg)add("act",msg);paint();
 }
 function liveTick(L){
@@ -5346,7 +5366,7 @@ function paint(){
   if(P){P.hidden=!VS.open;
     if(VS.open){
       const lg=$("#vcLog");
-      lg.innerHTML=(VS.msgs.length?"":`<p class="vc-hint">Vorbește liber, ca la telefon. Poți s-o întrerupi oricând. De exemplu:</p><div class="vc-chips">${EX().map(q=>`<button type="button" class="vc-chip" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>${F.isAdmin?`<p class="vc-hint">sau „Adaugă un eveniment: nunta lui Andrei Pop pe 20 iunie, la Conacul Bașa, 120 de invitați, 25 de euro de persoană”</p>`:""}`)+
+      lg.innerHTML=(VS.msgs.length?"":`<p class="vc-hint">Vorbește liber, ca la telefon. Poți s-o întrerupi oricând. De exemplu:</p><div class="vc-chips">${EX().map(q=>`<button type="button" class="vc-chip" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>${F.isAdmin?`<p class="vc-hint">sau „Adaugă un eveniment: nunta lui Andrei Pop pe 20 iunie, la Conacul Bașa, 120 de invitați, 25 de euro de persoană”</p>`:""}${matchMedia("(pointer:fine)").matches?`<p class="vc-hint vc-keys">Pe laptop: <kbd>${/Mac/i.test(navigator.platform||navigator.userAgent)?"⌥":"Alt"} S</kbd> deschide și închide Sofia, <kbd>Space</kbd> pornește, întrerupe sau oprește conversația.</p>`:""}`)+
         VS.msgs.filter(m=>m.text||m.who==="act").map(m=>`<div class="vc-m vc-${m.who}">${esc(m.text.trim())}</div>`).join("")+(VS.busy&&!VS.msgs.some(m=>m.streaming)?`<div class="vc-m vc-act">${esc(VS.status||"Mă gândesc…")}</div>`:"");
       lg.scrollTop=1e6;
       $("#vcAsk").hidden=!VS.ask;
@@ -5393,6 +5413,13 @@ async function talkTurn(o={}){
     $("#vcIn").value="";turn(t);
   }catch(e){add("act",e.message==="mic"?"Nu am acces la microfon. Permite microfonul pentru această pagină din setările browserului.":"Recunoașterea vocală nu merge în acest browser. Scrie întrebarea mai jos.")}
 }
+/* Ascultă vocea aleasă: repornește conversația cu ea (păstrând ce s-a vorbit) și Sofia se prezintă scurt */
+async function tryVoice(){
+  if(!useLive()){add("act","Vocea nouă se aude în conversația live.");return}
+  if(VS.live){stopLive();VS.liveModel=null}
+  await startLive();
+  if(VS.live)liveText("Salută-mă într-o singură propoziție scurtă, caldă, ca să aud cum îți sună vocea acum.","🔊 Ascult vocea");
+}
 /* Butonul mare: pornește / oprește conversația; dacă Sofia vorbește (vocea telefonului), o oprește și ascultă */
 function micPress(){
   if(VS.live&&playing(VS.live)){interrupt(VS.live);return}
@@ -5410,6 +5437,8 @@ function mount(){
     <div class="vc-set" id="vcCfg" hidden>
       <label>Vocea <select id="vcMode" aria-label="Felul vocii"><option value="live">Gemini Live (naturală, în timp real)</option><option value="clasic">Vocea telefonului</option></select></label>
       <div class="vc-row" id="vcLv"><label>Cine vorbește <select id="vcLVoice" aria-label="Vocea Sofiei">${Object.entries(LIVE_VOICES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("")}</select></label>
+        <label>Motorul vocii <select id="vcEng" aria-label="Motorul vocii">${Object.entries(ENGINES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("")}</select></label>
+        <button type="button" class="btn vc-try" id="vcTry">🔊 Ascult-o</button>
         <label>Întreruperi <select id="vcDup" aria-label="Cum o întrerupi"><option value="auto">vorbind peste ea</option><option value="atingere">doar prin atingere (difuzor, zgomot)</option></select></label></div>
       <div class="vc-row" id="vcCl"><label>Vocea <select id="vcVoice" aria-label="Vocea telefonului"></select></label>
         <label>Viteză <input type="range" id="vcRate" min="0.9" max="1.7" step="0.05"> <output id="vcRateV"></output></label>
@@ -5444,18 +5473,25 @@ function mount(){
   paintVoices();
   const dp=$("#vcDup");dp.value=VS.duplex;dp.onchange=()=>{VS.duplex=dp.value;LS.set("cp-voce-dup",VS.duplex)};
   const lv=$("#vcLVoice");lv.value=VS.lvoice;
-  lv.onchange=()=>{VS.lvoice=lv.value;LS.set("cp-voce-live",VS.lvoice);add("act",VS.live?"Vocea nouă se aude de la următoarea conversație.":"Am schimbat vocea.")};
+  lv.onchange=()=>{VS.lvoice=lv.value;LS.set("cp-voce-live",VS.lvoice);tryVoice()};
+  const en=$("#vcEng");en.value=VS.engine;en.onchange=()=>{VS.engine=en.value;LS.set("cp-voce-motor",VS.engine);VS.liveModel=null;VS.liveBroken=false;tryVoice()};
+  $("#vcTry").onclick=tryVoice;
   $("#vcMode").onchange=e=>{VS.mode=e.target.value;LS.set("cp-voce-mod",VS.mode);VS.liveBroken=false;stopLive();stopListen();shush();
     if(VS.mode==="live"&&!liveOK())add("act","Telefonul ăsta nu poate face conversația live. Folosesc vocea telefonului.");paint()};
   $("#vcTalk").onchange=e=>{VS.talk=e.target.checked;LS.set("cp-voce-talk",VS.talk?"1":"0");if(!VS.talk)shush()};
   $("#vcConv").onchange=e=>{VS.conv=e.target.checked;LS.set("cp-voce-conv",VS.conv?"1":"0")};
   $("#vcF").onsubmit=e=>{e.preventDefault();const i=$("#vcIn");const t=i.value;i.value="";stopListen();send(t)};
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&VS.open)closePanel()});
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"&&VS.open){closePanel();return}
+    if(e.altKey&&!e.metaKey&&!e.ctrlKey&&e.code==="KeyS"){e.preventDefault();b.click();return}   // ⌥S (Alt+S): Sofia
+    const typing=/^(INPUT|TEXTAREA|SELECT)$/.test((e.target&&e.target.tagName)||"")||(e.target&&e.target.isContentEditable);
+    if(VS.open&&e.code==="Space"&&!typing&&!e.repeat&&!e.altKey&&!e.metaKey&&!e.ctrlKey){e.preventDefault();micPress()}
+  });
   document.addEventListener("visibilitychange",()=>{if(document.hidden){stopLive();stopListen();shush()}});   // microfonul nu rămâne deschis în fundal
   paint();
 }
 mount();
-window.__sofia={gate,state:()=>({live:!!VS.live,loop:!!(VS.live&&VS.live.loop),open:!!(VS.live&&VS.live.open)})};   // pentru teste
+window.__sofia={gate,state:()=>({live:!!VS.live,loop:!!(VS.live&&VS.live.loop),open:!!(VS.live&&VS.live.open),rate:VS.live&&VS.live.pctx?VS.live.pctx.sampleRate:0})};   // pentru teste
 })();
 
 /* ---------- Meniul 2026: aceeași listă în aplicație, pe site, în portal și la bar ---------- */

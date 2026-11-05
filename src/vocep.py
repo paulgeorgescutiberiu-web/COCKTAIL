@@ -29,6 +29,8 @@ rep("</style>\n</head>","""#vcBtn{position:fixed;right:16px;bottom:calc(16px + e
 @keyframes vcBlink{50%{opacity:.25}}
 .vc-chips{display:flex;flex-wrap:wrap;gap:6px}.vc-chip{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}
 .vc-f{display:flex;gap:8px}.vc-f input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
+.vc-try{align-self:flex-start}.vc-keys{font-size:.8rem}.vc-keys kbd{font:inherit;font-size:.78rem;padding:1px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--card)}
+@media (min-width:900px) and (pointer:fine){#vcPanel{width:460px;max-height:min(78vh,680px);right:20px}#vcBtn{right:24px;bottom:24px}}
 @media print{#vcBtn,#vcPanel{display:none!important}}
 </style>
 </head>""")
