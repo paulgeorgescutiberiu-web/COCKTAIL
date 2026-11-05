@@ -48,6 +48,6 @@ test("biletul cerut la Google: o folosire, pornire în 2 minute, cel mult 30 de 
     uses: 1,
     expireTime: "2026-11-05T10:30:00.000Z",
     newSessionExpireTime: "2026-11-05T10:02:00.000Z",
-    liveConnectConstraints: { model: "models/gemini-3.8-live" },
+    bidiGenerateContentSetup: { model: "models/gemini-3.8-live" },
   });
 });

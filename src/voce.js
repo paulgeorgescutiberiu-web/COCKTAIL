@@ -493,7 +493,7 @@ function flushPlay(L){L.srcs.forEach(s=>{try{s.stop(0)}catch(e){}});L.srcs=[];L.
 /* Biblioteca Firebase pentru web nu trimite App Check pe conexiunea Live (firebase-js-sdk#10018), iar proiectul îl cere.
    Așa că funcția sofiaLive (functions/) dă un bilet Gemini Live de unică folosință, cerut cu App Check și contul tău,
    iar Sofia se conectează direct la Gemini cu el. */
-const LIVE_WS="wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained";
+const LIVE_WS="wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained";
 const fnURL=()=>`https://europe-west1-${F.cfg.projectId}.cloudfunctions.net/sofiaLive`;
 const liveErr=(kind,detail)=>Object.assign(new Error(detail||kind),{kind});
 async function ticket(fara){
@@ -711,7 +711,7 @@ async function turn(text,shown){
   };
   try{await ask(text,onText);sayQ(buf);if(!full.trim()){add("ai","Gata.");sayQ("Gata.")}}
   catch(e){console.warn("Sofia",e);VS.chat=null;shush();
-    const a=/configurat|administratorul/.test(e&&e.message)?e.message:(window.__cpAI?window.__cpAI.err(e).replace("Citirea facturii","Cererea"):"Nu am reușit. Încearcă din nou.");
+    const a=/configurat|administratorul/.test(e&&e.message)?e.message:(window.__cpAI?window.__cpAI.err(e).replace("Citirea facturii","Cererea")+" (detaliu: "+String(e&&(e.message||e.code)||e).replace(/https?:\/\/\S+/g,"…").replace(/^AI: Error fetching from …:?\s*/,"").replace(/\s+/g," ").slice(0,200)+")":"Nu am reușit. Încearcă din nou.");
     if(b)b.text+=(b.text?" … ":"")+a;else add("ai",a);sayQ(a);full=a}
   if(b)b.streaming=false;
   VS.busy=false;VS.status="";paint();

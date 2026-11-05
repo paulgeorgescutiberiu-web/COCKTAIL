@@ -43,7 +43,7 @@ exports.sofiaLive = onCall({
   if (!lista.length) throw new HttpsError("not-found", "Niciun model Live nu a mers.");
   const model = lista[0];
 
-  const r = await fetch(`${S.API}/auth_tokens`, {
+  const r = await fetch(`${S.API_BILET}/auth_tokens`, {
     method: "POST",
     headers: { "x-goog-api-key": key, "Content-Type": "application/json" },
     body: JSON.stringify(S.cerereBilet(model, Date.now())),

@@ -48,13 +48,15 @@ function alegeModel(modele, motor) {
 }
 
 /* Biletul: o singură folosire, conexiunea trebuie pornită în 2 minute, ține cel mult 30 de minute, doar pe modelul ales */
+/* Biletele (auth_tokens) există doar în v1alpha; câmpul pentru model e bidiGenerateContentSetup (cum îl trimite și biblioteca Google) */
+const API_BILET = "https://generativelanguage.googleapis.com/v1alpha";
 function cerereBilet(model, acum) {
   return {
     uses: 1,
     expireTime: new Date(acum + 30 * 60e3).toISOString(),
     newSessionExpireTime: new Date(acum + 2 * 60e3).toISOString(),
-    liveConnectConstraints: { model: "models/" + model },
+    bidiGenerateContentSetup: { model: "models/" + model },
   };
 }
 
-module.exports = { ADMIN_EMAIL, API, REZERVA, poate, limita, alegeModel, cerereBilet, eroare };
+module.exports = { ADMIN_EMAIL, API, API_BILET, REZERVA, poate, limita, alegeModel, cerereBilet, eroare };
