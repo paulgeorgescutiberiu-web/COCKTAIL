@@ -25,8 +25,8 @@ function loadAI(){
     const u=m=>`https://www.gstatic.com/firebasejs/${AI_VER}/firebase-${m}.js`;
     const [appM,acM,aiM]=await Promise.all([import(u("app")),import(u("app-check")),import(u("ai"))]);
     const app=appM.initializeApp(F.cfg,"cp-ai");
-    acM.initializeAppCheck(app,{provider:new acM.ReCaptchaEnterpriseProvider(F.recaptcha),isTokenAutoRefreshEnabled:true});
-    return {aiM,ai:aiM.getAI(app,{backend:new aiM.GoogleAIBackend()})};
+    const appCheck=acM.initializeAppCheck(app,{provider:new acM.ReCaptchaEnterpriseProvider(F.recaptcha),isTokenAutoRefreshEnabled:true});
+    return {aiM,ai:aiM.getAI(app,{backend:new aiM.GoogleAIBackend()}),acM,appCheck};
   })().catch(e=>{aiP=null;throw e});
   return aiP;
 }
