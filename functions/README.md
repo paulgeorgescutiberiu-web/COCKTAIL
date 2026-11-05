@@ -60,10 +60,16 @@ Pune cheia pe server (îți cere s-o lipești; nu se vede cât scrii):
 firebase functions:secrets:set GEMINI_API_KEY
 ```
 
-Publică funcția:
+Publică funcția (bibliotecile ei se instalează singure înainte, din `firebase.json`):
 
 ```bash
 firebase deploy --only functions
+```
+
+Dacă npm se plânge de `EACCES` / „cache folder contains root-owned files” (după un `sudo npm install`), dă-ți înapoi folderul npm și încearcă din nou:
+
+```bash
+sudo chown -R $(id -u):$(id -g) ~/.npm
 ```
 
 La prima publicare, Firebase poate întreba dacă activează serviciile necesare (Cloud Functions, Cloud Build, Artifact Registry, Secret Manager): răspunzi **y**. Dacă întreabă câte zile să păstreze imaginile vechi, lasă valoarea propusă.
