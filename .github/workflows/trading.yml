@@ -1,0 +1,31 @@
+# Aduce cotațiile zilnice SPCX în trading/spcx.json pentru pagina trading.html.
+# Rulează de 3 ori pe zi lucrătoare (deschidere, mijlocul zilei, după închidere, ora New York);
+# face commit doar dacă datele s-au schimbat. Durează câteva secunde, fără chei sau servere.
+name: Cotații SpaceX
+on:
+  schedule:
+    - cron: "47 14 * * 1-5"
+    - cron: "13 18 * * 1-5"
+    - cron: "23 21 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: trading-cotatii
+jobs:
+  cotatii:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aduce datele
+        run: python3 tools/trading/actualizeaza.py SPCX
+      - name: Salvează dacă s-a schimbat ceva
+        run: |
+          # câmpul „actualizat” se schimbă mereu; comparăm doar prețurile
+          if git diff --quiet -- trading/ || [ "$(git show HEAD:trading/spcx.json | python3 -c 'import json,sys;print(json.load(sys.stdin)["zile"])')" = "$(python3 -c 'import json;print(json.load(open("trading/spcx.json"))["zile"])')" ]; then
+            echo "Nicio cotație nouă"; exit 0; fi
+          git config user.name "cocktail-bot"; git config user.email "bot@users.noreply.github.com"
+          git add trading/spcx.json
+          git commit -qm "Cotații SPCX $(date -u +%F) [skip ci]"
+          git push -q

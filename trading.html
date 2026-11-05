@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#14432F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SPCX">
+<title>Trading SpaceX</title>
+<link rel="manifest" href="trading.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>
+:root{--bg:#FFFEF1;--panel:#FFFFFF;--line:#E2D9BF;--fg:#1A1A18;--mut:#5E6359;--ac:#C2862D;--brand:#14432F;--chip:#F3EBD6;--buy:#1F7A4A;--sell:#B3362A;--wait:#8A6A12;--grid:#ECE5CF;
+--d:"Barlow Condensed","Arial Narrow",Arial,sans-serif;--b:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C1A14;--panel:#12261D;--line:#24402F;--fg:#F2EEDF;--mut:#9DA89C;--ac:#E3B25C;--chip:#1B3327;--buy:#5FD08F;--sell:#FF7A6B;--wait:#F2C94C;--grid:#1C3326;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0C1A14;--panel:#12261D;--line:#24402F;--fg:#F2EEDF;--mut:#9DA89C;--ac:#E3B25C;--chip:#1B3327;--buy:#5FD08F;--sell:#FF7A6B;--wait:#F2C94C;--grid:#1C3326;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--b);font-size:16px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left)) 60px max(16px,env(safe-area-inset-right));display:flex;flex-direction:column;gap:16px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.brand{font:700 14px var(--d);letter-spacing:.1em;color:var(--mut);text-transform:uppercase}
+h1{margin:2px 0 0;font:700 30px/1.1 var(--d)}
+.px{text-align:right}.px b{font:700 30px/1 var(--d);font-variant-numeric:tabular-nums}.px small{display:block;color:var(--mut);font-size:13px}
+.up{color:var(--buy)}.dn{color:var(--sell)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{margin:0 0 10px;font:700 15px var(--d);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.sig{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.badge{font:700 34px/1 var(--d);padding:14px 18px;border-radius:12px;text-align:center;min-width:150px;border:2px solid currentColor}
+.badge small{display:block;font:500 13px var(--b);margin-top:6px;opacity:.85}
+.BUY{color:var(--buy)}.SELL{color:var(--sell)}.WAIT{color:var(--wait)}
+.bar{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--sell),var(--wait) 50%,var(--buy));position:relative;margin:8px 0 4px}
+.bar i{position:absolute;top:-5px;width:4px;height:22px;background:var(--fg);border-radius:2px;transform:translateX(-2px)}
+.bar u{position:absolute;top:0;bottom:0;width:1px;background:var(--panel);opacity:.8}
+.scale{display:flex;justify-content:space-between;font-size:12px;color:var(--mut)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:none;border:0;padding:7px 12px;color:var(--mut)}
+.seg button[aria-pressed="true"]{background:var(--chip);color:var(--fg);font-weight:600}
+.btn{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+input[type=number],input[type=password],input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;width:130px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut)}
+ul.why{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+ul.why li{display:grid;grid-template-columns:1fr 90px;gap:10px;align-items:center;font-size:14px}
+.mini{height:8px;background:var(--grid);border-radius:4px;position:relative;overflow:hidden}
+.mini b{position:absolute;top:0;bottom:0}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kv{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.kv span{display:block;font-size:12px;color:var(--mut)}.kv b{font:700 20px var(--d);font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--mut);margin:8px 0 0}
+svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+details summary{cursor:pointer;color:var(--mut);font-size:14px}
+.warn{border-left:4px solid var(--wait);padding:10px 12px;background:var(--chip);border-radius:8px;font-size:13px}
+#err{display:none;color:var(--sell)}
+@media (max-width:560px){.sig{grid-template-columns:1fr}.badge{min-width:0}.grid3{grid-template-columns:1fr 1fr}h1{font-size:26px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><div class="brand">Asistent probabilități</div><h1 id="nume">SpaceX · SPCX</h1></div>
+    <div class="px"><b id="pret">—</b><small id="var">—</small><small id="ora">—</small></div>
+  </header>
+
+  <p id="err" class="card"></p>
+
+  <section class="card" aria-live="polite">
+    <h2>Sugestia de acum</h2>
+    <div class="sig">
+      <div id="badge" class="badge WAIT">—<small>se calculează</small></div>
+      <div>
+        <div id="ptext" style="font-size:15px">—</div>
+        <div class="bar" aria-hidden="true"><u style="left:43%"></u><u style="left:57%"></u><i id="ac" style="left:50%"></i></div>
+        <div class="scale"><span>SELL ≤ 43%</span><span>AȘTEAPTĂ</span><span>BUY ≥ 57%</span></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <div class="row"><span style="font-size:13px;color:var(--mut)">Orizont:</span>
+        <div class="seg" id="hz"><button data-h="3">3 zile</button><button data-h="5" aria-pressed="true">5 zile</button><button data-h="10">10 zile</button></div>
+      </div>
+      <button class="btn" id="refresh">↻ Actualizează</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>De ce</h2>
+    <ul class="why" id="why"></ul>
+    <p class="note">Bara arată cât împinge fiecare indicator spre BUY (verde, dreapta) sau SELL (roșu, stânga), după cum s-a comportat SPCX până acum.</p>
+  </section>
+
+  <section class="card">
+    <h2>Planul, dacă intri</h2>
+    <div class="row" style="margin-bottom:12px">
+      <label class="f">Capital (USD)<input type="number" id="cap" min="0" step="100" value="10000"></label>
+      <label class="f">Risc pe tranzacție (%)<input type="number" id="risc" min="0.1" max="5" step="0.1" value="1"></label>
+    </div>
+    <div class="grid3" id="plan"></div>
+    <p class="note" id="plannote"></p>
+  </section>
+
+  <section class="card">
+    <h2>Preț și semnale din trecut</h2>
+    <div id="chart"></div>
+    <div class="legend"><span><i style="background:var(--fg)"></i>Preț</span><span><i style="background:var(--ac)"></i>Media 20 zile</span><span><i style="background:var(--buy)"></i>Ar fi zis BUY</span><span><i style="background:var(--sell)"></i>Ar fi zis SELL</span></div>
+  </section>
+
+  <section class="card">
+    <h2>Cât de fiabil a fost</h2>
+    <div class="grid3" id="bt"></div>
+    <p class="note" id="btnote"></p>
+  </section>
+
+  <section class="card">
+    <h2>Preț live (opțional)</h2>
+    <p class="note" style="margin-top:0">Datele zilnice se actualizează automat de câteva ori pe zi. Ca să recalculezi pe loc cu prețul de acum, scrie-l de la broker sau folosește o cheie gratuită <a href="https://finnhub.io/register" target="_blank" rel="noopener">Finnhub</a> (se păstrează doar în acest browser).</p>
+    <div class="row">
+      <label class="f">Preț curent<input type="number" id="live" step="0.01" placeholder="ex. 137.20"></label>
+      <button class="btn" id="aplica">Recalculează</button>
+      <button class="btn" id="reset">Înapoi la date</button>
+    </div>
+    <details style="margin-top:12px"><summary>Cheie Finnhub</summary>
+      <div class="row" style="margin-top:8px"><input type="password" id="key" placeholder="cheia ta" autocomplete="off" style="width:220px"><button class="btn" id="cota">Ia prețul acum</button></div>
+    </details>
+  </section>
+
+  <p class="warn"><b>Nu e sfat financiar.</b> Sunt probabilități statistice calculate din istoricul scurt al acțiunii (listată din iunie 2026) și pot greși. Nu știu de știri, rezultate trimestriale sau anunțuri. Folosește stop-ul și nu risca bani de care ai nevoie.</p>
+</div>
+
+<script src="trading/model.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const M = window.ModelTrading;
+  const S = { date: null, zile: null, H: 5, liveP: null };
+  const ls = {
+    get(k, d) { try { const v = localStorage.getItem("trd." + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem("trd." + k, JSON.stringify(v)); } catch (e) {} },
+  };
+  const usd = x => Number.isFinite(x) ? "$" + x.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—";
+  const pct = (x, s) => Number.isFinite(x) ? (s && x > 0 ? "+" : "") + (x * 100).toLocaleString("ro-RO", { maximumFractionDigits: 1 }) + "%" : "—";
+  const azi = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+
+  function eroare(m) { const e = $("err"); e.textContent = m; e.style.display = m ? "block" : "none"; }
+
+  async function incarca(fortat) {
+    eroare("");
+    try {
+      const r = await fetch("trading/spcx.json" + (fortat ? "?t=" + Date.now() : ""), { cache: fortat ? "no-store" : "default" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      S.date = await r.json(); ls.set("date", S.date);
+    } catch (e) {
+      S.date = ls.get("date", null);
+      if (!S.date) { eroare("Nu pot încărca datele (" + e.message + "). Verifică internetul."); return; }
+      eroare("Fără conexiune: arăt ultimele date salvate.");
+    }
+    S.zile = S.date.zile; S.liveP = null; deseneaza();
+  }
+
+  function deseneaza() {
+    if (!S.zile) return;
+    const zile = S.liveP ? M.cuPretCurent(S.zile, S.liveP, azi()) : S.zile;
+    const r = M.analizeaza(zile, { H: S.H });
+    const u = zile[zile.length - 1], prev = zile[zile.length - 2];
+    $("nume").textContent = "SpaceX · " + (S.date.simbol || "SPCX");
+    $("pret").textContent = usd(u[4]);
+    const ch = u[4] / prev[4] - 1; $("var").textContent = pct(ch, true) + " față de închiderea anterioară"; $("var").className = ch >= 0 ? "up" : "dn";
+    $("ora").textContent = S.liveP ? "preț introdus acum" : "închidere " + u[0] + " · actualizat " + new Date(S.date.actualizat).toLocaleString("ro-RO", { dateStyle: "short", timeStyle: "short" });
+
+    const b = $("badge");
+    if (!r.gata) { b.className = "badge WAIT"; b.innerHTML = "—<small>" + r.motiv + "</small>"; return; }
+    const cls = r.semnal === "BUY" ? "BUY" : r.semnal === "SELL" ? "SELL" : "WAIT";
+    b.className = "badge " + cls;
+    b.innerHTML = r.semnal + "<small>" + Math.round(r.p * 100) + "% să crească în " + S.H + " zile</small>";
+    $("ac").style.left = Math.max(1, Math.min(99, r.p * 100)) + "%";
+    const inc = r.incredere < 0.2 ? "scăzută" : r.incredere < 0.45 ? "medie" : "bună";
+    $("ptext").innerHTML = "Probabilitate de creștere în următoarele <b>" + S.H + " zile de bursă</b>: <b>" + pct(r.p) + "</b>. "
+      + "Modelul singur ar spune " + pct(r.pBrut) + ", dar l-am temperat pentru că încrederea e <b>" + inc + "</b> (" + r.nAntrenare + " zile de istoric"
+      + (r.test.skill <= 0 ? ", iar pe trecut n-a bătut clar hazardul" : "") + ").";
+
+    const max = Math.max(0.3, ...r.contributii.map(c => Math.abs(c.efect)));
+    $("why").innerHTML = r.contributii.map(c => {
+      const w = Math.abs(c.efect) / max * 50, poz = c.efect >= 0;
+      return "<li><span>" + c.nume + " <span style='color:var(--mut)'>· " + descrie(c, r.ultim) + "</span></span><div class='mini'><b style='left:" + (poz ? 50 : 50 - w) + "%;width:" + w + "%;background:var(--" + (poz ? "buy" : "sell") + ")'></b></div></li>";
+    }).join("");
+
+    const cap = +$("cap").value || 0, risc = +$("risc").value || 1; ls.set("cap", cap); ls.set("risc", risc);
+    const p = M.plan(r, cap, risc), dir = p.semnal === "SELL" ? "short" : "long";
+    $("plan").innerHTML = kv("Intrare (" + dir + ")", usd(p.pret)) + kv("Stop-loss", usd(p.stop), pct(p.stop / p.pret - 1, true)) + kv("Țintă", usd(p.tinta), pct(p.tinta / p.pret - 1, true))
+      + kv("Bucăți", p.bucati, usd(p.bucati * p.pret)) + kv("Pierdere maximă", usd(p.bucati * p.riscPeActiune)) + kv("Câștig / risc", "1 : " + p.raport.toFixed(1));
+    $("plannote").textContent = (p.semnal === "AȘTEAPTĂ" ? "Semnalul e neutru: cifrele de mai sus sunt doar pentru cazul în care intri oricum long. " : "")
+      + "Stop la 1,5 × ATR (" + usd(p.atr) + " = mișcarea medie zilnică), țintă la 2,5 × ATR. Mărimea poziției e calculată ca, dacă se atinge stop-ul, să pierzi cel mult " + risc + "% din capital."
+      + (p.semnal === "SELL" ? " Short înseamnă vânzare în lipsă; dacă nu faci asta, SELL = vinde ce ai sau nu cumpăra." : "");
+
+    const t = r.test;
+    $("bt").innerHTML = kv("Zile testate", t.n) + kv("Direcție ghicită", pct(t.acuratete)) + kv("Față de hazard", (t.skill > 0 ? "+" : "") + (t.skill * 100).toFixed(0) + "%", t.skill > 0.02 ? "mai bun" : t.skill < -0.02 ? "mai slab" : "la egalitate")
+      + kv("Semnale BUY/SELL", t.semnale) + kv("Din ele, corecte", t.acurateteSemnale === null ? "—" : pct(t.acurateteSemnale)) + kv("Randament mediu / semnal", pct(t.randamentMediuSemnal, true));
+    $("btnote").textContent = "Test „walk-forward”: în fiecare zi din trecut modelul a văzut doar datele de până atunci, apoi s-a verificat ce a făcut prețul peste " + S.H + " zile. "
+      + (t.skill > 0.02 ? "A fost ceva mai bun decât hazardul, dar istoricul e scurt — tratează-l ca pe un indiciu, nu o garanție." : "Deocamdată nu are un avantaj clar față de hazard, de aceea sugestia rămâne aproape de 50%. Pe măsură ce se adună zile, se recalibrează singur.");
+
+    grafic(r);
+  }
+
+  function descrie(c, u) {
+    const v = c.valoare;
+    switch (c.nume) {
+      case "RSI 14": return "RSI " + u.rsi.toFixed(0) + (u.rsi > 70 ? " (supra-cumpărat)" : u.rsi < 30 ? " (supra-vândut)" : "");
+      case "Trend (față de media 20 zile)": return pct(v, true) + " față de medie";
+      case "Randament 5 zile": return pct(v, true);
+      case "Bollinger %B": return (v + 0.5 > 1 ? "peste banda de sus" : v + 0.5 < 0 ? "sub banda de jos" : Math.round((v + 0.5) * 100) + "% din bandă");
+      case "Volum": return v > 0.3 ? "volum mare pe creștere" : v < -0.3 ? "volum mare pe scădere" : "volum obișnuit";
+      case "Volatilitate (ATR)": return pct(v) + " pe zi";
+      case "MACD": return v >= 0 ? "peste semnal" : "sub semnal";
+    }
+    return "";
+  }
+  function kv(k, v, s) { return "<div class='kv'><span>" + k + "</span><b>" + v + "</b>" + (s ? "<span>" + s + "</span>" : "") + "</div>"; }
+
+  function grafic(r) {
+    const rows = r.rows, W = 700, H = 240, P = { l: 44, r: 8, t: 10, b: 22 };
+    const pr = rows.map(x => x.pret), lo = Math.min(...pr) * 0.97, hi = Math.max(...pr) * 1.03;
+    const X = i => P.l + i / (rows.length - 1) * (W - P.l - P.r), Y = v => P.t + (hi - v) / (hi - lo) * (H - P.t - P.b);
+    const linie = (vals) => vals.map((v, i) => Number.isFinite(v) ? (i && Number.isFinite(vals[i - 1]) ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1) : "").join("");
+    let g = "";
+    for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4; g += "<line x1='" + P.l + "' x2='" + (W - P.r) + "' y1='" + Y(v) + "' y2='" + Y(v) + "' stroke='var(--grid)'/><text x='" + (P.l - 6) + "' y='" + (Y(v) + 4) + "' text-anchor='end' font-size='11' fill='var(--mut)'>" + v.toFixed(0) + "</text>"; }
+    const idx = {}; rows.forEach((x, i) => idx[x.data] = i);
+    let pts = "";
+    for (const t of r.test.istoric) {
+      if (t.p < M.PRAG_BUY && t.p > M.PRAG_SELL) continue;
+      const i = idx[t.data], c = t.p >= M.PRAG_BUY ? "buy" : "sell";
+      pts += "<circle cx='" + X(i) + "' cy='" + Y(rows[i].pret) + "' r='3.5' fill='var(--" + c + ")'><title>" + t.data + ": " + Math.round(t.p * 100) + "% · peste " + r.H + " zile " + pct(t.ret, true) + "</title></circle>";
+    }
+    const lab = [0, Math.floor(rows.length / 2), rows.length - 1].map(i => "<text x='" + X(i) + "' y='" + (H - 6) + "' text-anchor='" + (i ? i === rows.length - 1 ? "end" : "middle" : "start") + "' font-size='11' fill='var(--mut)'>" + rows[i].data.slice(5).split("-").reverse().join(".") + "</text>").join("");
+    $("chart").innerHTML = "<svg viewBox='0 0 " + W + " " + H + "' role='img' aria-label='Graficul prețului SPCX'>" + g
+      + "<path d='" + linie(rows.map(x => x.sma20)) + "' fill='none' stroke='var(--ac)' stroke-width='1.5' stroke-dasharray='4 3'/>"
+      + "<path d='" + linie(pr) + "' fill='none' stroke='var(--fg)' stroke-width='1.8'/>" + pts + lab + "</svg>";
+  }
+
+  /* evenimente */
+  $("hz").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    S.H = +b.dataset.h; ls.set("H", S.H);
+    for (const x of $("hz").children) x.setAttribute("aria-pressed", x === b);
+    deseneaza();
+  });
+  $("refresh").onclick = () => incarca(true);
+  $("cap").oninput = $("risc").oninput = () => deseneaza();
+  $("aplica").onclick = () => { const v = +$("live").value; if (v > 0) { S.liveP = v; deseneaza(); } };
+  $("reset").onclick = () => { S.liveP = null; $("live").value = ""; deseneaza(); };
+  $("key").value = ls.get("key", "");
+  $("cota").onclick = async () => {
+    const k = $("key").value.trim(); if (!k) return; ls.set("key", k);
+    try {
+      const r = await fetch("https://finnhub.io/api/v1/quote?symbol=" + encodeURIComponent(S.date ? S.date.simbol : "SPCX") + "&token=" + encodeURIComponent(k));
+      const q = await r.json(); if (!(q.c > 0)) throw new Error(q.error || "răspuns gol");
+      $("live").value = q.c; S.liveP = q.c; eroare(""); deseneaza();
+    } catch (e) { eroare("Finnhub n-a răspuns: " + e.message); }
+  };
+
+  S.H = ls.get("H", 5);
+  for (const x of $("hz").children) x.setAttribute("aria-pressed", +x.dataset.h === S.H);
+  $("cap").value = ls.get("cap", 10000); $("risc").value = ls.get("risc", 1);
+  window.__trading = S;
+  incarca(false);
+})();
+</script>
+</body>
+</html>

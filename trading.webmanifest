@@ -1,0 +1,16 @@
+{
+  "id": "trading",
+  "name": "Trading SpaceX",
+  "short_name": "SPCX",
+  "description": "Probabilități BUY / SELL pentru acțiunea SpaceX (SPCX), calculate din istoricul ei.",
+  "start_url": "trading.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0C1A14",
+  "theme_color": "#14432F",
+  "lang": "ro",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
