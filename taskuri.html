@@ -866,7 +866,6 @@ let lastDay=today();
 setInterval(()=>{if(today()!==lastDay){lastDay=today();render()}checkReminders()},30000);
 setTimeout(checkReminders,1500);
 window.addEventListener("storage",e=>{if(e.key===KEY){load();render()}});
-window.addEventListener("pagehide",()=>persist());
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){checkReminders();if(today()!==lastDay){lastDay=today();render()}}});
 window.__taskuri={parse,addFromText,state:()=>S,sync:()=>SY.st};
 })();
