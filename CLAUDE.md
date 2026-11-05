@@ -14,8 +14,8 @@ Textele din aplicații și mesajele de commit sunt tot în română.
 | Trading SpaceX (SPCX) | `trading.html` | `tools/trading/` |
 | Site-ul nou (cocktailphilosophy.ro) | `site-nou/` | prețurile în `site-nou/preturi.js` |
 | Postări Instagram + Facebook | din aplicație sau `social/coada/` | `social/README.md` |
-| Emailul de luni „Săptămâna ta” | GitHub Actions | `tools/rezumat/`, `src/cp-core.js` |
-| Serverul Firebase (Sofia Live, postări programate) | `functions/` | `functions/README.md` |
+| Emailul de luni „Săptămâna ta” | funcția Firebase `rezumatLuni` | `functions/rezumat.js`, `src/cp-core.js` |
+| Serverul Firebase (Sofia Live, postări programate, emailul de luni) | `functions/` | `functions/README.md`, `Porneste-functiile.command` |
 
 ## Aplicația de evenimente (`index.html`)
 
