@@ -44,6 +44,11 @@ main{min-width:0;padding:0 max(16px,env(safe-area-inset-right)) 120px max(16px,e
 .hd h1 small{font:500 15px var(--b);color:var(--mut);margin-left:8px}
 .ib{border:1px solid var(--line);background:var(--panel);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;font-size:17px}
 .ib.on{border-color:var(--ac);background:var(--chip)}
+#b-sync{position:relative}
+#b-sync::after{content:"";position:absolute;right:6px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--mut);border:2px solid var(--panel)}
+#b-sync[data-st="ok"]::after{background:var(--ok)}#b-sync[data-st="pending"]::after,#b-sync[data-st="conn"]::after{background:var(--yel)}
+#b-sync[data-st="err"]::after,#b-sync[data-st="auth"]::after,#b-sync[data-st="offline"]::after,#b-sync[data-st="noteam"]::after{background:var(--red)}
+#b-sync[data-st="off"]{opacity:.55}
 .search{margin-top:8px}
 .search input{width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel)}
 .cap{margin-top:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--sh);padding:6px 6px 6px 14px;display:flex;align-items:center;gap:6px}
@@ -162,6 +167,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
       <div class="top">
         <div class="hd">
           <h1 id="title">Inbox</h1>
+          <button class="ib" id="b-sync" data-act="settings" data-st="off" title="Sincronizare" aria-label="Sincronizare">☁️</button>
           <button class="ib" id="b-search" title="Caută (/)" aria-label="Caută">🔍</button>
           <button class="ib" id="b-help" title="Cum se scrie rapid" aria-label="Ajutor">?</button>
         </div>
@@ -226,6 +232,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <dialog id="set" aria-labelledby="set-h"><div class="dlg">
   <h2 id="set-h">Setări <button type="button" class="ib x" data-close aria-label="Închide">✕</button></h2>
+  <div class="f"><span class="l">Sincronizare telefon ↔ laptop</span><div id="s-sync" class="f"></div></div>
   <div class="f"><span class="l">Mementouri</span>
     <p class="small" style="margin:0">Când un task are oră, primești o notificare la ora lui cât timp aplicația e deschisă. Pentru mementouri sigure pe telefon, folosește butonul „În Google Calendar” din task.</p>
     <div><button class="btn" id="s-notif">Pornește notificările</button></div>
@@ -238,7 +245,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
     </div>
   </div>
   <div class="f"><span class="l">Copie de siguranță</span>
-    <p class="small" style="margin:0">Totul se păstrează doar pe acest dispozitiv, în browser. Descarcă o copie din când în când sau ca să muți taskurile pe alt telefon/laptop.</p>
+    <p class="small" style="margin:0">Pe dispozitiv se păstrează mereu o copie, ca aplicația să meargă și fără internet. Descarcă o copie din când în când sau ca să muți taskurile pe alt telefon/laptop.</p>
     <div class="qd"><button class="btn" id="s-exp">⬇ Descarcă copia</button><button class="btn" id="s-imp">⬆ Încarcă o copie</button><input type="file" id="s-file" accept="application/json,.json" class="hide"></div>
   </div>
   <p class="small" id="s-stats" style="margin:0"></p>
@@ -374,9 +381,20 @@ function parse(raw){
 }
 
 /* ---------- Date ---------- */
-let S={items:[],view:"inbox",tag:null,q:"",lastReview:null,theme:"",undo:null};
-function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v&&Array.isArray(v.items)){S.items=v.items;S.lastReview=v.lastReview||null;S.theme=v.theme||""}}catch(e){}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify({v:1,items:S.items,lastReview:S.lastReview,theme:S.theme}))}catch(e){toast("Nu am putut salva pe acest dispozitiv. Descarcă o copie din Setări.")}}
+let S={items:[],view:"inbox",tag:null,q:"",lastReview:null,theme:"",undo:null,dead:{},dirty:{},sync:false};
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v&&Array.isArray(v.items)){S.items=v.items;S.lastReview=v.lastReview||null;S.theme=v.theme||"";S.dead=v.dead||{};S.dirty=v.dirty||{};S.sync=!!v.sync}}catch(e){}
+  for(const i of S.items)if(!i.upd)i.upd=i.created||1;resetLast()}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({v:1,items:S.items,lastReview:S.lastReview,theme:S.theme,dead:S.dead,dirty:S.dirty,sync:S.sync}))}catch(e){toast("Nu am putut salva pe acest dispozitiv. Descarcă o copie din Setări.")}}
+function save(){track();persist();push()}
+/* Ce s-a schimbat de la ultima salvare: primește ora modificării și pleacă la sincronizare */
+let LAST=new Map();
+const sig=i=>{const{upd,...r}=i;return JSON.stringify(r)};
+function resetLast(){LAST=new Map(S.items.map(i=>[i.id,sig(i)]))}
+function track(){
+  const now=Date.now(),seen=new Set();
+  for(const i of S.items){seen.add(i.id);const g=sig(i);if(LAST.get(i.id)!==g){i.upd=Math.max(now,(i.upd||0)+1);LAST.set(i.id,g);S.dirty[i.id]=1;delete S.dead[i.id]}}
+  for(const id of[...LAST.keys()])if(!seen.has(id)){LAST.delete(id);S.dead[id]=now;S.dirty[id]=1}
+}
 function snap(){S.undo=JSON.stringify(S.items)}
 function get(id){return S.items.find(i=>i.id===id)}
 
@@ -620,6 +638,131 @@ function checkReminders(){
   if(ch)save();
 }
 
+/* ---------- Sincronizare prin Firebase (aceeași bază ca aplicația echipei) ----------
+   Fiecare task e un document echipe/{cod}/privat/tk_{id}; regulile existente lasă doar contul lui Paul să citească și să scrie acolo.
+   Pe dispozitiv rămâne totul în localStorage, deci aplicația merge și fără internet; la conectare câștigă varianta modificată mai recent. */
+const FB_VER="10.12.5",ADMIN="paul.georgescu.tiberiu@gmail.com";
+const FB_CFG={apiKey:"AIzaSyBdnMe0062NUOsIBlRZ1NqKlPniDwWXebI",authDomain:"cocktail-philosophy-dc34b.firebaseapp.com",projectId:"cocktail-philosophy-dc34b",storageBucket:"cocktail-philosophy-dc34b.firebasestorage.app",messagingSenderId:"924422421135",appId:"1:924422421135:web:127a3c78598b64afb84efa"};
+const SY={st:"off",msg:"",col:null,ready:false,unsub:null,auth:null,user:null,at:null};
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+function teamToken(){const m=location.hash.match(/k=([A-Za-z0-9]{20,})/);if(m){try{localStorage.setItem("cp-team",m[1])}catch(e){}return m[1]}return lsGet("cp-team")}
+function loadScript(src){return new Promise((ok,no)=>{const e=document.createElement("script");e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+async function fbLoad(){
+  if(window.firebase&&firebase.auth&&firebase.firestore)return;
+  const u=m=>`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-${m}-compat.js`;
+  await loadScript(u("app"));await Promise.all([loadScript(u("auth")),loadScript(u("firestore"))]);
+}
+const pendingN=()=>Object.keys(S.dirty).length;
+function setSync(st,msg){SY.st=st;SY.msg=msg||"";if(st==="ok")SY.at=new Date();syncUI()}
+async function syncStart(interactive){
+  if(SY.unsub)return;
+  const T=teamToken();if(!T){setSync("noteam");return}
+  setSync("conn");
+  try{await fbLoad()}catch(e){setSync("offline");return}
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(FB_CFG);
+    SY.auth=firebase.auth();
+    try{await SY.auth.getRedirectResult()}catch(e){}
+    await new Promise(res=>{const u=SY.auth.onAuthStateChanged(()=>{u();res()})});
+    const u=SY.user=SY.auth.currentUser;
+    if(!u||u.isAnonymous||u.email!==ADMIN){if(interactive)return signIn();setSync("auth");return}
+    S.sync=true;persist();
+    SY.col=firebase.firestore().collection(`echipe/${T}/privat`);
+    let first=true;
+    SY.unsub=SY.col.where("_t","==","task").onSnapshot(snap=>{
+      const docs=snap.docs.map(d=>d.data()).filter(r=>r&&r._t==="task"&&r.id);
+      if(first){first=false;initialMerge(docs);applyRemote(docs);SY.ready=true;persist();push();purge()}
+      else applyRemote(docs);
+      if(!pendingN())setSync("ok");
+    },err=>{SY.unsub&&SY.unsub();SY.unsub=null;SY.ready=false;setSync("err",err&&(err.code||err.message))});
+  }catch(e){setSync("err",e&&(e.code||e.message))}
+}
+async function signIn(){
+  S.sync=true;persist();
+  const p=new firebase.auth.GoogleAuthProvider();try{p.setCustomParameters({login_hint:ADMIN,prompt:"select_account"})}catch(e){}
+  try{await SY.auth.signInWithPopup(p);SY.unsub=null;return syncStart(false)}
+  catch(e){
+    if(e&&(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment"))return SY.auth.signInWithRedirect(p);
+    setSync("auth",e&&e.code!=="auth/popup-closed-by-user"?(e.code||e.message):"");
+  }
+}
+function syncStop(){if(SY.unsub)SY.unsub();SY.unsub=null;SY.ready=false;SY.col=null;S.sync=false;persist();setSync("off")}
+function initialMerge(docs){
+  const rm=new Map(docs.map(r=>[r.id,r]));
+  for(const i of S.items){const r=rm.get(i.id);if(!r||(i.upd||0)>(r.upd||0))S.dirty[i.id]=1}
+  for(const[id,t]of Object.entries(S.dead)){const r=rm.get(id);if(r&&!r.del&&t>(r.upd||0))S.dirty[id]=1}
+}
+function applyRemote(docs){
+  let ch=false;
+  for(const d of docs){
+    const r={...d};delete r._t;const id=r.id,loc=S.items.find(i=>i.id===id),dt=S.dead[id];
+    if(r.del){
+      if(loc&&(loc.upd||0)<=r.upd){S.items=S.items.filter(i=>i!==loc);LAST.delete(id);S.dead[id]=r.upd;delete S.dirty[id];ch=true}
+      else if(!loc&&!dt)S.dead[id]=r.upd;
+      continue;
+    }
+    delete r.del;
+    if(dt&&dt>=(r.upd||0))continue;
+    if(loc&&(loc.upd||0)>=(r.upd||0))continue;
+    if(loc){for(const k of Object.keys(loc))delete loc[k];Object.assign(loc,r)}else S.items.push(r);
+    LAST.set(id,sig(r));delete S.dead[id];delete S.dirty[id];ch=true;
+  }
+  if(ch){persist();render()}
+}
+let pushing=false,pushAgain=false;
+async function push(){
+  if(!SY.ready||!SY.col)return;
+  if(pushing){pushAgain=true;return}
+  const ids=Object.keys(S.dirty);if(!ids.length){if(SY.st!=="ok")setSync("ok");return}
+  pushing=true;setSync(navigator.onLine===false?"offline":"pending");
+  try{
+    for(let k=0;k<ids.length;k+=400){
+      const part=ids.slice(k,k+400),sent={},b=SY.col.firestore?SY.col.firestore.batch():firebase.firestore().batch();
+      for(const id of part){const it=S.items.find(i=>i.id===id),ref=SY.col.doc("tk_"+id);
+        if(it){sent[id]=it.upd;b.set(ref,JSON.parse(JSON.stringify({...it,_t:"task"})))}
+        else{sent[id]=S.dead[id]||Date.now();b.set(ref,{_t:"task",id,del:true,upd:sent[id]})}}
+      await b.commit();
+      for(const id of part){const it=S.items.find(i=>i.id===id),cur=it?it.upd:S.dead[id];if(cur===sent[id])delete S.dirty[id]}
+      persist();
+    }
+    setSync(pendingN()?"pending":"ok");
+  }catch(e){setSync("err",e&&(e.code||e.message))}
+  finally{pushing=false;if(pushAgain){pushAgain=false;push()}}
+}
+function purge(){
+  const old=Date.now()-30*864e5;
+  for(const[id,t]of Object.entries(S.dead))if(t<old&&!S.dirty[id]){delete S.dead[id];SY.col.doc("tk_"+id).delete().catch(()=>{})}
+  persist();
+}
+function syncText(){
+  const n=pendingN();
+  return{off:"Doar pe acest dispozitiv.",noteam:"Lipsește codul echipei pe acest dispozitiv.",conn:"Se conectează…",
+    auth:SY.user&&!SY.user.isAnonymous?`Ești intrat ca ${SY.user.email}. Pentru sincronizare intră cu ${ADMIN}.`:`Intră cu contul Google ${ADMIN} ca să sincronizezi.`,
+    ok:"Sincronizat"+(SY.at?" · "+pad(SY.at.getHours())+":"+pad(SY.at.getMinutes()):""),
+    pending:`Se trimit ${n} modificări…`,offline:`Fără internet${n?` · ${n} modificări așteaptă`:""}. Se sincronizează când revine.`,
+    err:"Sincronizarea nu a mers"+(SY.msg?` (${SY.msg})`:"")+"."}[SY.st];
+}
+function syncUI(){
+  const b=$("#b-sync");if(b){b.dataset.st=SY.st;b.title=syncText();b.setAttribute("aria-label","Sincronizare: "+syncText())}
+  const box=$("#s-sync");if(!box)return;
+  let act="";
+  if(SY.st==="off")act=`<button class="btn pri" data-sy="start">☁️ Pornește sincronizarea</button>`;
+  else if(SY.st==="auth")act=`<button class="btn pri" data-sy="login">Intră cu Google</button> <button class="btn" data-sy="stop">Renunță</button>`;
+  else if(SY.st==="noteam")act=`<input id="s-team" placeholder="Lipește aici linkul aplicației echipei (cu #k=…)"><button class="btn pri" data-sy="team">Folosește linkul</button>`;
+  else if(SY.st==="err"||SY.st==="offline")act=`<button class="btn" data-sy="retry">Reîncearcă</button> <button class="btn" data-sy="stop">Oprește</button>`;
+  else if(SY.st!=="conn")act=`<button class="btn" data-sy="stop">Oprește sincronizarea</button>`;
+  box.innerHTML=`<p class="small" style="margin:0"><b style="color:var(--fg)">${esc(syncText())}</b>${SY.st==="off"?" Pornește sincronizarea ca să ai aceleași taskuri pe telefon și pe laptop. Datele merg în baza de date Cocktail Philosophy, unde le vede doar contul tău.":""}${SY.st==="noteam"?" Deschide o dată aplicația echipei din linkul tău pe acest dispozitiv, sau lipește linkul aici:":""}</p><div class="qd">${act}</div>`;
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-sy]");if(!b)return;const a=b.dataset.sy;
+  if(a==="start"){S.sync=true;persist();syncStart(true)}
+  else if(a==="login"){if(SY.auth)signIn();else syncStart(true)}
+  else if(a==="stop")syncStop();
+  else if(a==="retry"){if(SY.ready)push();else{SY.unsub=null;syncStart(false)}}
+  else if(a==="team"){const m=($("#s-team").value||"").match(/k=([A-Za-z0-9]{20,})/);if(!m){toast("Linkul nu conține codul echipei (#k=…)");return}try{localStorage.setItem("cp-team",m[1])}catch(x){}S.sync=true;persist();syncStart(true)}
+});
+window.addEventListener("online",()=>{if(SY.ready)push();else if(S.sync&&!SY.unsub)syncStart(false)});
+window.addEventListener("offline",()=>{if(SY.ready&&pendingN())setSync("offline")});
+
 /* ---------- Evenimente ---------- */
 document.addEventListener("click",e=>{
   const a=e.target.closest("a");if(a&&a.closest(".tx"))return;
@@ -668,7 +811,7 @@ function openSettings(){
   document.querySelector(`#s-theme input[value="${S.theme}"]`).checked=true;
   const o=S.items.filter(open).length,d=S.items.length-o;
   $("#s-stats").textContent=`${o} deschise · ${d} terminate · ${S.items.filter(i=>i.kind==="idea").length} idei în total.`;
-  $("#set").showModal();
+  syncUI();$("#set").showModal();
 }
 $("#s-notif").addEventListener("click",async()=>{try{const p=await Notification.requestPermission();if(p==="granted"){toast("Notificările sunt pornite");checkReminders()}openSettings()}catch(e){}});
 $("#s-theme").addEventListener("change",e=>{S.theme=e.target.value;save();render()});
@@ -717,13 +860,15 @@ load();
 try{const lv=JSON.parse(localStorage.getItem(KEY+":view")||"null");if(lv&&(VIEWS[lv.v]||lv.v==="tag")){S.view=lv.v;S.tag=lv.tag||null;if(S.view==="tag"&&!S.tag)S.view="inbox"}}catch(e){}
 // adăugare din scurtătură: taskuri.html?add=textul
 try{const u=new URL(location.href),a=u.searchParams.get("add");if(a){const it=addFromText(a,{view:"inbox"});u.searchParams.delete("add");history.replaceState(null,"",u.pathname+u.search+u.hash);if(it)setTimeout(()=>toast("Notat → "+whereLabel(it)),300)}}catch(e){}
-render();
+render();syncUI();
+if(S.sync)syncStart(false);
 let lastDay=today();
 setInterval(()=>{if(today()!==lastDay){lastDay=today();render()}checkReminders()},30000);
 setTimeout(checkReminders,1500);
 window.addEventListener("storage",e=>{if(e.key===KEY){load();render()}});
+window.addEventListener("pagehide",()=>persist());
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){checkReminders();if(today()!==lastDay){lastDay=today();render()}}});
-window.__taskuri={parse,addFromText,state:()=>S};
+window.__taskuri={parse,addFromText,state:()=>S,sync:()=>SY.st};
 })();
 </script>
 </body>

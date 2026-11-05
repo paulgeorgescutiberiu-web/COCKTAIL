@@ -75,3 +75,81 @@ test("notez, sortez din Inbox, bifez, anulez și păstrez după reîncărcare", 
   await page.waitForSelector("li.it");
   assert.equal(await page.evaluate(() => window.__taskuri.state().items.length), 2);
 });
+
+/* Sincronizarea, cu Firebase simulat (tests/fake-firebase.js): ce e în baza de date ajunge pe dispozitiv,
+   ce notezi pleacă în baza de date, modificările și ștergerile de pe alt dispozitiv se aplică. */
+const fs = require("fs");
+const FAKE = fs.readFileSync(path.join(__dirname, "fake-firebase.js"), "utf8");
+const TEAM = "TestEchipaCod1234567890";
+const COL = `echipe/${TEAM}/privat`;
+/* SDK-ul real e înlocuit cu cel simulat; restul scripturilor Firebase sunt goale (regula adăugată ultima are prioritate, deci una singură) */
+const routes = ctx => ctx.route(/gstatic\.com|googleapis\.com/, r => {
+  const u = r.request().url();
+  if (/firebase-app-compat\.js/.test(u)) return r.fulfill({ contentType: "text/javascript", body: FAKE });
+  if (/firebasejs\//.test(u)) return r.fulfill({ contentType: "text/javascript", body: "" });
+  return r.abort();
+});
+const remote = (id, x) => ({ _t: "task", id, text: "De pe telefon", kind: "task", notes: "", due: "2026-11-05", time: null, pri: 0, tags: [], rep: null, someday: false, triaged: true, done: false, doneAt: null, created: 1, upd: 1000, ...x });
+
+test("sincronizare: îmbină ce e local cu ce e în baza de date și trimite modificările", async () => {
+  const ctx = await browser.newContext();
+  await ctx.addInitScript(([seed, team]) => {
+    window.__SEED = seed;
+    if (!localStorage.getItem("cp-taskuri-v1")) {
+      localStorage.setItem("cp-team", team);
+      localStorage.setItem("cp-taskuri-v1", JSON.stringify({ v: 1, sync: true, items: [{ id: "l1", text: "Doar pe laptop", kind: "task", notes: "", due: null, time: null, pri: 0, tags: [], rep: null, someday: false, triaged: false, done: false, doneAt: null, created: 5, upd: 5 }] }));
+    }
+  }, [{ docs: { [`${COL}/tk_r1`]: remote("r1"), [`${COL}/bani`]: { curs: "5" } } }, TEAM]);
+  await routes(ctx);
+  const p = await ctx.newPage();
+  await p.goto(FILE);
+  await p.waitForFunction(() => window.__taskuri.sync() === "ok");
+  const ids = () => p.evaluate(() => window.__taskuri.state().items.map(i => i.id + ":" + i.text).sort());
+  assert.deepEqual(await ids(), ["l1:Doar pe laptop", "r1:De pe telefon"]);
+  const sentPaths = () => p.evaluate(() => window.__WRITES.map(w => w.path));
+  assert.ok((await sentPaths()).includes(`${COL}/tk_l1`), "taskul local a plecat în baza de date");
+  assert.ok(!(await sentPaths()).includes(`${COL}/bani`), "nu atinge celelalte documente private");
+
+  // notez ceva nou: pleacă imediat
+  await p.fill("#in", "comand gheață vineri #stoc");
+  await p.press("#in", "Enter");
+  await p.waitForFunction(() => window.__WRITES.some(w => w.data && w.data.text === "Comand gheață" && w.data.due === "2026-11-06"));
+
+  // modificat pe alt dispozitiv, mai recent: se aplică aici
+  await p.evaluate(([c, d]) => firebase.firestore().doc(c + "/tk_r1").set(d), [COL, remote("r1", { text: "Modificat pe telefon", upd: Date.now() + 5000 })]);
+  await p.waitForFunction(() => window.__taskuri.state().items.some(i => i.text === "Modificat pe telefon"));
+  // o variantă mai veche nu suprascrie
+  await p.evaluate(([c, d]) => firebase.firestore().doc(c + "/tk_r1").set(d), [COL, remote("r1", { text: "Varianta veche", upd: 2 })]);
+  await p.waitForTimeout(100);
+  assert.ok(await p.evaluate(() => window.__taskuri.state().items.some(i => i.text === "Modificat pe telefon")));
+
+  // șters aici: pleacă o marcă de ștergere
+  await p.click('[data-view="inbox"] >> visible=true');
+  await p.click('li[data-id="l1"] [data-to="del"]');
+  await p.waitForFunction(c => window.__WRITES.some(w => w.path === c + "/tk_l1" && w.data && w.data.del === true), COL);
+  // șters pe alt dispozitiv: dispare și aici
+  await p.evaluate(([c]) => firebase.firestore().doc(c + "/tk_r1").set({ _t: "task", id: "r1", del: true, upd: Date.now() + 9000 }), [COL]);
+  await p.waitForFunction(() => !window.__taskuri.state().items.some(i => i.id === "r1"));
+
+  // după reîncărcare nu mai rămâne nimic de trimis
+  assert.equal(await p.evaluate(() => Object.keys(window.__taskuri.state().dirty).length), 0);
+  await ctx.close();
+});
+
+test("sincronizare: fără contul lui Paul cere intrarea cu Google, fără codul echipei îl cere", async () => {
+  for (const [team, user, want] of [[TEAM, { email: "altcineva@gmail.com" }, "auth"], [null, null, "noteam"]]) {
+    const ctx = await browser.newContext();
+    await ctx.addInitScript(([seed, team]) => {
+      window.__SEED = seed;
+      if (team) localStorage.setItem("cp-team", team);
+      localStorage.setItem("cp-taskuri-v1", JSON.stringify({ v: 1, sync: true, items: [] }));
+    }, [{ docs: {}, user }, team]);
+    await routes(ctx);
+    const p = await ctx.newPage();
+    await p.goto(FILE);
+    await p.waitForFunction(w => window.__taskuri.sync() === w, want);
+    await p.click("#b-sync");
+    assert.ok(await p.locator(want === "auth" ? '[data-sy="login"]' : "#s-team").isVisible());
+    await ctx.close();
+  }
+});
