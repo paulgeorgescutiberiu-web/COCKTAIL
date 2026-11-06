@@ -1,11 +1,16 @@
 /* ---------- Eveniment nou / modificare fișă, direct în aplicație ---------- */
 let EN=null;
 const EN_META=["NR PERSOANE","DATA","ORA INCEPERE","ECHIPA","TRANSPORT","MENTIUNI SPECIALE"];
+const EN_STD_NEW=["BITTER ANGOSTURA","CONDIMENT TAJIN"];   // adăugate în fișa standard (nov. 2026)
 const enIsMeta=L=>L.startsWith("NR PERSOANE")||L==="PERSOANE"||L==="DATA"||L.startsWith("DATA ")||L==="ZIUA"||L==="ORA"||L.startsWith("ORA ")||L.startsWith("ECHIPA")||L.startsWith("TRANSPORT")||L.startsWith("MENTIUNI");
 const enISO=d=>d?dKey(d):"";
 function enTemplateRows(){
   if(EVD&&EVD.aoa&&EVD.aoa.length>1){
     const out=[];EVD.aoa.forEach((row,r)=>{if(!r)return;const lab=row&&row[0];if(blank(lab))return;const L=norm(lab);if(enIsMeta(L))return;out.push({r,lab:String(lab).trim(),L})});
+    /* rândurile standard noi intră și în fișele vechi, după ultimul rând de ierburi (la salvare se inserează acolo) */
+    const has=new Set(out.map(x=>x.L));let after=null;out.forEach((x,i)=>{const k=KNOWN[x.L];if(k&&k[1]==="garnish")after=i});
+    const g=after!=null?out[after].L:null,prev=[];
+    EN_STD_NEW.filter(L=>!has.has(L)).forEach((L,j)=>{const x={r:null,lab:L,L,after:g?[...prev].reverse().concat(g):null};prev.push(L);if(after!=null)out.splice(after+1+j,0,x);else out.push(x)});
     return out;
   }
   return Object.keys(KNOWN).map(L=>({r:null,lab:L,L}));
@@ -115,10 +120,18 @@ function enBuild(){
     if(L==="MENTIUNI SPECIALE"){for(let k=r+1;k<A.length&&blank(A[k][0]);k++){if(A[k].length>col)A[k][col]=null}}
   });
   const tcol=A[0].findIndex((v,i)=>i>0&&norm(v)==="TOTAL"),evCols=A[0].map((v,i)=>i).filter(i=>i>0&&i!==tcol&&!blank(A[0][i]));
+  /* rândurile noi cu loc stabilit (după ierburi) se inserează acolo, nu la coadă; indicii rândurilor se țin local */
+  const RR=new Map(e.rows.map(x=>[x.L,x.r])),ins=new Set();
+  e.rows.forEach(x=>{if(x.r!=null||!x.after||e.del.includes(x.L))return;const v=enCell(x.L,e.vals[x.L]);if(blank(v))return;
+    const p0=x.after.find(L=>RR.get(L)!=null),pr=p0?RR.get(p0):null;if(pr==null)return;const at=pr+1;
+    const nr=new Array(A[0].length).fill(null);nr[0]=x.lab;nr[col]=v;if(tcol>0&&typeof v==="number")nr[tcol]=v;
+    A.splice(at,0,nr);RR.forEach((r,L)=>{if(r!=null&&r>=at)RR.set(L,r+1)});RR.set(x.L,at);ins.add(x.L)});
   e.rows.forEach(x=>{const gone=e.del.includes(x.L);
-    if(x.r==null){if(gone)return;const v=enCell(x.L,e.vals[x.L]);const nr=new Array(A[0].length).fill(null);nr[0]=x.lab;nr[col]=v;if(tcol>0&&typeof v==="number")nr[tcol]=v;A.push(nr);x.r=A.length-1;return}
-    while(A[x.r].length<=col)A[x.r].push(null);A[x.r][col]=gone?null:enCell(x.L,e.vals[x.L]);
-    if(gone&&evCols.every(i=>blank(A[x.r][i])))A[x.r]=[];});
+    if(ins.has(x.L))return;
+    let r=RR.get(x.L);
+    if(r==null){if(gone)return;const v=enCell(x.L,e.vals[x.L]);if(x.after&&blank(v))return;const nr=new Array(A[0].length).fill(null);nr[0]=x.lab;nr[col]=v;if(tcol>0&&typeof v==="number")nr[tcol]=v;A.push(nr);return}
+    while(A[r].length<=col)A[r].push(null);A[r][col]=gone?null:enCell(x.L,e.vals[x.L]);
+    if(gone&&evCols.every(i=>blank(A[r][i])))A[r]=[];});
   return {fileName:EVD.fileName,aoa:A};
 }
 async function enSave(btn){
@@ -211,7 +224,7 @@ function enSaveArt(L,label,cat){try{const F=window.CPFS;if(F&&F.isAdmin)F.fs.doc
   if(ch&&EVD){loadData();render();if(window.__stocRefresh)window.__stocRefresh()}}).catch(()=>{})}catch(e){}})();
 
 /* Unitatea în care se numără fiecare articol (ca în Excel și în stoc) */
-const EN_UNITS={"GHEATA":"kg","LADA LIME":"lăzi","PORTO BUC":"buc","GREF":"buc","CIMBRISOR":"caserole","ROZMARIN":"caserole","MENTA":"caserole","DESHIDRATATE":"pungi","FLORI COMES":"caserole","PROSECCO":"sticle 0,75 L","FRESH LAMAIE":"sticle 1 L","APA MINERALA":"sticle","COLA 1 L":"sticle 1 L","ALOE 1,5L":"sticle 1,5 L","KINLEY 1,5":"sticle 1,5 L","SAN PELEGRIN":"sticle","CRANBERRY":"cutii 1 L","ORANGE":"cutii 1 L","MAR VERDE":"cutii 1 L"};
+const EN_UNITS={"BITTER ANGOSTURA":"sticle","CONDIMENT TAJIN":"borcane","GHEATA":"kg","LADA LIME":"lăzi","PORTO BUC":"buc","GREF":"buc","CIMBRISOR":"caserole","ROZMARIN":"caserole","MENTA":"caserole","DESHIDRATATE":"pungi","FLORI COMES":"caserole","PROSECCO":"sticle 0,75 L","FRESH LAMAIE":"sticle 1 L","APA MINERALA":"sticle","COLA 1 L":"sticle 1 L","ALOE 1,5L":"sticle 1,5 L","KINLEY 1,5":"sticle 1,5 L","SAN PELEGRIN":"sticle","CRANBERRY":"cutii 1 L","ORANGE":"cutii 1 L","MAR VERDE":"cutii 1 L"};
 function enUnit(L,cat){if(EN_UNITS[L])return EN_UNITS[L];if(/\bKG\b/.test(L))return "kg";if(cat==="alcool")return "sticle 1 L";if(cat==="premix")return "sticle";if(cat==="soft")return "sticle";if(cat==="garnish")return "buc";return "buc"}
 /* Cât e în depozit pentru acest articol, după celelalte evenimente din săptămână */
 function enStockHint(L,raw){
@@ -416,6 +429,9 @@ function ncCalc(){
     if(i.cat==="alcool"&&/1\s?L/i.test(u)&&!/PROSECCO/.test(L)){f=1/0.7;u="sticle 700 ml";label=label.replace(/\s*1\s?L$/i,"")}else if(i.cat==="premix"&&u==="sticle")u="sticle 700 ml";
     let q=M[L]*p*f;q=q<=0?0:(["alcool","soft","premix"].includes(i.cat)||q>=3)?Math.ceil(q-1e-3):Math.ceil(q*2)/2;return {L,label,cat:i.cat,q,f,unit:u,on:q>0,src:src[L]||"sapt",per:N[L]||0}})
     .filter(r=>QTY_CATS.includes(r.cat));
+  /* Bitter Angostura și Tajin intră implicit în necesar: 1 bucată, dacă nu au încă o normă pe persoană */
+  EN_STD_NEW.forEach(L=>{if(NC.rows.some(r=>r.L===L))return;const i=ncInfo(L),per=N[L]||0;let q=per>0?Math.ceil(per*p-1e-3):1;
+    NC.rows.push({L,label:i.label,cat:i.cat,q,f:1,unit:enUnit(L,i.cat),on:true,src:per>0?(src[L]||"norma"):"std",per})});
   const prev={};(NC.rows0||[]).forEach(r=>prev[r.L]=r);
   NC.rows.forEach(r=>{const sn=(NC.savedNames||{})[r.L];if(prev[r.L]&&prev[r.L].label)r.label=prev[r.L].label;else if(sn)r.label=sn});
   /* articolele adăugate de mână: cele salvate în norme (cu cantitate pe persoană) și cele adăugate acum */

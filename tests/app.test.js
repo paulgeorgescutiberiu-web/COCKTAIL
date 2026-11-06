@@ -229,3 +229,40 @@ test("Stoc: necesar din evenimente → numeri în depozit → comanda la furnizo
   assert.ok(need1 > 0);
   assert.deepEqual(errors, []);
 });
+
+test("fișa: Bitter Angostura și Condiment Tajin apar la ierburi și se salvează după ele", async () => {
+  await tab("evenimente");
+  await page.click("#evNou");
+  await page.waitForSelector('[data-eq="BITTER ANGOSTURA"]');
+  assert.ok(await page.$('[data-eq="CONDIMENT TAJIN"]'));
+  await page.fill('[data-en="nume"]', "Test Angostura");
+  await page.fill('[data-en="data"]', "2026-11-07");
+  await page.fill('[data-eq="BITTER ANGOSTURA"]', "1");
+  await page.fill('[data-eq="CONDIMENT TAJIN"]', "2");
+  await page.click('[data-enact="save"]');
+  await page.waitForFunction(() => !document.querySelector('[data-eq="BITTER ANGOSTURA"]'), null, { timeout: 8000 });
+  const aoa = await page.evaluate(() => window.__cp.evd().aoa);
+  const labels = aoa.map(r => String((r || [])[0] || ""));
+  const a = labels.indexOf("BITTER ANGOSTURA"), t = labels.indexOf("CONDIMENT TAJIN");
+  assert.ok(a > 0 && t === a + 1, "rândurile nu sunt unul după altul: " + labels.join("|"));
+  const garn = ["GHEATA", "LADA LIME", "PORTO BUC", "GREF", "CIMBRISOR", "ROZMARIN", "MENTA", "DESHIDRATATE", "FLORI COMES"];
+  const lastG = Math.max(...labels.map((l, i) => garn.includes(l.toUpperCase()) ? i : -1));
+  assert.equal(a, lastG + 1, "Angostura nu e imediat după ierburi");
+  assert.deepEqual(errors, []);
+});
+
+test("necesarul pentru client are implicit Bitter Angostura și Condiment Tajin", async () => {
+  const has = await page.evaluate(() => typeof window.__necNew === "function");
+  assert.ok(has, "lipsește __necNew");
+  await page.evaluate(() => window.__necNew({ pers: 50 }));
+  await page.waitForSelector("[data-ncq]", { timeout: 8000 }).catch(() => {});
+  const txt = await page.$eval("#evView", el => el.innerText).catch(() => "");
+  if (!/Angostura/.test(txt)) {
+    const b = await page.$('[data-ncact="calc"], [data-nca="calc"]'); if (b) await b.click();
+    await page.waitForTimeout(300);
+  }
+  const names = await page.$$eval("#evView [data-ncn]", l => l.map(i => i.value).join("|"));
+  assert.match(names, /Bitter Angostura/, names);
+  assert.match(names, /Condiment Tajin/);
+  assert.deepEqual(errors, []);
+});
