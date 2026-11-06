@@ -204,3 +204,28 @@ test("nicio eroare în tot testul și nicio cerere spre servicii reale", async (
   // e în regulă să fie blocate (ex. Google Drive), dar le afișăm pentru claritate
   if (bad.length) console.log("Cereri blocate în test:", bad.join(", "));
 });
+
+test("Stoc: necesar din evenimente → numeri în depozit → comanda la furnizor", async () => {
+  await tab("stoc");
+  await page.waitForSelector("#v-stoc [data-cnt]", { timeout: 8000 });
+  assert.match(await page.$eval("#v-stoc", el => el.innerText), /Necesar și comandă/);
+  const rows = await page.$$eval("#v-stoc .nx-row:not(.nx-head)", r => r.map(x => [...x.children].map(c => c.value ?? c.textContent.trim())));
+  assert.ok(rows.length >= 2, "prea puține articole în necesar: " + JSON.stringify(rows));
+  // la primul articol scriu cât necesarul (nu lipsește), la al doilea 0 (lipsește tot)
+  const ins = await page.$$("#v-stoc [data-cnt]");
+  const need0 = Number(rows[0][1].replace(",", ".")), need1 = Number(rows[1][1].replace(",", "."));
+  await ins[0].fill(String(need0).replace(".", ","));
+  await ins[1].fill("0");
+  assert.equal(await page.$eval(`#v-stoc [data-lp="${await ins[0].getAttribute("data-cnt")}"]`, e => e.textContent), "✓");
+  await page.click('#v-stoc [data-a="nxorder"]');
+  await page.waitForSelector("#v-stoc [data-oq]", { timeout: 8000 });
+  const txt = await page.$eval("#v-stoc", el => el.innerText);
+  assert.ok(!txt.includes(rows[0][0] + "\n"), "articolul acoperit nu trebuia comandat");
+  assert.ok(txt.includes(rows[1][0]) || txt.toUpperCase().includes(rows[1][0].toUpperCase()), "lipsește articolul numărat 0");
+  const saved = await store(`echipe/${S.TEAM}/privat/numarare`);
+  assert.ok(saved && saved.counts && Object.keys(saved.counts).length === 2, "numărătoarea nu s-a salvat");
+  await page.click('#v-stoc [data-a="cancel"]');
+  await page.waitForSelector("#v-stoc [data-cnt]");
+  assert.ok(need1 > 0);
+  assert.deepEqual(errors, []);
+});

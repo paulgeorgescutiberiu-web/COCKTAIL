@@ -41,3 +41,18 @@
 .ord-add{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1fr) auto;gap:8px;margin:14px 0}
 .ord-add input,.ord-add select{width:100%;box-sizing:border-box;padding:9px 10px;border:1.5px dashed var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit}
 @media (max-width:560px){.ord-add{grid-template-columns:1fr 1fr}.ord-add input[data-on=tip]{grid-column:1/-1}}
+
+/* Necesar și comandă */
+.nx-evs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:0 0 6px}
+.nx-ev{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer}
+.nx-ev input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent,#2f5d50)}
+.nx-ev small{display:block;color:var(--muted);font-size:.8rem}
+.nx-row{display:grid;grid-template-columns:1fr 64px 84px 56px;gap:10px;align-items:center;padding:8px 16px;border-top:1px solid var(--line)}
+.ev-list>.nx-row:first-child{border-top:0}
+.nx-row>b{text-align:right;font-variant-numeric:tabular-nums}
+.nx-row input{width:100%;text-align:right}
+.nx-head{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.nx-head span:not(:first-child){text-align:right}
+.nx-row .neg{color:#b3261e}.nx-ok{color:#2e7d32}.nx-q{color:var(--muted)}
+.nx-hint{margin:10px 0 0}
+@media (max-width:420px){.nx-row{grid-template-columns:1fr 52px 70px 48px;gap:6px;padding:8px 10px}}

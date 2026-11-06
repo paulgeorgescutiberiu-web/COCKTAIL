@@ -18,7 +18,7 @@ Firebase (`boot.js`) și produce `index.html`, care se copiază în rădăcina r
 |---|---|
 | `base.html` | Rețetarul și evenimentele (baza aplicației) |
 | `boot.js` | Conectarea la Firebase, autentificarea, salvarea și arhiva săptămânilor |
-| `stoc.js`, `stoc.css` | Stocul din depozit, facturi, inventar, comanda la furnizor, AI |
+| `stoc.js`, `stoc.css` | **Necesar și comandă** (implicit): necesarul evenimentelor bifate din fișă, numărătoarea din depozit (`privat/numarare`, doar ultima) și diferența ca fișă de comandă la furnizor. Dedesubt, la „Stoc vechi”: stocul ținut din facturi, inventar și ieșiri, plus citirea facturii cu AI |
 | `cons.js` | Consumația și Excelul de consum pe eveniment |
 | `evnou.js` | „Eveniment nou”, editarea fișei, săptămâni anterioare |
 | `contracte.js` | Contracte, portalul clientului, plăți, rentabilitate, notițe, postare Instagram + Facebook (acum sau programată, cu idei de postări; vezi `social/README.md`) |
