@@ -2675,6 +2675,7 @@ function subscribe(){
 
 /* ---------- Comandă la furnizor: ce lipsește din stoc (alcool și sucuri) ---------- */
 const ORD_CATS=[{id:"alcool",sect:"alcool",name:"ALCOOL",color:"C00000"},{id:"soft",sect:"suc",name:"SUCURI / APE",color:"38761D"},{id:"garnish",sect:"",name:"GHEAȚĂ, FRUCTE, IERBURI",color:"6AA84F"},{id:"premix",sect:"",name:"PREMIXURI (le prepari tu)",color:"8E7CC3"},{id:"altele",sect:"",name:"ALTELE",color:"7F6000"}];
+const FURN=C=>C.id==="alcool"||C.id==="soft";   // la furnizor pleacă doar alcoolul, apa și sucurile
 const ordCat=c=>ORD_CATS.some(C=>C.id===c)?c:"altele";
 let ord=null,ordFrom="list";
 const ORD_LOC_DEF="Str. Tractorului 4, Sibiu";
@@ -2712,8 +2713,10 @@ function viewOrder(){
   if(!ord.hasBase)h+=`<div class="ev-alert">Nu ai făcut încă Inventarul, așa că aplicația pornește de la stoc 0 și pune pe listă tot ce s-a încărcat la evenimente.</div>`;
   if(!ord.lines.length)h+=`<div class="ev-ok">${ord.flux?"Nu lipsește nimic: ce ai în depozit acoperă evenimentele alese.":"Nu lipsește nimic la alcool și sucuri. Stocul acoperă evenimentele încărcate."} Poți adăuga mai jos ce vrei să comanzi.</div>`;
   h+=`<div class="st-meta"><label>Ziua livrării<input id="ordDay" type="date" value="${esc(ord.livrare)}"></label><label>Locația livrării<input id="ordLoc" value="${esc(ord.loc)}"></label></div>`;
+  let notice=false;
   ORD_CATS.forEach(C=>{const L=ord.lines.map((l,i)=>[l,i]).filter(([l])=>l.cat===C.id);if(!L.length)return;
-    h+=`<h2 class="ev-h2">${esc(C.name)}</h2><div class="ev-list">`;
+    if(!FURN(C)&&!notice){notice=true;h+=`<p class="ev-file nx-hint">Mai jos e ce lipsește în rest. <b>Nu intră</b> în comanda pentru furnizor (Excel și WhatsApp), e doar pentru tine.</p>`}
+    h+=`<h2 class="ev-h2">${esc(C.name)}${FURN(C)?"":" · doar pentru tine"}</h2><div class="ev-list">`;
     L.forEach(([l,i])=>{
       h+=`<div class="st-in ord-row"><span><b>${esc(l.tip)}${l.brand?" "+esc(l.brand):""}</b><small>${l.manual?"adăugat de tine":`lipsesc ${num(l.need)} ${l.cat==="alcool"&&l.k!=="PROSECCO"?"sticle de 1 L":"(ca în fișă)"}`}</small></span>
         <span class="ord-q"><input class="ev-rin" inputmode="decimal" data-oq="${i}" value="${esc(num(l.q))}" aria-label="Cantitate de comandat"><small>${esc(l.unit)}</small></span></div>`});
@@ -2721,17 +2724,17 @@ function viewOrder(){
   const opts=Object.values(catalog()).map(x=>x.label).sort((a,b)=>a.localeCompare(b,"ro"));
   h+=`<div class="ord-add"><input data-on="tip" list="ordList" placeholder="Adaugă în comandă, ex: Lime" aria-label="Produs"><datalist id="ordList">${opts.map(o=>`<option value="${esc(o)}">`).join("")}</datalist>
     <input data-on="q" inputmode="decimal" placeholder="cant." aria-label="Cantitate"><input data-on="unit" placeholder="unitate" aria-label="Unitate">
-    <select data-on="cat" aria-label="Secțiune"><option value="alcool">Alcool</option><option value="soft">Sucuri / ape</option><option value="garnish">Gheață, fructe, ierburi</option><option value="altele" selected>Altele</option></select>
+    <select data-on="cat" aria-label="Secțiune"><option value="alcool" selected>Alcool</option><option value="soft">Sucuri / ape</option></select>
     <button class="btn" data-a="ordadd">+ Adaugă</button></div>`;
-  if(!ord.lines.length)return h;
+  if(!ord.lines.some(l=>FURN({id:l.cat})))return h;
   h+=`<div class="st-save"><button class="btn" data-a="ordcopy">Copiază pentru WhatsApp</button> <button class="btn primary" data-a="ordxl">Descarcă Excel</button></div>`;
   return h;
 }
 function grabOrder(){if(!ord)return;const d=V.querySelector("#ordDay"),lc=V.querySelector("#ordLoc");if(d)ord.livrare=d.value;if(lc){ord.loc=lc.value.trim();store.set("ordloc",ord.loc)}V.querySelectorAll("[data-oq]").forEach(i=>{const v=pnum(i.value);ord.lines[+i.dataset.oq].q=v==null||isNaN(v)?0:v})}
 const ordDate=()=>{const d=new Date();return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`};
 function orderText(){
-  const L=ord.lines.filter(l=>l.q>0);
-  return `Comandă Cocktail Philosophy, ${ordDate()}\n`+(ord.livrare?`Livrare: ${ordDayTxt(ord.livrare)}\n`:"")+(ord.loc?`Locație: ${ord.loc}\n`:"")+ORD_CATS.map(C=>{const x=L.filter(l=>l.cat===C.id);return x.length?`\n${C.name}\n`+x.map(l=>`- ${l.tip}${l.brand?" "+l.brand:""}: ${num(l.q)} × ${l.unit}`).join("\n"):""}).join("")+"\n\nMulțumesc!";
+  const L=ord.lines.filter(l=>l.q>0&&FURN({id:l.cat}));
+  return `Comandă Cocktail Philosophy, ${ordDate()}\n`+(ord.livrare?`Livrare: ${ordDayTxt(ord.livrare)}\n`:"")+(ord.loc?`Locație: ${ord.loc}\n`:"")+ORD_CATS.filter(FURN).map(C=>{const x=L.filter(l=>l.cat===C.id);return x.length?`\n${C.name}\n`+x.map(l=>`- ${l.tip}${l.brand?" "+l.brand:""}: ${num(l.q)} × ${l.unit}`).join("\n"):""}).join("")+"\n\nMulțumesc!";
 }
 async function orderExcel(btn){
   const lbl=btn.textContent;btn.disabled=true;btn.textContent="Se pregătește…";
@@ -2745,7 +2748,7 @@ async function orderExcel(btn){
     ws.getCell("A4").value="Locație:";ws.getCell("A4").font={bold:true};ws.mergeCells("B4:D4");ws.getCell("B4").value=ord.loc||"";
     const hr=ws.getRow(6);["Produs","Brand","Cantitate","Unitate"].forEach((t,i)=>{const c=hr.getCell(i+1);c.value=t;c.font={bold:true};c.border=B;c.alignment={horizontal:"center"}});
     let rn=7;
-    ORD_CATS.forEach(C=>{const L=ord.lines.filter(l=>l.cat===C.id&&l.q>0);if(!L.length)return;
+    ORD_CATS.filter(FURN).forEach(C=>{const L=ord.lines.filter(l=>l.cat===C.id&&l.q>0);if(!L.length)return;
       ws.mergeCells(`A${rn}:D${rn}`);const sc=ws.getCell(`A${rn}`);sc.value=C.name;sc.font={bold:true,color:{argb:"FFFFFFFF"}};sc.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+C.color}};rn++;
       L.forEach(l=>{const r=ws.getRow(rn);r.getCell(1).value=l.tip;r.getCell(2).value=l.brand||"";r.getCell(3).value=l.q;r.getCell(4).value=l.unit;
         r.getCell(1).font={bold:true};for(let i=1;i<=4;i++)r.getCell(i).border=B;rn++});
@@ -2919,7 +2922,7 @@ V.addEventListener("click",async e=>{
   if(act==="comanda"){ordFrom="list";mode="comanda";ord=null;render();window.scrollTo(0,V.offsetTop-10);
     buildOrder().then(x=>{ord=x;if(mode==="comanda")render()}).catch(e=>{console.warn(e);toast("Nu am putut calcula comanda. Verifică internetul.")});return}
   if(act==="ordadd"){grabOrder();const g=n=>{const i=V.querySelector(`[data-on=${n}]`);return i?i.value.trim():""};const t=g("tip");if(!t){toast("Scrie produsul.");return}
-    const q=pnum(g("q"));ord.lines.push({cat:g("cat")||"altele",k:K(t),label:t,tip:t,brand:"",unit:g("unit")||"buc",pret:null,need:0,q:q==null||isNaN(q)?1:q,manual:true});render();return}
+    const q=pnum(g("q"));ord.lines.push({cat:g("cat")||"alcool",k:K(t),label:t,tip:t,brand:"",unit:g("unit")||"buc",pret:null,need:0,q:q==null||isNaN(q)?1:q,manual:true});render();return}
   if(act==="ordcopy"){grabOrder();const txt=orderText();
     try{await navigator.clipboard.writeText(txt);toast("Comanda e copiată. Lipește-o în WhatsApp la furnizor.")}
     catch(x){window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}return}
