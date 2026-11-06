@@ -65,6 +65,7 @@ textarea{resize:vertical}
 .stars{display:flex;gap:6px;justify-content:center}.stars button{background:none;border:0;font-size:40px;line-height:1;color:#D8CFB5;cursor:pointer;padding:2px;transition:transform .15s}.stars button.on{color:var(--ye)}.stars button:active{transform:scale(1.2)}
 .fbl{text-align:center;color:var(--mut);font-size:15px;margin:0;min-height:20px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{border:1px solid var(--line);background:#FFFEF1;color:var(--fg);border-radius:999px;padding:8px 14px;font:inherit;font-size:15px;cursor:pointer}.chips button.on{border-color:var(--or);background:#F6EBD3;color:var(--or)}
+.cr{display:flex;align-items:center;gap:2px;margin-top:10px}.cr .crl{font:600 11px var(--b);letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-right:8px}.cr button{background:none;border:0;font-size:28px;line-height:1;color:#D8CFB5;cursor:pointer;padding:2px 3px;transition:transform .15s}.cr button.on{color:var(--ye)}.cr button:active{transform:scale(1.2)}
 .fbq{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 0}
 @media (max-width:420px){form{grid-template-columns:1fr}}
 </style>
@@ -82,17 +83,15 @@ textarea{resize:vertical}
   </section>
 
   <section class="card" id="fbk">
-    <h2>Cum ți se pare?</h2>
-    <p class="mut">Spune-ne sincer. Feedbackul ajunge doar la noi și la echipa de la bar, nu e public.</p>
+    <h2>Cum ți s-au părut?</h2>
+    <p class="mut">Dă câte o stea fiecărui cocktail pe care l-ai gustat, din meniul de mai sus. Sari peste cele pe care nu le-ai încercat. Notele ajung doar la noi și la echipa de la bar, nu sunt publice.</p>
     <div id="fbForm" style="display:flex;flex-direction:column;gap:12px">
-      <div class="stars" id="stars" role="radiogroup" aria-label="Nota ta"></div>
-      <p class="fbl" id="starLbl">Atinge stelele</p>
+      <p class="fbl" id="starLbl">Atinge stelele de lângă fiecare cocktail</p>
       <div id="fbMore" class="hide" style="display:flex;flex-direction:column;gap:12px">
-        <p class="fbq" id="ckQ">Cocktailul preferat (opțional)</p><div class="chips" id="ckChips"></div>
-        <label class="fbq" style="display:flex;flex-direction:column;gap:6px">Vrei să ne spui ceva? (opțional)<textarea id="fbMsg" rows="3" maxlength="400" placeholder="ex: Harmony a fost superb! / am așteptat cam mult la bar"></textarea></label>
+        <label class="fbq" style="display:flex;flex-direction:column;gap:6px">Vrei să ne spui ceva? (opțional)<textarea id="fbMsg" rows="3" maxlength="400" placeholder="ex: am așteptat cam mult la bar / ce am putea face mai bine?"></textarea></label>
         <label class="fbq" style="display:flex;flex-direction:column;gap:6px">Numele tău (opțional)<input id="fbName" maxlength="40" autocomplete="name"></label>
         <p class="err hide" id="fbErr"></p>
-        <button class="btn" type="button" id="fbBtn">Trimite feedback</button>
+        <button class="btn" type="button" id="fbBtn">Trimite notele</button>
       </div>
     </div>
     <div id="fbDone" class="hide" style="display:flex;flex-direction:column;gap:12px">
@@ -187,7 +186,7 @@ function show(){
     SEC.forEach((t,si)=>{const L=M.filter(x=>sec(x)===si);if(!L.length)return;
       h+=`<div class="mh"><small>${t[0]}</small><span>${t[1]}</span></div>`;
       h+=L.map(x=>{const mi=mInfo(x),nm=mi?mi[0]:x.name,tg=mi&&mi[1]&&!/alcool|clasic/.test(mi[1])?mi[1]:"";
-        return `<div class="ck" style="--a:${look(x)};--dl:${(n++*0.04).toFixed(2)}s"><i></i><div class="nm"><b>${esc(nm)}</b>${x.zero?'<span class="z">0% alcool</span>':""}</div>${tg?`<span class="tg">${esc(tg)}</span>`:""}<small>${esc(mi?mi[2]:ingTxt(x))}</small>${mi&&mi[3]?`<em>${esc(mi[3])}</em>`:""}</div>`}).join("")});
+        return `<div class="ck" style="--a:${look(x)};--dl:${(n++*0.04).toFixed(2)}s"><i></i><div class="nm"><b>${esc(nm)}</b>${x.zero?'<span class="z">0% alcool</span>':""}</div>${tg?`<span class="tg">${esc(tg)}</span>`:""}<small>${esc(mi?mi[2]:ingTxt(x))}</small>${mi&&mi[3]?`<em>${esc(mi[3])}</em>`:""}<div class="cr" data-cn="${esc(nm)}" role="radiogroup" aria-label="Nota ta pentru ${esc(nm)}"><span class="crl">Nota ta</span>${[1,2,3,4,5].map(i=>`<button type="button" data-cs="${i}" role="radio" aria-checked="false" aria-label="${i} din 5">★</button>`).join("")}</div></div>`}).join("")});
     $("#menu").innerHTML=h}
   const L=(info&&info.links)||{};
   if(L.ig)$("#ig").href=L.ig;if(L.fb)$("#fb").href=L.fb;
@@ -220,30 +219,39 @@ $("#f").addEventListener("submit",async e=>{
   }catch(x){b.disabled=false;b.textContent="Vreau ofertă";err.innerHTML=`Nu am putut trimite. <a href="${waLink(waTxt)}" style="color:var(--fg)" target="_blank" rel="noopener">Trimite-ne pe WhatsApp</a>.`;err.classList.remove("hide")}
 });
 /* ---------- feedback de la invitați: vizibil doar pentru Paul și echipă ---------- */
-const STL=["","Nu mi-a plăcut","Așa și așa","Bun","Foarte bun","Senzațional!"];let fbR=0,fbCk="";
+const RT={};
 const fbKey="cp-fb-"+code+"-"+new Date().toISOString().slice(0,10);
 function fbInit(){
+  if(!document.querySelector("#menu .cr")){$("#fbk").classList.add("hide");return}
   let done=false;try{done=!!localStorage.getItem(fbKey)}catch(e){}
-  if(done){$("#fbForm").classList.add("hide");$("#fbDone").classList.remove("hide");$("#fbThx").textContent="Mulțumim, ne-ai dat deja feedback azi!";return}
-  $("#stars").innerHTML=[1,2,3,4,5].map(i=>`<button type="button" data-st="${i}" role="radio" aria-checked="false" aria-label="${i} din 5">★</button>`).join("");
-  const M=[...document.querySelectorAll("#menu .ck b")].map(b=>b.textContent).slice(0,14);
-  if(M.length)$("#ckChips").innerHTML=M.map(n=>`<button type="button" data-ck="${esc(n)}">${esc(n)}</button>`).join("");else{$("#ckQ").classList.add("hide")}
+  if(done){$("#fbForm").classList.add("hide");$("#fbDone").classList.remove("hide");$("#fbThx").textContent="Mulțumim, ne-ai dat deja notele azi!";return}
+}
+function fbRefresh(){
+  const k=Object.values(RT).filter(v=>v).length;
+  $("#fbMore").classList.toggle("hide",!k);
+  $("#starLbl").textContent=k?`Ai notat ${k} ${k===1?"cocktail":"cocktailuri"}.`:"Atinge stelele de lângă fiecare cocktail";
 }
 document.addEventListener("click",e=>{
-  const st=e.target.closest("[data-st]");if(st){fbR=+st.dataset.st;document.querySelectorAll("[data-st]").forEach(b=>{const on=+b.dataset.st<=fbR;b.classList.toggle("on",on);b.setAttribute("aria-checked",+b.dataset.st===fbR?"true":"false")});
-    $("#starLbl").textContent=STL[fbR];$("#fbMore").classList.remove("hide");$("#fbMsg").placeholder=fbR<=3?"Ce am putea face mai bine?":"ex: Harmony a fost superb!";return}
-  const ck=e.target.closest("[data-ck]");if(ck){fbCk=fbCk===ck.dataset.ck?"":ck.dataset.ck;document.querySelectorAll("[data-ck]").forEach(b=>b.classList.toggle("on",b.dataset.ck===fbCk));return}
+  const st=e.target.closest("[data-cs]");if(!st)return;
+  const row=st.closest(".cr"),cn=row.dataset.cn,n=+st.dataset.cs;
+  RT[cn]=RT[cn]===n?0:n;
+  row.querySelectorAll("[data-cs]").forEach(b=>{const on=+b.dataset.cs<=RT[cn];b.classList.toggle("on",on);b.setAttribute("aria-checked",+b.dataset.cs===RT[cn]?"true":"false")});
+  fbRefresh();
 });
 $("#fbBtn").addEventListener("click",async()=>{
-  if(!fbR){$("#fbErr").textContent="Alege o notă de la 1 la 5 stele.";$("#fbErr").classList.remove("hide");return}
+  const R=Object.entries(RT).filter(([,v])=>v);
+  if(!R.length){$("#fbErr").textContent="Dă cel puțin o stea unui cocktail.";$("#fbErr").classList.remove("hide");return}
   const b=$("#fbBtn");b.disabled=true;b.textContent="Se trimite…";
-  const d={r:fbR,ck:fbCk.slice(0,40),msg:($("#fbMsg").value||"").trim().slice(0,400),nm:($("#fbName").value||"").trim().slice(0,40),ev:code,evn:(ev&&ev.n||"").slice(0,60),at:new Date().toISOString()};
-  try{if(!fs)throw 0;await fs.collection("barFeedback").add(d);try{localStorage.setItem(fbKey,"1")}catch(e){}
-    ga("feedback",{rating:fbR});
+  const msg=($("#fbMsg").value||"").trim().slice(0,400),nm=($("#fbName").value||"").trim().slice(0,40),evn=(ev&&ev.n||"").slice(0,60),at=new Date().toISOString();
+  /* un document per cocktail: regulile Firestore cer un singur număr (r) și un singur nume (ck) per document */
+  const docs=R.map(([ck,r],i)=>({r,ck:ck.slice(0,40),msg:i===0?msg:"",nm:i===0?nm:"",ev:code,evn,at}));
+  const avg=R.reduce((s,[,v])=>s+v,0)/R.length;
+  try{if(!fs)throw 0;await Promise.all(docs.map(d=>fs.collection("barFeedback").add(d)));try{localStorage.setItem(fbKey,"1")}catch(e){}
+    ga("feedback",{items:R.length,avg:avg.toFixed(1)});
     $("#fbForm").classList.add("hide");$("#fbDone").classList.remove("hide");
-    $("#fbThx").textContent=fbR>=4?"Mulțumim mult! Ne bucurăm că îți place. 🧡":"Mulțumim că ne-ai spus! Ne uităm imediat la asta.";
+    $("#fbThx").textContent=avg>=4?"Mulțumim mult! Ne bucurăm că îți place. 🧡":"Mulțumim că ne-ai spus! Ne uităm imediat la asta.";
     const rv=info&&info.links&&info.links.review;if(rv){const r=$("#rev2");r.href=rv;r.classList.remove("hide")}
-  }catch(x){b.disabled=false;b.textContent="Trimite feedback";$("#fbErr").textContent="Nu am putut trimite acum. Verifică internetul și încearcă din nou.";$("#fbErr").classList.remove("hide")}
+  }catch(x){b.disabled=false;b.textContent="Trimite notele";$("#fbErr").textContent="Nu am putut trimite acum. Verifică internetul și încearcă din nou.";$("#fbErr").classList.remove("hide")}
 });
 document.addEventListener("click",e=>{const a=e.target.closest("a");if(!a)return;const h=a.href||"";
   if(h.includes("wa.me"))ga("whatsapp_click");else if(a.id==="ig")ga("social_click",{network:"instagram"});else if(a.id==="fb")ga("social_click",{network:"facebook"});
