@@ -13,7 +13,7 @@ const up=s=>String(s||"").trim().toLocaleUpperCase("ro-RO");
 function cnpOk(c){c=String(c||"").replace(/\D/g,"");if(c.length!==13||!/[1-9]/.test(c[0]))return false;const w="279146358279";let s=0;for(let i=0;i<12;i++)s+=+c[i]*+w[i];let k=s%11;if(k===10)k=1;return k===+c[12]}
 const BLANK=()=>({id:null,nume:"",strada:"",nr:"",bl:"",sc:"",et:"",ap:"",localitate:"",judet:"",serie:"",nrCI:"",cnp:"",tel:"",
   dataContract:today(),obiect:"COCKTAIL CATERING",dataEv:"",locatie:"",invitati:"",pret:"",moneda:"EURO",unitate:"/ PERSOANĂ",tva:"fără TVA",
-  ore:"10",semn:"Da",c1:true,c2:true,c3:true,c4:true,infl:"10",transport:"se achită separat",vase:"beneficiar",avans:"",monedaAvans:"RON",dataRest:"",plata:"în numerar",avansPlatit:false,restPlatit:false,oraEv:"",driveId:"",calId:"",ocr:{}});
+  ore:"10",semn:"Da",c1:true,c2:true,c3:true,c4:true,c5:false,infl:"10",transport:"se achită separat",vase:"beneficiar",avans:"",monedaAvans:"RON",dataRest:"",plata:"în numerar",avansPlatit:false,restPlatit:false,oraEv:"",driveId:"",calId:"",ocr:{}});
 let sig=null,list=[],sub=null,mode="list",f=null,cur=null,rentMsg="",noteDel=null,firma=null,q="",confirmDel=null,ocrMsg="",ocrBusy=false,errs=[];
 
 function subscribe(){
@@ -167,6 +167,7 @@ function viewForm(){
       <label class="ct-opt"><input type="checkbox" data-cb="c1"${on(f.c1)?" checked":""}><span>Ajustare cu inflația (INS), maximum <input class="ev-rin ct-mini" data-f="infl" inputmode="numeric" value="${esc(f.infl)}">%</span></label>
       <label class="ct-opt"><input type="checkbox" data-cb="c2"${on(f.c2)?" checked":""}><span>Prețul e valabil pentru <input class="ev-rin ct-mini" data-f="ore" inputmode="numeric" value="${esc(f.ore)}"> ore de servire</span></label>
       <label class="ct-opt"><input type="checkbox" data-cb="c3"${on(f.c3)?" checked":""}><span>Transportul Sibiu - locație - Sibiu <select data-f="transport">${["se achită separat","este inclus în preț"].map(v=>`<option${f.transport===v?" selected":""}>${v}</option>`).join("")}</select></span></label>
+      <label class="ct-opt"><input type="checkbox" data-cb="c5"${f.c5===true?" checked":""}><span>Servicii + consumație: băutura se plătește exact cât se consumă, măsurat pe fiecare sticlă (și cele începute); ce rămâne se returnează</span></label>
       <label class="ct-opt"><input type="checkbox" data-cb="c4"${on(f.c4)?" checked":""}><span>„Taxa de vase” a locației e suportată de <select data-f="vase">${["beneficiar","prestator"].map(v=>`<option${f.vase===v?" selected":""}>${v}</option>`).join("")}</select></span></label>
     </div>
     ${errs.length?`<div class="ev-alert" id="ctErr"><b>Mai am nevoie de:</b><ul>${errs.map(e=>`<li>${esc(e.m)}</li>`).join("")}</ul></div>`:""}
@@ -271,7 +272,10 @@ function clauses31(c){const o=[];
   if(on(c.c2))o.push(`Prețul este valabil pentru ${c.ore||10} ore de servire din momentul începerii evenimentului!`);
   if(on(c.c3))o.push(c.transport==="este inclus în preț"?"Transportul de la Sibiu - locație - Sibiu este inclus în prețul prestației.":"Prețul transportului de la Sibiu - locație - Sibiu se achită separat.");
   if(on(c.c4))o.push(`În cazul unei eventuale „taxe de vase” solicitate de locația gazdă, aceasta este suportată de către ${c.vase||"beneficiar"}!`);
+  if(c.c5===true)o.push(CONSUM_CLAUZA);
   return o}
+/* servicii + consumație: se plătește exact cât s-a consumat, măsurat pe fiecare sticlă */
+const CONSUM_CLAUZA="Băutura (alcool și siropuri) se achită separat, după consumul real: la finalul evenimentului se măsoară fiecare sticlă, iar beneficiarul plătește exact cantitatea consumată, inclusiv fracțiunile din sticlele începute (de exemplu, dacă din 10 sticle s-au consumat 8,5, se plătesc 8,5 sticle, nu 9). Băutura rămasă, în sticle pline sau începute, se returnează prestatorului și nu se plătește.";
 function contractDoc(c,F0){
   const B=t=>({text:String(t||"").trim()||" ",bold:true}),P=(...parts)=>({text:parts,margin:[0,2,0,2]}),H=t=>({text:t,bold:true,margin:[0,12,0,4]});
   const adr=[c.strada,c.nr?`nr. ${c.nr}`:"",c.bl?`bl. ${c.bl}`:"",c.sc?`sc. ${c.sc}`:"",c.et?`etaj ${c.et}`:"",c.ap?`ap. ${c.ap}`:""].filter(Boolean).join(", ");

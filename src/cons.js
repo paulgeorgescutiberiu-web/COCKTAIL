@@ -134,6 +134,7 @@ async function downloadConsum(e,btn){
     tr.getCell(7).value={formula:`SUM(G5:G${rn-1})`};tr.getCell(7).numFmt=money;
     [1,7].forEach(i=>{tr.getCell(i).font={bold:true,size:12,color:{argb:"FFFFFFFF"}};tr.getCell(i).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF000000"}}});
     for(let i=2;i<=6;i++)tr.getCell(i).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF000000"}};
+    {const k=rn+(extra?3:2),n=ws.getRow(k);ws.mergeCells(`A${k}:G${k}`);n.getCell(1).value="Calculat pe fiecare sticlă: cantitatea trimisă minus ce s-a returnat (sticle pline și începute). Plătiți exact cât s-a consumat, inclusiv din sticlele începute.";n.getCell(1).font={italic:true,color:{argb:"FF555555"}};n.getCell(1).alignment={wrapText:true};n.height=30}
     if(extra){const n=ws.getRow(rn+2);ws.mergeCells(`A${rn+2}:G${rn+2}`);n.getCell(1).value="Rândurile galbene nu sunt în lista de prețuri: completează prețul.";n.getCell(1).font={italic:true,color:{argb:"FF7F6000"}}}
     const buf=await wb.xlsx.writeBuffer();
     const fname=`consumatie_${String(e.name).replace(/[^\p{L}\p{N}]+/gu,"_")}_${e.date?dKey(e.date):String(D.fileName).replace(/\.[^.]+$/,"").replace(/[^\p{L}\p{N}]+/gu,"_")}.xlsx`;
