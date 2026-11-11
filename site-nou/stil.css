@@ -318,3 +318,27 @@ p{margin:0}
 /* mențiuni discrete (ex. suplimentul pentru băutura din altă sursă) */
 .mic{margin:0;font-family:var(--sans);font-style:italic;font-weight:500;font-size:14.5px;line-height:1.45;color:var(--green-dark);max-width:640px}
 .sec-ink .mic,.offer .mic{color:var(--green-dark)}
+
+/* statuia cu frunze (din eticheta sticluțelor) pe restul site-ului — 11 nov 2026 */
+.st-band{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:56px;align-items:center}
+.st-band-art{position:relative;margin:0}
+.st-band-art>img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;box-shadow:14px 14px 0 var(--gold)}
+.st-band-text{display:flex;flex-direction:column;gap:22px}
+.st-band-text p.txt{font-size:18px;line-height:1.55;max-width:560px}
+.st-mini{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.st-mini img{height:150px;width:auto;display:block;box-shadow:0 6px 14px rgba(0,0,0,.18);transition:transform .25s}
+.st-mini img:nth-child(odd){transform:rotate(-3deg)}.st-mini img:nth-child(even){transform:rotate(2.5deg)}
+.st-mini img:hover{transform:translateY(-6px) rotate(0)}
+@media (max-width:860px){.st-band{grid-template-columns:1fr;gap:40px}.st-band-art{max-width:440px}.st-mini img{height:120px}}
+
+.st-card{display:flex;align-items:center;gap:20px;margin-top:8px;padding:16px 20px 16px 16px;background:#212548;color:var(--cream);text-decoration:none;transition:transform .2s}
+.st-card:hover{transform:translateY(-3px)}
+.st-card img{width:92px;height:92px;flex:none;border-radius:50%;object-fit:cover;object-position:60% 40%;border:3px solid var(--gold-light)}
+.st-card b{display:block;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.05;color:var(--white)}
+.st-card span{font-family:var(--cond);font-weight:600;font-size:17px;line-height:1.3}
+.st-card em{font-style:normal;color:var(--gold-light);white-space:nowrap}
+
+.cu-frunze{position:relative;overflow:hidden;isolation:isolate}
+.cu-frunze::before{content:"";position:absolute;z-index:-1;left:-90px;bottom:-60px;width:520px;height:650px;background:url(img/statuia-veche-frunze.webp) center/cover no-repeat;opacity:.16;mix-blend-mode:luminosity;-webkit-mask-image:radial-gradient(closest-side,#000 55%,transparent);mask-image:radial-gradient(closest-side,#000 55%,transparent);pointer-events:none}
+@media (max-width:860px){.cu-frunze::before{width:380px;height:475px;left:-120px;bottom:auto;top:-40px;opacity:.12}}
+@media (max-width:560px){.st-card{gap:14px;padding:14px}.st-card img{width:64px;height:64px}.st-card b{font-size:21px}.st-card span{font-size:15px}}
