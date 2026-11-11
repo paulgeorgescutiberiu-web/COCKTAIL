@@ -30,6 +30,7 @@ if (!defined('CP_SN_LOADED')) { // protecție: dacă snippetul e activ de două 
 			'nunti'     => 'nunti.html',
 			'corporate' => 'corporate.html',
 			'petreceri' => 'petreceri.html',
+			'sticlute'  => 'sticlute.html',
 		);
 	}
 
