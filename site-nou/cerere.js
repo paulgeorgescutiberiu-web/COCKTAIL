@@ -31,7 +31,7 @@
         loc:v('loc').slice(0,80),msg:(extra+v('msg')).slice(0,500),ev:('site-'+F.dataset.lead).slice(0,40),evn:(F.dataset.evn||'Site').slice(0,60),at:new Date().toISOString()};
       var dt=lead.data?(function(){var m=lead.data.split('-');return (+m[2])+' '+MON[+m[1]-1]+' '+m[0]})():'';
       var t='Bună! Sunt '+lead.nume+(v('firma')?' de la '+v('firma'):'')+'. '+(F.dataset.intro||'Aș dori o ofertă pentru evenimentul meu.');
-      if(dt)t+='\nData: '+dt; if(lead.loc)t+='\nLocația: '+lead.loc; if(lead.inv)t+='\nNumăr invitați: '+lead.inv; if(v('msg'))t+='\n'+v('msg');
+      if(dt)t+='\nData: '+dt; if(lead.loc)t+='\nLocația: '+lead.loc; if(lead.inv)t+='\n'+(F.dataset.inv||'Număr invitați')+': '+lead.inv; if(v('msg'))t+='\n'+v('msg');
       var wa='https://wa.me/'+WA+'?text='+encodeURIComponent(t);
       btn.disabled=true;btn.textContent='Se trimite…';
       timeout(db().then(function(fs){
