@@ -9,7 +9,7 @@
 <link rel="icon" href="img/monograma-cp.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonturi.css">
-<link rel="stylesheet" href="stil.css?v=20261113b">
+<link rel="stylesheet" href="stil.css?v=20261113d">
 <!-- SEO -->
 <link rel="canonical" href="https://cocktailphilosophy.ro/oferte/">
 <meta name="theme-color" content="#1A1A18">
@@ -84,13 +84,29 @@
 <p class="lead" style="font-size:20px">Consumație nelimitată din meniul ales, preț fix pe invitat. Prețul final nu poate crește față de cotație, oricât s-ar bea.</p>
 <div class="calc-box">
 <label for="cpN">Câți invitați aveți? <small>(fără staff și copii)</small></label>
-<div class="calc-in">
+<div class="cg-top">
+<button type="button" class="cg-pm" id="cpMinus" aria-label="Mai puțini invitați">−</button>
+<div class="cg-num"><input type="number" id="cpN" min="1" max="2000" value="150" inputmode="numeric"><span>invitați</span></div>
+<button type="button" class="cg-pm" id="cpPlus" aria-label="Mai mulți invitați">+</button>
+</div>
+<div class="cg-slider">
 <input type="range" id="cpR" min="20" max="500" step="5" value="150" aria-label="Număr invitați">
-<input type="number" id="cpN" min="1" max="2000" value="150" inputmode="numeric">
+<div class="cg-ticks" aria-hidden="true"><span>20</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span></div>
+</div>
+<div class="cg-chips" role="group" aria-label="Alege rapid numărul de invitați">
+<button type="button" data-n="50">50</button><button type="button" data-n="80">80</button><button type="button" data-n="120">120</button><button type="button" data-n="150">150</button><button type="button" data-n="200">200</button><button type="button" data-n="300">300</button>
 </div>
 <div class="calc-out">
 <div><span>Preț / invitat</span><b class="gold" id="cpPP">11,4 €</b></div>
 <div><span>Total estimat</span><b id="cpTot">1.710 €</b></div>
+</div>
+<figure class="cg-chart">
+<svg id="cpChart" viewBox="0 0 600 210" role="img" aria-label="Grafic: prețul pe invitat scade pe măsură ce crește numărul de invitați"></svg>
+<figcaption>Cu cât sunteți mai mulți, cu atât scade prețul pe invitat.</figcaption>
+</figure>
+<div class="cg-info">
+<div class="cg-barmani"><span class="cg-shakers" id="cpShakers" aria-hidden="true"></span><span id="cpBarmani">2 barmani la bar</span></div>
+<div class="cg-eco" id="cpEco"></div>
 </div>
 <p class="note" style="font-size:16px">Preț orientativ. Oferta finală o primești după ce verificăm data și locația.</p>
 </div>
@@ -237,16 +253,46 @@ function price(n){
 function fmt(v){return v.toLocaleString('ro-RO',{minimumFractionDigits:1,maximumFractionDigits:1})}
 var r=document.getElementById('cpR'),n=document.getElementById('cpN'),te=document.getElementById('cpTiers');
 te.innerHTML=TIERS.map(function(t){return '<div role="listitem"><span>'+(t[1]===null?t[0]+'+':t[0]+'–'+t[1])+' invitați</span><strong>'+fmt(t[2])+' €</strong></div>'}).join('');
+/* graficul: curba prețului pe invitat */
+var W=600,H=210,L=44,R=16,T=30,B=30,N0=20,N1=500,P0=Math.floor(TIERS[TIERS.length-1][2])-1,P1=Math.ceil(TIERS[0][2])+1;
+function X(v){return L+(Math.min(N1,Math.max(N0,v))-N0)/(N1-N0)*(W-L-R)}
+function Y(p){return T+(P1-p)/(P1-P0)*(H-T-B)}
+var d='',i;for(i=N0;i<=N1;i+=5){d+=(i===N0?'M':'L')+X(i).toFixed(1)+' '+Y(price(i)).toFixed(1)+' '}
+var g='';[P0+1,Math.round((P0+P1)/2),P1-1].forEach(function(p){g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(p)+'" y2="'+Y(p)+'" class="cg-grid"/><text x="'+(L-8)+'" y="'+(Y(p)+4)+'" text-anchor="end" class="cg-ax">'+p+' €</text>'});
+[50,100,200,300,400,500].forEach(function(v){g+='<text x="'+X(v)+'" y="'+(H-8)+'" text-anchor="middle" class="cg-ax">'+v+'</text>'});
+var ch=document.getElementById('cpChart');
+ch.innerHTML=g+'<path d="'+d+'L'+X(N1)+' '+(H-B)+' L'+X(N0)+' '+(H-B)+' Z" class="cg-area"/><path d="'+d+'" class="cg-line"/><line id="cgV" class="cg-guide" y2="'+(H-B)+'"/><circle id="cgDot" r="9" class="cg-dot"/><g id="cgTag"><rect x="-38" y="-40" width="76" height="26" rx="13" class="cg-tagbg"/><text y="-22" text-anchor="middle" class="cg-tagtx" id="cgTagTx"></text></g>';
+var dot=document.getElementById('cgDot'),gv=document.getElementById('cgV'),tag=document.getElementById('cgTag'),tagTx=document.getElementById('cgTagTx');
+var sh=document.getElementById('cpShakers'),SH='<svg viewBox="0 0 24 24"><path d="M8 2h8l-1 4H9L8 2zm1 5h6l2 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L9 7z"/></svg>';
+sh.innerHTML=SH+SH+SH;
+var chips=document.querySelectorAll('.cg-chips button'),lastTier=-1;
 function update(v){
   v=Math.max(1,Math.min(2000,Math.round(+v||0)));
   var p=price(v);
   document.getElementById('cpPP').textContent=fmt(p)+' €';
   document.getElementById('cpTot').textContent=Math.round(p*v).toLocaleString('ro-RO')+' €';
-  TIERS.forEach(function(t,i){var on=v>t[0]?(t[1]===null||v<=t[1]):(i===0);te.children[i].classList.toggle('on',on)});
+  var tier=0;
+  TIERS.forEach(function(t,i){var on=v>t[0]?(t[1]===null||v<=t[1]):(i===0);te.children[i].classList.toggle('on',on);if(on)tier=i});
+  if(tier!==lastTier){var pp=document.getElementById('cpPP');pp.classList.remove('cg-pop');void pp.offsetWidth;pp.classList.add('cg-pop');lastTier=tier}
+  var x=X(v),y=Y(p);
+  dot.setAttribute('cx',x);dot.setAttribute('cy',y);
+  gv.setAttribute('x1',x);gv.setAttribute('x2',x);gv.setAttribute('y1',y);
+  tag.setAttribute('transform','translate('+Math.max(L+38,Math.min(W-R-38,x))+','+y+')');tagTx.textContent=fmt(p)+' €';
+  r.style.setProperty('--p',((Math.min(N1,Math.max(N0,v))-N0)/(N1-N0)*100)+'%');
+  var nb=v<=100?1:(v<=250?2:3);
+  [0,1,2].forEach(function(k){sh.children[k].classList.toggle('on',k<nb)});
+  document.getElementById('cpBarmani').textContent=nb===1?'1 barman la bar':nb+' barmani la bar';
+  var eco=Math.round((TIERS[0][2]-p)*10)/10,ee=document.getElementById('cpEco');
+  ee.textContent=eco>0?'−'+fmt(eco)+' € pe invitat față de un eveniment mic':'';
+  chips.forEach(function(c){c.classList.toggle('on',+c.getAttribute('data-n')===v)});
   return v;
 }
+function setN(v){v=update(v);n.value=v;r.value=Math.min(N1,v)}
 r.addEventListener('input',function(){n.value=r.value;update(r.value)});
-n.addEventListener('input',function(){var v=update(n.value);r.value=Math.min(500,v)});
+n.addEventListener('input',function(){var v=update(n.value);r.value=Math.min(N1,v)});
+chips.forEach(function(c){c.addEventListener('click',function(){setN(c.getAttribute('data-n'))})});
+document.getElementById('cpMinus').addEventListener('click',function(){setN((+n.value||0)-10)});
+document.getElementById('cpPlus').addEventListener('click',function(){setN((+n.value||0)+10)});
 update(150);
 if(CPP.barmani)document.querySelectorAll('[data-barmani]').forEach(function(b){var v=CPP.barmani[b.getAttribute('data-barmani')];if(v)b.textContent=v.toLocaleString('ro-RO')+' €'});
 })();
