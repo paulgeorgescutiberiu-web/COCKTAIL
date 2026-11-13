@@ -266,3 +266,18 @@ test("necesarul pentru client are implicit Bitter Angostura și Condiment Tajin"
   assert.match(names, /Condiment Tajin/);
   assert.deepEqual(errors, []);
 });
+
+test("Raport: profit pe eveniment, de la cel mai bun la cel mai slab", async () => {
+  await page.evaluate(B => Promise.all([
+    firebase.firestore().doc(B + "/contracte/c1").set({ rent: { invitati: "120", calc: { venit: 9000, profit: 3600, marja: 0.4 } } }, { merge: true }),
+  ]), `echipe/${S.TEAM}`);
+  await tab("raport");
+  await page.click('#v-raport [data-rp="reload"]');
+  await page.waitForFunction(() => /profit pe eveniment/i.test(document.querySelector("#v-raport").innerText), null, { timeout: 8000 });
+  const t = await page.$eval("#v-raport", e => e.innerText);
+  assert.match(t, /Nunta Ana Si Dan/i);
+  assert.match(t, /3\.600 lei/);
+  assert.match(t, /40%/);
+  assert.match(t, /30 lei\/inv/);
+  assert.deepEqual(errors, []);
+});

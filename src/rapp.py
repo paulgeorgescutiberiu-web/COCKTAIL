@@ -18,6 +18,7 @@ rep("</style>\n</head>",""".rp-kpi{display:grid;grid-template-columns:repeat(aut
 .rp-k span{font-weight:700;font-size:.85rem}.rp-k small{color:var(--muted);font-size:.78rem;line-height:1.3}
 .rp-t{border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
 .rp-r{display:grid;grid-template-columns:minmax(0,2fr) 1fr 1fr;gap:8px;padding:9px 12px;border-top:1px solid var(--line)}.rp-r:first-child{border-top:0}
+.rp-pf{grid-template-columns:minmax(0,1.6fr) auto minmax(0,1.3fr);align-items:center}.rp-pf>span:not(:first-child){text-align:right;white-space:nowrap}.rp-pf small{color:var(--muted);font-weight:400}.rp-pf .neg b{color:#b3261e}
 .rp-ed{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;padding:12px;border:1.5px solid var(--line);border-radius:12px;margin:8px 0}
 .rp-ed label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted)}
 .rp-ed input,.rp-ev input{width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit}

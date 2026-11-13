@@ -74,6 +74,13 @@ function render(){
     ${kp(lei(payTot),"plată barmani",`${T.length} ${T.length===1?"om":"oameni"}`)}
     ${kp(ML.length,"cereri de ofertă",ML.length?`${won} câștigate (${pct(won/ML.length)})`:"")}</div>`;
   if(MC.length&&R.length<MC.length)h+=`<p class="ev-file">${MC.length-R.length} ${MC.length-R.length===1?"contract nu are":"contracte nu au"} rentabilitatea calculată, deci venitul și profitul sunt parțiale. Le completezi la Contracte → Rentabilitate, după eveniment.</p>`;
+  /* profit pe fiecare eveniment din lună: de la cel mai bun la cel mai slab */
+  if(MC.length){const RS=R.slice().sort((a,b)=>(b.rent.calc.profit||0)-(a.rent.calc.profit||0)),NR=MC.filter(c=>!(c.rent&&c.rent.calc));
+    const dz=c=>String(c.dataEv||"").split("-").reverse().slice(0,2).join("."),who=c=>tcase(String(c.nume||"").split(" ")[0]);
+    h+=`<h2 class="ev-h2">Profit pe eveniment</h2><div class="rp-t">`+
+      RS.map(c=>{const k=c.rent.calc,inv=nr(c.rent.invitati||c.invitati);return `<div class="rp-r rp-pf"><span>${esc(dz(c))} · ${esc(tcase(c.locatie||""))}<small> ${esc(who(c))}${inv?" · "+num(inv)+" inv.":""}</small></span><span>${lei(k.venit)}</span><span class="${k.profit<0?"neg":""}"><b>${lei(k.profit)}</b> · ${pct(k.marja)}${inv?`<small> ${lei(k.profit/inv)}/inv.</small>`:""}</span></div>`}).join("")+
+      NR.map(c=>`<div class="rp-r rp-pf"><span>${esc(dz(c))} · ${esc(tcase(c.locatie||""))}<small> ${esc(who(c))}</small></span><span>—</span><span><small>fără rentabilitate calculată</small></span></div>`).join("")+`</div>`;
+    if(RS.length>1){const best=RS[0],worst=RS[RS.length-1];h+=`<p class="ev-file">Cel mai bun: ${esc(tcase(best.locatie||""))} (${pct(best.rent.calc.marja)}). Cel mai slab: ${esc(tcase(worst.locatie||""))} (${pct(worst.rent.calc.marja)}). Coloane: venit, apoi profit și marjă.</p>`}}
   /* locații */
   const loc={};ME.forEach(x=>{const k=x.e.name;loc[k]=loc[k]||{n:k,ev:0,p:0};loc[k].ev++;loc[k].p+=typeof x.e.persons==="number"?x.e.persons:0});
   const LL=Object.values(loc).sort((a,b)=>b.ev-a.ev||b.p-a.p);
