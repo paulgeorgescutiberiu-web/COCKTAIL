@@ -74,14 +74,19 @@ exports.postariProgramate = onSchedule({
 }, async () => {
   const db = getFirestore(), acum = Date.now();
   const snap = await db.collection("socialCoada").where("cand", "<=", acum).get();
-  const lista = SOC.deTrimis(snap.docs.map(d => ({ ...d.data(), id: d.id })), acum).slice(0, 10);
+  const toate = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  for (const d of SOC.blocate(toate, acum)) {
+    await db.doc(`socialCoada/${d.id}`).update(SOC.BLOCAT).catch(e => logger.warn("postariProgramate: blocat", d.id, e));
+    logger.warn("postariProgramate: rămasă pe trimit, marcată ca eroare", d.id);
+  }
+  const lista = SOC.deTrimis(toate, acum).slice(0, 10);
   for (const d of lista) {
     const ref = db.doc(`socialCoada/${d.id}`);
     // o iau doar dacă nu a luat-o altcineva între timp
     const luat = await db.runTransaction(async t => {
       const x = await t.get(ref);
       if (!x.exists || !["programat", "eroare"].includes(x.data().stare)) return false;
-      t.update(ref, { stare: "trimit" });
+      t.update(ref, { stare: "trimit", trimitLa: Date.now() });
       return true;
     });
     if (!luat) continue;

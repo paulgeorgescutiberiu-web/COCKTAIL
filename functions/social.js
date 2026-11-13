@@ -47,4 +47,12 @@ function dupaEroare(d, rez) {
   return { stare: "eroare", incercari: rez.final ? INCERCARI : incercari, err: String(rez.err || "").slice(0, 300) };
 }
 
-module.exports = { HOOK_RE, INCERCARI, deTrimis, formular, trimite, dupaEroare };
+/* postări rămase pe „trimit” (funcția s-a oprit la mijloc): după 15 minute le marchez ca eroare, fără reîncercare automată,
+   ca să nu se posteze de două ori; Paul vede eroarea și apasă „Reîncearcă” dacă nu a apărut pe Instagram */
+const BLOCAT_MS = 15 * 60e3;
+function blocate(docs, acum) {
+  return docs.filter(d => d.stare === "trimit" && (!d.trimitLa || acum - d.trimitLa > BLOCAT_MS));
+}
+const BLOCAT = { stare: "eroare", incercari: INCERCARI, err: "Trimiterea s-a întrerupt. Verifică pe Instagram dacă a apărut; dacă nu, apasă Reîncearcă." };
+
+module.exports = { HOOK_RE, INCERCARI, BLOCAT_MS, BLOCAT, deTrimis, blocate, formular, trimite, dupaEroare };

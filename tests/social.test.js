@@ -49,3 +49,15 @@ test("trimite: datele greșite nu se mai reîncearcă, problemele de rețea da",
   const rRetea = await S.trimite("x", { hook: HOOK, caption: "a" }, { img: JPEG }, async () => { throw new Error("ECONNRESET"); });
   assert.equal(rRetea.ok, false); assert.equal(rRetea.final, false); assert.match(rRetea.err, /ECONNRESET/);
 });
+
+test("postările rămase pe „trimit” peste 15 minute sunt găsite, cele proaspete nu", () => {
+  const acum = Date.now();
+  const L = [
+    { id: "a", stare: "trimit", trimitLa: acum - 20 * 60e3 },
+    { id: "b", stare: "trimit", trimitLa: acum - 60e3 },
+    { id: "c", stare: "trimit" },
+    { id: "d", stare: "programat" },
+  ];
+  assert.deepEqual(S.blocate(L, acum).map(d => d.id), ["a", "c"]);
+  assert.equal(S.BLOCAT.incercari, S.INCERCARI);
+});

@@ -409,9 +409,9 @@ VS.duplex=LS.get("cp-voce-dup","auto");
 VS.engine=LS.get("cp-voce-motor","nou");if(!ENGINES[VS.engine])VS.engine="nou";
 VS.lvoice=LS.get("cp-voce-live","Sulafat");if(!LIVE_VOICES[VS.lvoice])VS.lvoice="Sulafat";
 const liveOK=()=>!!((window.AudioContext||window.webkitAudioContext)&&window.AudioWorkletNode&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.WebSocket);
-/* Când Live nu poate porni din cauza configurării (server neinstalat, acces, cheie), nu mai încearcă 6 ore:
+/* Când Live nu poate porni din cauza configurării (server neinstalat, acces, cheie), nu mai încearcă 20 de minute:
    Sofia pornește direct pe vocea telefonului și spune o dată de ce. „🔊 Ascult-o” sau schimbarea vocii încearcă din nou. */
-const OFF_MS=6*3600e3;
+const OFF_MS=20*60e3;   // 20 de minute, nu 6 ore: după ce repari ceva pe server, Sofia reîncearcă singură repede
 function liveOff(){try{const o=JSON.parse(LS.get("cp-voce-live-off","null"));return o&&Date.now()-o.at<OFF_MS?o:null}catch(e){return null}}
 const setLiveOff=motiv=>LS.set("cp-voce-live-off",JSON.stringify({at:Date.now(),motiv}));
 const clearLiveOff=()=>{VS.liveBroken=false;try{localStorage.removeItem("cp-voce-live-off")}catch(e){}};
@@ -554,7 +554,7 @@ async function connectLive(){
   }
   throw last;
 }
-/* Motivul pe înțeles și dacă e de configurare (atunci nu mai încearcă 6 ore) */
+/* Motivul pe înțeles și dacă e de configurare (atunci nu mai încearcă 20 de minute) */
 const LIVE_WHY={neinstalat:["serverul pentru conversația live nu e încă instalat (functions/README.md)",true],
   acces:["contul ăsta nu are acces la conversația live",true],appcheck:["Google a refuzat verificarea App Check",true],
   cheie:["cheia Gemini de pe server lipsește sau nu e bună",true],limita:["s-a atins limita de conversații live, pentru moment",false],
@@ -732,8 +732,9 @@ async function talkTurn(o={}){
 }
 /* Ascultă vocea aleasă: repornește conversația cu ea (păstrând ce s-a vorbit) și Sofia se prezintă scurt */
 async function tryVoice(){
-  if(!useLive()){add("act","Vocea nouă se aude în conversația live.");return}
-  clearLiveOff();if(VS.live){stopLive();VS.liveModel=null}
+  if(VS.mode==="live")clearLiveOff();   // „Ascult-o” încearcă din nou și după o eroare de configurare (înainte verifica întâi și nu mai încerca niciodată)
+  if(!useLive()){add("act",VS.mode==="live"?"Browserul ăsta nu poate porni conversația live (microfon sau sunet indisponibil).":"Vocea nouă se aude în conversația live. Alege sus „Gemini Live”.");return}
+  if(VS.live){stopLive();VS.liveModel=null}
   await startLive();
   if(VS.live)liveText("Salută-mă într-o singură propoziție scurtă, caldă, ca să aud cum îți sună vocea acum.","🔊 Ascult vocea");
 }

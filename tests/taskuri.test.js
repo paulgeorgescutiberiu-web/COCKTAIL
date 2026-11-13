@@ -113,7 +113,10 @@ test("sincronizare: îmbină ce e local cu ce e în baza de date și trimite mod
   // notez ceva nou: pleacă imediat
   await p.fill("#in", "comand gheață vineri #stoc");
   await p.press("#in", "Enter");
-  await p.waitForFunction(() => window.__WRITES.some(w => w.data && w.data.text === "Comand gheață" && w.data.due === "2026-11-06"));
+  // „vineri” depinde de ziua în care rulează testul (aici ceasul e cel real), așa că data așteptată o dă aplicația însăși
+  const vineri = await p.evaluate(() => window.__taskuri.parse("comand gheață vineri #stoc").due);
+  assert.match(vineri, /^\d{4}-\d{2}-\d{2}$/);
+  await p.waitForFunction(d => window.__WRITES.some(w => w.data && w.data.text === "Comand gheață" && w.data.due === d), vineri);
 
   // modificat pe alt dispozitiv, mai recent: se aplică aici
   await p.evaluate(([c, d]) => firebase.firestore().doc(c + "/tk_r1").set(d), [COL, remote("r1", { text: "Modificat pe telefon", upd: Date.now() + 5000 })]);

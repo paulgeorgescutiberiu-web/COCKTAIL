@@ -254,7 +254,7 @@ test("pe laptop: ⌥S deschide Sofia, Space încheie, „Ascult-o” pornește c
   await ctx.close();
 });
 
-test("serverul de bilete nu e instalat: Sofia spune de ce, trece imediat pe vocea telefonului și nu mai încearcă 6 ore", async () => {
+test("serverul de bilete nu e instalat: Sofia spune de ce, trece imediat pe vocea telefonului și nu mai încearcă o vreme", async () => {
   const { page, errors, ctx, tickets } = await open("live", { status: 404 });
   await page.click("#vcBtn");
   await page.waitForFunction(() => /serverul pentru conversația live nu e încă instalat/.test(document.getElementById("vcLog").textContent), null, { timeout: 8000 });
