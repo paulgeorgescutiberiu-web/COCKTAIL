@@ -9,7 +9,7 @@
 <link rel="icon" href="img/monograma-cp.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonturi.css">
-<link rel="stylesheet" href="stil.css?v=20261113a">
+<link rel="stylesheet" href="stil.css?v=20261113b">
 <!-- SEO -->
 <link rel="canonical" href="https://cocktailphilosophy.ro/">
 <meta name="theme-color" content="#1A1A18">
@@ -138,6 +138,13 @@
 <img src="img/barman-turnare-shoturi.webp" alt="Barman Cocktail Philosophy turnând shoturi la bar" loading="lazy" style="aspect-ratio:1">
 <img src="img/barman-cocktail-philosophy.webp" alt="Barman agitând shakerul" loading="lazy" style="aspect-ratio:1">
 </div>
+</div>
+<div class="clip">
+<button class="clip-play" type="button" data-yt="2mg_QtUISk8" aria-label="Pornește clipul Cocktail Philosophy">
+<img src="https://i.ytimg.com/vi/2mg_QtUISk8/hqdefault.jpg" alt="" loading="lazy" width="480" height="360" onerror="this.style.display='none'">
+<span class="clip-btn" aria-hidden="true"></span>
+<span class="clip-txt">Vezi-ne în acțiune</span>
+</button>
 </div>
 </div>
 </section>
@@ -366,6 +373,9 @@
 <script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/preturi-pagina.js?v=2"></script>
 <script>
 document.querySelectorAll('.burger nav a').forEach(function(a){a.addEventListener('click',function(){a.closest('details').removeAttribute('open')})});
+</script>
+<script>
+document.querySelectorAll('.clip-play').forEach(function(b){b.addEventListener('click',function(){var f=document.createElement('iframe');f.src='https://www.youtube-nocookie.com/embed/'+b.dataset.yt+'?autoplay=1\u0026rel=0';f.title='Cocktail Philosophy – video';f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';f.allowFullscreen=true;b.parentNode.replaceChild(f,b);});});
 </script>
 </body>
 </html>

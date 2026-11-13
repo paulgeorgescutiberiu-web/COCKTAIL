@@ -381,3 +381,14 @@ p{margin:0}
   .st-mini img{height:96px}
   .oameni-pts{grid-template-columns:1fr;gap:14px}
 }
+
+/* clipul de pe YouTube (se încarcă doar la apăsare) */
+.clip{flex:1 1 100%;max-width:960px;margin:8px auto 0;width:100%}
+.clip-play,.clip iframe{display:block;width:100%;aspect-ratio:16/9;border:0;padding:0;background:var(--ink)}
+.clip-play{position:relative;cursor:pointer;overflow:hidden;box-shadow:14px 14px 0 var(--gold)}
+.clip-play img{width:100%;height:100%;object-fit:cover;opacity:.85;transition:opacity .2s,transform .4s}
+.clip-play:hover img{opacity:1;transform:scale(1.03)}
+.clip-btn{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:var(--gold)}
+.clip-btn::after{content:"";position:absolute;left:34px;top:26px;border-style:solid;border-width:16px 0 16px 26px;border-color:transparent transparent transparent var(--ink)}
+.clip-txt{position:absolute;left:0;bottom:0;background:var(--ink);color:var(--white);font-family:var(--display);font-size:26px;text-transform:uppercase;padding:10px 18px 6px}
+@media (max-width:700px){.clip-play{box-shadow:8px 8px 0 var(--gold)}.clip-btn{width:64px;height:64px;margin:-32px 0 0 -32px}.clip-btn::after{left:26px;top:20px;border-width:12px 0 12px 20px}.clip-txt{font-size:20px}}
