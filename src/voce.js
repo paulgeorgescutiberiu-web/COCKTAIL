@@ -60,6 +60,8 @@ const DECL=[
   {name:"necesar_client",description:"Calculează NECESARUL pentru un client: ce băuturi și consumabile trebuie să cumpere clientul pentru un număr de persoane (lista de trimis clientului, PDF sau WhatsApp). NU creează eveniment și nu face fișă. Folosește-o pentru „necesar pentru 20 de persoane”, „fă-mi un necesar”, „ce trebuie să cumpere clientul pentru…”.",
     parameters:S("object","",{properties:{pers:S("string","Număr persoane"),client:S("string","Numele clientului sau al evenimentului (opțional)"),data:S("string","Data evenimentului AAAA-LL-ZZ (opțional)"),
       meniu:S("array","Cocktailurile alese de client (opțional)",{items:S("string","")}),nota:S("string","Notă pentru client (opțional)")},required:["pers"]})},
+  {name:"preia_din_calendar",description:"Preia evenimentele din Google Calendar în fișa evenimentelor (butonul „Preia din calendar”): deschide lista cu evenimentele săptămânii, bifate, cu persoanele din contract. Utilizatorul verifică și apasă „Fă fișele”.",
+    parameters:S("object","",{properties:{saptamana:S("string","„asta” sau „viitoare”")}})},
   {name:"eveniment_nou",description:"Deschide fișa de marfă (Excelul săptămânii) pentru un eveniment NOU al firmei, completată cu ce a spus utilizatorul. Nu o folosi pentru necesarul unui client.",
     parameters:S("object","",{properties:{nume:S("string","Numele evenimentului"),data:S("string","AAAA-LL-ZZ"),ora:S("string","HH:MM"),pers:S("string","Număr persoane"),
       echipa:S("string","Barmanii, separați prin spațiu"),transport:S("string","Transport"),note:S("string","Mențiuni")}})}
@@ -188,6 +190,13 @@ const RUN={
     const L=await window.__necNew(a||{});hidePanel();
     return {ok:true,deschis:"Necesarul pentru client, calculat. Utilizatorul îl verifică și apasă „PDF pentru client” sau „Copiază pentru WhatsApp”.",articole:L.slice(0,40)};
   },
+  async preia_din_calendar(a){
+    if(!F.isAdmin)return {eroare:"Fișele le face doar administratorul."};
+    if(!window.__ciOpen)return {eroare:"Preluarea din calendar nu e disponibilă."};
+    const r=await window.__ciOpen(/viit|urm/i.test(String(a&&a.saptamana||"")));hidePanel();
+    if(r.google===false)return {ok:true,deschis:"Lista „Preia din calendar” e deschisă, dar Google nu e conectat încă: utilizatorul apasă o dată „Citește calendarul” (Google cere o apăsare). Apoi verifică bifele și apasă „Fă fișele”."};
+    return {ok:true,deschis:"Lista cu evenimentele din calendar e deschisă. Cele bifate devin fișe când utilizatorul apasă „Fă fișele”.",...r};
+  },
   eveniment_nou(a){
     if(!F.isAdmin)return {eroare:"Fișele de eveniment le face doar administratorul."};
     if(!window.__evNew)return {eroare:"Fișa de eveniment nu e disponibilă."};
@@ -230,6 +239,7 @@ Reguli:
 - Prețurile uzuale: dacă utilizatorul spune „euro de persoană”, moneda EURO și unitatea „/ PERSOANĂ”.
 - Zilele următoare, ca să calculezi corect datele: ${zile()}.
 - „Ce am de făcut săptămâna asta / ce e urgent / cine așteaptă răspuns” = saptamana_mea. Răspunde scurt: întâi prioritățile, apoi doar ce întreabă.
+- „Preia/ia/adu evenimentul din calendar / fă fișele din calendar / ce am în calendar săptămâna asta în fișă” = preia_din_calendar (săptămâna „viitoare” dacă așa spune). Spui pe scurt ce evenimente a găsit și că le verifică și apasă „Fă fișele”. NU folosi eveniment_nou pentru asta.
 - „Necesar pentru N persoane / fă-mi un necesar / ce trebuie să cumpere clientul” = necesar_client (doar lista pentru client). NU folosi eveniment_nou sau adauga_eveniment pentru asta.
 - Liste lungi (multe evenimente, multe articole): spui doar primele câteva și întrebi dacă vrea restul.
 - Poți face și calcule (cantități pentru un număr de invitați, sume, rest de plată) pe baza datelor din funcții.${hist?`
@@ -242,11 +252,11 @@ ${hist}`:""}`;
 const DOING={deschide_sectiune:"Deschid secțiunea",retete:"Caut în rețetar",evenimente:"Citesc evenimentele",stoc:"Verific stocul",contracte:"Caut în contracte",
   marcheaza_incasare:"Marchez încasarea",adauga_eveniment:"Adaug evenimentul",calendar_zi:"Mă uit în calendar",pune_in_calendar:"Pun în calendar",modifica_contract:"Modific contractul",
   contract_drive:"Pun PDF-ul în Drive",deschide_contract:"Deschid contractul",descarca_pdf:"Descarc PDF-ul",notita_contract:"Salvez notița",disponibilitate:"Verific disponibilitatea",
-  noteaza_bani:"Notez în Bani",bani_luna:"Calculez banii lunii",saptamana_mea:"Fac rezumatul săptămânii",necesar_client:"Calculez necesarul",eveniment_nou:"Deschid fișa nouă",inchide_conversatia:"Închei"};
+  noteaza_bani:"Notez în Bani",bani_luna:"Calculez banii lunii",saptamana_mea:"Fac rezumatul săptămânii",necesar_client:"Calculez necesarul",eveniment_nou:"Deschid fișa nouă",preia_din_calendar:"Citesc calendarul",inchide_conversatia:"Închei"};
 const DONE={deschide_sectiune:"Am deschis secțiunea",retete:"Am căutat în rețetar",evenimente:"Am citit evenimentele",stoc:"Am verificat stocul",contracte:"Am citit contractele",
   marcheaza_incasare:"Încasare",adauga_eveniment:"Eveniment nou",calendar_zi:"Am citit calendarul",pune_in_calendar:"Calendar",modifica_contract:"Contract modificat",
   contract_drive:"PDF în Drive",deschide_contract:"Am deschis contractul",descarca_pdf:"PDF descărcat",notita_contract:"Notiță salvată",disponibilitate:"Am verificat disponibilitatea",
-  noteaza_bani:"Notat în Bani",bani_luna:"Am calculat luna",saptamana_mea:"Rezumatul săptămânii",necesar_client:"Necesar calculat",eveniment_nou:"Am deschis fișa nouă"};
+  noteaza_bani:"Notat în Bani",bani_luna:"Am calculat luna",saptamana_mea:"Rezumatul săptămânii",necesar_client:"Necesar calculat",eveniment_nou:"Am deschis fișa nouă",preia_din_calendar:"Am deschis lista din calendar"};
 function note(name,out){
   if(name==="inchide_conversatia")return;
   add("act",(DONE[name]||name)+(out&&out.eroare?" · nu a mers":out&&out.anulat?" · anulat":" ✓"));

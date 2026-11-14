@@ -4,7 +4,7 @@ def rep(a,b):
     global h
     assert h.count(a)==1,("x",a[:90]); h=h.replace(a,b)
 rep('<button class="btn" type="button" id="evArh">Săptămâni anterioare</button>','<button class="btn" type="button" id="evCal">📅 Preia din calendar</button><button class="btn" type="button" id="evArh">Săptămâni anterioare</button>')
-rep('$("#evArh").onclick=()=>arhOpen();','$("#evArh").onclick=()=>arhOpen();\n$("#evCal").onclick=()=>ciOpen();')
+rep('$("#evArh").onclick=()=>arhOpen();','$("#evArh").onclick=()=>arhOpen();\n$("#evCal").onclick=()=>ciOpen(0);')
 rep('  if(route==="arh"){','  if(route==="cal"){if(!CI)CI={wk:0,list:null,msg:"",busy:false,target:null};$("#evTabs").innerHTML="";v.innerHTML=viewCal();return}\n  if(route==="arh"){')
 rep('  if(enClick(ev.target))return;','  if(ciClick(ev.target))return;\n  if(enClick(ev.target))return;')
 rep('"nou","arh","prep"]','"nou","arh","prep","cal"]')

@@ -334,7 +334,14 @@ function ciParse(ev,contracts,dayN){
   const inWeek=D&&D.events.some(e=>e.date&&ciISO(e.date)===iso&&(norm(e.name)===norm(nume)||norm(nume).includes(norm(e.name))||norm(e.name).includes(norm(nume))));
   return {id:ev.id,iso,ora,sum,nume:capL(nume.trim()),pers,client:c?c.nume:client,contract:!!c,menuIds:Array.isArray(r.menuIds)&&r.menuIds.length?r.menuIds:null,note,looks,inWeek,pick:looks&&!inWeek&&iso>=ciISO(new Date())};
 }
-function ciOpen(){CI={wk:0,list:null,msg:"",busy:false,target:null};route="cal";render();}
+function ciOpen(wk){CI={wk:wk?1:0,list:null,msg:"",busy:false,target:null};route="cal";render();
+  /* dacă Google e deja conectat, citesc calendarul direct, fără încă o apăsare */
+  if(window.__gcal&&window.__gcal.ready&&window.__gcal.ready())return ciLoad();return Promise.resolve()}
+/* pentru Sofia: deschide „Preia din calendar” și întoarce ce a găsit */
+window.__ciOpen=async wk=>{const b=document.querySelector('nav.tabs button[data-view="evenimente"]');if(b)b.click();await ciOpen(wk);
+  if(!CI)return {eroare:"Nu am putut deschide."};
+  if(CI.list===null)return {google:false};
+  return {google:true,msg:CI.msg||"",evenimente:(CI.list||[]).filter(x=>x.looks).map(x=>({nume:x.nume,data:x.iso,ora:x.ora,persoane:x.pers||null,contract:x.contract,deja_in_fisa:x.inWeek,bifat:x.pick}))}};
 async function ciLoad(){
   if(!window.__gcal){CI.msg="Legătura cu Google Calendar nu e disponibilă acum.";render();return}
   const W=ciWeek(CI.wk);CI.busy=true;CI.msg="";CI.list=null;render();

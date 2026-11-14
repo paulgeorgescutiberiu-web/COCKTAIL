@@ -281,3 +281,19 @@ test("Raport: profit pe eveniment, de la cel mai bun la cel mai slab", async () 
   assert.match(t, /30 lei\/inv/);
   assert.deepEqual(errors, []);
 });
+
+test("Preia din calendar: cu Google conectat, citește singur calendarul (și pentru Sofia)", async () => {
+  const r = await page.evaluate(async () => {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    window.__gcal = { ...(window.__gcal || {}), ready: () => true,
+      range: async () => [{ id: "ev1", summary: "Hanul din Sălcii 90", location: "Hanul din Sălcii, Sibiu", start: { dateTime: iso + "T18:00:00+02:00" } }] };
+    return window.__ciOpen(false);
+  });
+  assert.equal(r.google, true);
+  assert.equal(r.evenimente.length, 1);
+  assert.equal(r.evenimente[0].persoane, 90);
+  assert.equal(r.evenimente[0].bifat, true);
+  await page.click('[data-ci="back"]');
+  assert.deepEqual(errors, []);
+});
