@@ -145,6 +145,7 @@ const inp=(k,label,o={})=>`<label class="${o.cls||""}${f.ocr&&f.ocr[k]?" ct-ocr"
   <input data-f="${k}" value="${esc(f[k]??"")}"${o.type?` type="${o.type}"`:""}${o.im?` inputmode="${o.im}"`:""}${o.ph?` placeholder="${esc(o.ph)}"`:""}${o.ac?` autocomplete="${o.ac}"`:" autocomplete=\"off\""}></label>`;
 const sel=(k,label,opts)=>`<label>${label}<select data-f="${k}">${opts.map(v=>`<option${f[k]===v?" selected":""}>${esc(v)}</option>`).join("")}</select></label>`;
 function viewForm(){
+  if(f&&!f.pachetTip)f.pachetTip=pachetTip(f);
   let h=`<div class="st-top"><div><p class="ev-sub">${f.id?"Editează contractul":"Contract nou"}</p><p class="ev-file">Câmpurile cu * sunt obligatorii. Ce lipsește îți arăt înainte de PDF.</p></div>
     <div class="st-acts"><button class="btn" data-c="back">Renunță</button></div></div>
     <div class="st-ai"><button class="btn primary" data-c="foto"${ocrBusy?" disabled":""}>Citește buletinul din poză sau PDF</button><input type="file" id="ctFoto" accept="image/*,application/pdf,.pdf" hidden>
@@ -158,7 +159,7 @@ function viewForm(){
     ${inp("dataContract","Data contractului",{type:"date"})}${inp("dataEv","Data evenimentului",{type:"date"})}<div class="ct-full" id="ctOver">${window.__qr&&window.__qr.sameDayHTML?window.__qr.sameDayHTML(f.dataEv,f.id,true):""}</div>${inp("locatie","Locația",{ph:"SYMPHONY"})}
     ${inp("oraEv","Ora începerii (pentru calendar)",{type:"time"})}${inp("invitati","Nr. minim de invitați",{im:"numeric"})}${inp("obiect","Obiectul contractului")}</div>
     <h2 class="ev-h2">Preț și plată</h2><div class="st-meta">
-    ${inp("pret","Preț",{im:"decimal"})}${sel("moneda","Moneda",["EURO","RON"])}${sel("unitate","Unitate",["/ PERSOANĂ","TOTAL"])}${sel("tva","TVA",["fără TVA","cu TVA inclus"])}</div>
+    ${sel("pachetTip","Tipul ofertei",[PACH_AI,PACH_BAR])}${inp("pret","Preț",{im:"decimal"})}${sel("moneda","Moneda",["EURO","RON"])}${sel("unitate","Unitate",["/ PERSOANĂ","TOTAL"])}${sel("tva","TVA",["fără TVA","cu TVA inclus"])}</div>
     <div class="st-meta">${inp("avans","Avans (cu TVA inclus)",{im:"decimal"})}${sel("monedaAvans","Moneda avansului",["RON","EURO"])}
     ${inp("dataRest","Data plății diferenței",{type:"date"})}${sel("plata","Plata se face",["în numerar","prin transfer bancar","în numerar sau prin transfer bancar"])}
     ${sig?sel("semn","Semnătura și ștampila mea pe PDF",["Da","Nu"]):""}</div>
@@ -274,6 +275,15 @@ function clauses31(c){const o=[];
   if(on(c.c4))o.push(`În cazul unei eventuale „taxe de vase” solicitate de locația gazdă, aceasta este suportată de către ${c.vase||"beneficiar"}!`);
   if(c.c5===true)o.push(CONSUM_CLAUZA);
   return o}
+/* tipul ofertei: ales în contract; la contractele vechi îl ghicesc (clauza de consumație, pachet barmani la rentabilitate, obiectul, prețul total) */
+const PACH_AI="All you can drink",PACH_BAR="Barmani + consumație";
+function pachetTip(c){
+  if(c.pachetTip===PACH_AI||c.pachetTip===PACH_BAR)return c.pachetTip;
+  const o=String(c.obiect||"");
+  if(c.c5===true||c.rent&&c.rent.bauturaClient||/barman|consum/i.test(o))return PACH_BAR;
+  if(/all|inclusive|drink/i.test(o))return PACH_AI;
+  return c.unitate==="TOTAL"?PACH_BAR:PACH_AI;
+}
 /* servicii + consumație: se plătește exact cât s-a consumat, măsurat pe fiecare sticlă */
 const CONSUM_CLAUZA="Băutura (alcool și siropuri) se achită separat, după consumul real: la finalul evenimentului se măsoară fiecare sticlă, iar beneficiarul plătește exact cantitatea consumată, inclusiv fracțiunile din sticlele începute (de exemplu, dacă din 10 sticle s-au consumat 8,5, se plătesc 8,5 sticle, nu 9). Băutura rămasă, în sticle pline sau începute, se returnează prestatorului și nu se plătește.";
 function contractDoc(c,F0){
@@ -374,7 +384,7 @@ async function portalPublish(c,quiet){
       ev:{dataEv:c.dataEv||"",oraEv:c.oraEv||"",locatie:tcase(c.locatie||""),invitati:String(c.invitati||""),pachet:tcase(c.obiect||""),pret:String(c.pret||""),moneda:c.moneda==="EURO"?"€":"RON",unitate:isTotal?"total":"/ persoană",tva:c.tva||"",ore:c.ore||"",avans:String(c.avans||""),avansPrimit:c.avansPlatit?{suma:String(c.avansSuma||c.avans||""),moneda:(c.avansMoneda||payCur(c)),data:c.avansPlatitLa||""}:null,monedaAvans:c.monedaAvans==="EURO"?"EUR":"RON",dataRest:c.dataRest||"",plata:c.plata||""},
       client:{nume:tcase(c.nume||""),prenume:tcase(String(c.nume||"").trim().split(/\s+/).slice(-1)[0]||"")},
       firma:{nume:F0.nume,iban:F0.iban,banca:F0.banca,tel:"0743 785 655"},
-      oferte:[{t:"Meniul 2026",u:"https://cocktailphilosophy.ro/meniu/"},isTotal?{t:"Oferta pachet barmani",u:"https://cocktailphilosophy.ro/oferte/#pachet-barmani"}:{t:"Oferta All you can drink",u:"https://cocktailphilosophy.ro/oferte/#all-inclusive"}],
+      oferte:[{t:"Meniul 2026",u:"https://cocktailphilosophy.ro/meniu/"},pachetTip(c)===PACH_BAR?{t:"Oferta pachet barmani",u:"https://cocktailphilosophy.ro/oferte/#pachet-barmani"}:{t:"Oferta All you can drink",u:"https://cocktailphilosophy.ro/oferte/#all-inclusive"}],
       menuOpts:porMenuOptions(),
       pay:null,
       pdf};
