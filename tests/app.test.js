@@ -297,3 +297,25 @@ test("Preia din calendar: cu Google conectat, citește singur calendarul (și pe
   await page.click('[data-ci="back"]');
   assert.deepEqual(errors, []);
 });
+
+test("Contract: tipul ofertei pune singur prețul (All you can drink pe persoană, barmani după număr)", async () => {
+  await tab("contracte");
+  await page.click('#v-contracte [data-c="new"]');
+  await page.waitForSelector('#v-contracte [data-f="pachetTip"]');
+  assert.equal(await page.$('#v-contracte [data-f="unitate"]'), null, "unitatea nu se mai alege de mână");
+  await page.fill('#v-contracte [data-f="invitati"]', "120");
+  await page.dispatchEvent('#v-contracte [data-f="invitati"]', "change");
+  const ai = await page.$eval('#v-contracte [data-f="pret"]', e => e.value);
+  assert.ok(/^1[2-5](,\d)?$/.test(ai), "preț All you can drink pentru 120: " + ai);
+  await page.selectOption('#v-contracte [data-f="pachetTip"]', "Barmani + consumație");
+  await page.waitForSelector('#v-contracte [data-f="barmani"]');
+  await page.selectOption('#v-contracte [data-f="barmani"]', "3");
+  await page.waitForFunction(() => document.querySelector('#v-contracte [data-f="pret"]').value === "690");
+  assert.equal(await page.$eval('#v-contracte [data-cb="c5"]', e => e.checked), true);
+  await page.fill('#v-contracte [data-f="pret"]', "600");
+  await page.selectOption('#v-contracte [data-f="barmani"]', "2");
+  await page.waitForSelector('#v-contracte [data-f="barmani"]');
+  assert.equal(await page.$eval('#v-contracte [data-f="pret"]', e => e.value), "600", "prețul scris de mână rămâne");
+  await page.click('#v-contracte [data-c="back"]');
+  assert.deepEqual(errors, []);
+});

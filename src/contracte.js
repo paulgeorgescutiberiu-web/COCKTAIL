@@ -145,7 +145,7 @@ const inp=(k,label,o={})=>`<label class="${o.cls||""}${f.ocr&&f.ocr[k]?" ct-ocr"
   <input data-f="${k}" value="${esc(f[k]??"")}"${o.type?` type="${o.type}"`:""}${o.im?` inputmode="${o.im}"`:""}${o.ph?` placeholder="${esc(o.ph)}"`:""}${o.ac?` autocomplete="${o.ac}"`:" autocomplete=\"off\""}></label>`;
 const sel=(k,label,opts)=>`<label>${label}<select data-f="${k}">${opts.map(v=>`<option${f[k]===v?" selected":""}>${esc(v)}</option>`).join("")}</select></label>`;
 function viewForm(){
-  if(f&&!f.pachetTip)f.pachetTip=pachetTip(f);
+  if(f&&!f.pachetTip){f.pachetTip=pachetTip(f);if(f.pachetTip===PACH_BAR&&!f.barmani)f.barmani="2";f.pretAuto=f.id?false:undefined}
   let h=`<div class="st-top"><div><p class="ev-sub">${f.id?"Editează contractul":"Contract nou"}</p><p class="ev-file">Câmpurile cu * sunt obligatorii. Ce lipsește îți arăt înainte de PDF.</p></div>
     <div class="st-acts"><button class="btn" data-c="back">Renunță</button></div></div>
     <div class="st-ai"><button class="btn primary" data-c="foto"${ocrBusy?" disabled":""}>Citește buletinul din poză sau PDF</button><input type="file" id="ctFoto" accept="image/*,application/pdf,.pdf" hidden>
@@ -158,8 +158,10 @@ function viewForm(){
     <h2 class="ev-h2">Eveniment</h2><div class="st-meta">
     ${inp("dataContract","Data contractului",{type:"date"})}${inp("dataEv","Data evenimentului",{type:"date"})}<div class="ct-full" id="ctOver">${window.__qr&&window.__qr.sameDayHTML?window.__qr.sameDayHTML(f.dataEv,f.id,true):""}</div>${inp("locatie","Locația",{ph:"SYMPHONY"})}
     ${inp("oraEv","Ora începerii (pentru calendar)",{type:"time"})}${inp("invitati","Nr. minim de invitați",{im:"numeric"})}${inp("obiect","Obiectul contractului")}</div>
+    <h2 class="ev-h2">Oferta</h2><div class="st-meta">${sel("pachetTip","Tipul ofertei",[PACH_AI,PACH_BAR])}${f.pachetTip===PACH_BAR?sel("barmani","Număr barmani",["1","2","3","4"]):""}</div>
     <h2 class="ev-h2">Preț și plată</h2><div class="st-meta">
-    ${sel("pachetTip","Tipul ofertei",[PACH_AI,PACH_BAR])}${inp("pret","Preț",{im:"decimal"})}${sel("moneda","Moneda",["EURO","RON"])}${sel("unitate","Unitate",["/ PERSOANĂ","TOTAL"])}${sel("tva","TVA",["fără TVA","cu TVA inclus"])}</div>
+    ${inp("pret",f.pachetTip===PACH_BAR?"Preț total":"Preț de persoană",{im:"decimal"})}${sel("moneda","Moneda",["EURO","RON"])}${sel("tva","TVA",["fără TVA","cu TVA inclus"])}</div>
+    <p class="ev-file">${esc(pretHint(f))}</p>
     <div class="st-meta">${inp("avans","Avans (cu TVA inclus)",{im:"decimal"})}${sel("monedaAvans","Moneda avansului",["RON","EURO"])}
     ${inp("dataRest","Data plății diferenței",{type:"date"})}${sel("plata","Plata se face",["în numerar","prin transfer bancar","în numerar sau prin transfer bancar"])}
     ${sig?sel("semn","Semnătura și ștampila mea pe PDF",["Da","Nu"]):""}</div>
@@ -251,7 +253,7 @@ function render(){try{if(!G.tc)gPrep()}catch(e){}
 }
 function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
   V.querySelectorAll("[data-cb]").forEach(el=>{f[el.dataset.cb]=el.checked})}
-const clean=x=>{const o={...x};delete o.id;delete o.ocr;["nume","strada","localitate","judet","serie","locatie","obiect"].forEach(k=>o[k]=k==="strada"?String(o[k]||"").trim():up(o[k]));o.cnp=String(o.cnp||"").replace(/\D/g,"");o.at=new Date().toISOString();return o};
+const clean=x=>{const o={...x};delete o.id;delete o.ocr;delete o.pretAuto;if(o.pachetTip===PACH_AI||o.pachetTip===PACH_BAR)o.unitate=o.pachetTip===PACH_BAR?"TOTAL":"/ PERSOANĂ";if(o.pachetTip!==PACH_BAR)delete o.barmani;["nume","strada","localitate","judet","serie","locatie","obiect"].forEach(k=>o[k]=k==="strada"?String(o[k]||"").trim():up(o[k]));o.cnp=String(o.cnp||"").replace(/\D/g,"");o.at=new Date().toISOString();return o};
 async function save(){
   const data=clean(f);
   try{if(f.id)await F.fs.doc(`${F.base}/contracte/${f.id}`).set(data);else{const r=await F.fs.collection(`${F.base}/contracte`).add(data);f.id=r.id}return true}
@@ -284,6 +286,23 @@ function pachetTip(c){
   if(/all|inclusive|drink/i.test(o))return PACH_AI;
   return c.unitate==="TOTAL"?PACH_BAR:PACH_AI;
 }
+/* prețul se pune singur din tipul ofertei: All you can drink = prețul de pe site pentru numărul de invitați (/ persoană),
+   Barmani + consumație = tariful pentru numărul de barmani (total). Dacă Paul scrie alt preț, nu i-l mai schimb. */
+const CPPR=window.CP_PRETURI||{};
+function aiPret(n){const T=CPPR.allInclusive||[],P=T.map(t=>[t[1]===null?375:(t[0]+t[1])/2,t[2]]);if(!P.length||!n)return null;
+  if(n<=P[0][0])return P[0][1];const L=P[P.length-1];if(n>=L[0])return L[1];
+  for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i];if(n<=b[0])return Math.round((a[1]+(b[1]-a[1])*(n-a[0])/(b[0]-a[0]))*10)/10}return L[1]}
+function pretAuto(x){
+  const bar=x.pachetTip===PACH_BAR;x.unitate=bar?"TOTAL":"/ PERSOANĂ";
+  if(bar&&!x.barmani)x.barmani="2";
+  const v=bar?(CPPR.barmani||{})[x.barmani]:aiPret(parseInt(String(x.invitati||"").replace(/\D/g,""),10));
+  if(v!=null&&(x.pretAuto!==false||!String(x.pret||"").trim())&&x.moneda!=="RON"){x.pret=String(v).replace(".",",");x.pretAuto=true}
+}
+function pretHint(x){
+  if(x.pachetTip===PACH_BAR){const v=(CPPR.barmani||{})[x.barmani];return `Preț total pentru ${x.barmani} ${x.barmani==="1"?"barman":"barmani"}${v?`: tariful e ${v} €`:""}. Băutura se plătește separat, după consum.`}
+  const n=parseInt(String(x.invitati||"").replace(/\D/g,""),10),v=aiPret(n);
+  return n?`Preț de persoană. Pentru ${n} invitați, prețul de pe site e ${String(v).replace(".",",")} €.`:"Preț de persoană. Scrie numărul de invitați și pun prețul de pe site.";
+}
 /* servicii + consumație: se plătește exact cât s-a consumat, măsurat pe fiecare sticlă */
 const CONSUM_CLAUZA="Băutura (alcool și siropuri) se achită separat, după consumul real: la finalul evenimentului se măsoară fiecare sticlă, iar beneficiarul plătește exact cantitatea consumată, inclusiv fracțiunile din sticlele începute (de exemplu, dacă din 10 sticle s-au consumat 8,5, se plătesc 8,5 sticle, nu 9). Băutura rămasă, în sticle pline sau începute, se returnează prestatorului și nu se plătește.";
 function contractDoc(c,F0){
@@ -306,7 +325,7 @@ function contractDoc(c,F0){
     P("2.3. În următoarea locație: ",B(c.locatie)),
     P("2.4. Număr de invitați minim: ",B(c.invitati)),
     H("3. PREȚUL STABILIT ȘI MODALITĂȚI DE PLATĂ"),
-    P("3.1. Prețul prestației este de ",B(`${c.pret} ${c.moneda} ${c.unitate==="TOTAL"?"(TOTAL)":"/ PERSOANĂ"} (${c.tva})`)),
+    P("3.1. Prețul prestației este de ",B(`${c.pret} ${c.moneda} ${c.unitate==="TOTAL"?`(TOTAL${c.pachetTip===PACH_BAR&&c.barmani?`, ${c.barmani} ${c.barmani==="1"?"BARMAN":"BARMANI"}`:""})`:"/ PERSOANĂ"} (${c.tva})`)),
     ...clauses31(c).map((t,i)=>L(`3.1.${i+1}. ${t}`)),
     P(`3.2. Se va achita prestatorului de către beneficiar ${c.plata} astfel: un avans (cu TVA inclus) de `,B(`${c.avans} ${c.monedaAvans}`)," la data semnării prezentului contract și diferența în data de: ",B(bigDate(c.dataRest))),
     H("4. OBLIGAȚIILE PĂRȚILOR"),
@@ -1102,8 +1121,13 @@ async function uploadSigned(c,fileIn){
 V.addEventListener("change",e=>{
   const i=e.target.closest("[data-sgn]");if(!i||!i.files||!i.files[0])return;const c=list.find(x=>x.id===i.dataset.sgn);if(c)uploadSigned(c,i)});
 V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.target.value;render();return}
+  if(f&&e.target.dataset&&e.target.dataset.f==="pret")f.pretAuto=false;
 });
-V.addEventListener("change",e=>{const i=e.target;if(i&&i.dataset&&i.dataset.f==="dataEv"){const o=document.getElementById("ctOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,f&&f.id,true)}});
+V.addEventListener("change",e=>{const i=e.target;
+  if(mode==="form"&&f&&i&&i.dataset&&["pachetTip","barmani","invitati","moneda"].includes(i.dataset.f)){grab();
+    if(i.dataset.f==="pachetTip"){f.pretAuto=true;f.c5=f.pachetTip===PACH_BAR}
+    pretAuto(f);render();return}
+  if(i&&i.dataset&&i.dataset.f==="dataEv"){const o=document.getElementById("ctOver");if(o&&window.__qr)o.innerHTML=window.__qr.sameDayHTML(i.value,f&&f.id,true)}});
 V.addEventListener("click",async e=>{
   const t=e.target,b=t.closest("[data-c]");
   const rv=t.closest("[data-rcv]");if(rv){const c=list.find(x=>x.id===rv.dataset.rcv);RCV.f=c?{id:c.id,suma:String(c.avans||""),moneda:payCur(c),data:today(),met:/numerar/.test(c.plata||"")?"numerar":"transfer"}:null;RCV.undo=null;render();return}
