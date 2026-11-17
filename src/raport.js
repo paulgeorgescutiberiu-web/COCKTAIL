@@ -61,7 +61,7 @@ function render(){
     <div class="st-acts"><button class="btn" data-rp="prev" aria-label="Luna anterioară">←</button><button class="btn" data-rp="next" aria-label="Luna următoare">→</button><button class="btn" data-rp="reload">Actualizează</button></div></div>`;
   if(!EQ){V.innerHTML=h+`<p class="ev-file">Se încarcă…</p>`;return}
   const ME=monthEvents(),pers=ME.reduce((a,x)=>a+(typeof x.e.persons==="number"?x.e.persons:0),0);
-  const MC=CT.filter(c=>String(c.dataEv||"").slice(0,7)===month),R=MC.filter(c=>c.rent&&c.rent.calc);
+  const MC=CT.filter(c=>!c.doarMeniu&&String(c.dataEv||"").slice(0,7)===month),R=MC.filter(c=>c.rent&&c.rent.calc);
   const ven=R.reduce((a,c)=>a+(c.rent.calc.venit||0),0),prof=R.reduce((a,c)=>a+(c.rent.calc.profit||0),0),baut=R.reduce((a,c)=>a+(c.rent.calc.bautura||0),0);
   const invR=R.reduce((a,c)=>a+nr(c.rent.invitati||c.invitati),0);
   const T=team(),payTot=T.reduce((a,t)=>a+t.sum,0);

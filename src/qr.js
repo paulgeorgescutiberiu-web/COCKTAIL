@@ -209,7 +209,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-qrall]");i
 const tcase=s=>String(s||"").toLocaleLowerCase("ro-RO").replace(/(^|[\s-])(\S)/g,(m,a,b)=>a+b.toLocaleUpperCase("ro-RO"));
 function weekRange(D){const ds=D.events.map(e=>e.date).filter(Boolean),ref=ds[0]||(D.title&&D.title.date);if(!ref)return null;
   const d=new Date(ref);d.setHours(0,0,0,0);const wd=(d.getDay()+6)%7,a=new Date(d);a.setDate(d.getDate()-wd);const b=new Date(a);b.setDate(a.getDate()+6);return [iso(a),iso(b)]}
-const isSigned=c=>!!(c.signedId||(c.portalResp&&c.portalResp.signedAt)||c.avansPlatit);
+const isSigned=c=>!!(c.doarMeniu||c.signedId||(c.portalResp&&c.portalResp.signedAt)||c.avansPlatit);
 function pending(){
   const D=curD();if(!F.isAdmin||!D||!CT.length)return [];const W=weekRange(D);if(!W)return [];
   return CT.filter(c=>c.dataEv&&c.dataEv>=W[0]&&c.dataEv<=W[1]&&isSigned(c)&&!c.evSkip).filter(c=>{

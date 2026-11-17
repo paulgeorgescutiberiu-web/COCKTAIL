@@ -177,12 +177,36 @@ function viewForm(){
     <div class="st-save"><button class="btn" data-c="save">Salvează</button> <button class="btn" data-c="pdf">Salvează și descarcă PDF</button> <button class="btn primary" data-c="gsync">Salvează în Drive + calendar</button></div>${gPick()}`;
   return h;
 }
+/* „Doar meniu”: clienți fără contract care primesc doar linkul de alegere a cocktailurilor.
+   Se țin tot la contracte (marcate doarMeniu), ca alegerea lor să ajungă singură în QR-ul de la bar și în fișa evenimentului. */
+function menuCard(c){
+  return `<div class="ct-card ct-dm"><div class="ct-h"><b>${esc(c.nume||"Fără nume")}</b><span>${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""}</span></div>
+    <div class="ct-m"><span class="ct-chip">Doar alegerea meniului, fără contract</span>${c.invitati?` · ${esc(c.invitati)} invitați`:""}${c.tel?` · ${esc(c.tel)}`:""}</div>
+    ${portalRow(c)}
+    <div class="ct-b"><button class="btn" data-fisa="${c.id}">Fișă eveniment</button><button class="btn" data-ed="${c.id}">Editează</button>
+    <button class="btn st-del" data-del="${c.id}">${confirmDel===c.id?"Sigur? Șterge":"Șterge"}</button></div></div>`;
+}
+function viewMeniu(){
+  const row=(k,l,o={})=>`<label>${l}${o.req?" *":""}<input data-f="${k}" value="${esc(f[k]??"")}"${o.type?` type="${o.type}"`:""}${o.im?` inputmode="${o.im}"`:""}></label>`;
+  return `<div class="st-top"><div><p class="ev-sub">${f.id?"Editează":"Doar alegerea meniului"}</p><p class="ev-file">Pentru clienții fără contract: primesc un link unde aleg cocktailurile. Alegerea ajunge singură în QR-ul de la bar și în fișa evenimentului.</p></div>
+    <div class="st-acts"><button class="btn" data-c="back">Renunță</button></div></div>
+    <div class="st-meta">${row("nume","Numele clientului",{req:1})}${row("tel","Telefon",{im:"tel"})}${row("dataEv","Data evenimentului",{type:"date",req:1})}${row("oraEv","Ora",{type:"time"})}${row("locatie","Locația")}${row("invitati","Invitați",{im:"numeric"})}</div>
+    <div class="st-save"><button class="btn primary" data-c="savemeniu">Salvează și fă linkul</button></div>`;
+}
+async function saveMeniu(){
+  grab();const x={nume:String(f.nume||"").trim(),tel:String(f.tel||"").trim(),dataEv:f.dataEv||"",oraEv:f.oraEv||"",locatie:up(f.locatie),invitati:String(f.invitati||"").trim(),doarMeniu:true};
+  if(!x.nume||!x.dataEv){toast("Scrie numele clientului și data evenimentului.");return}
+  try{if(f.id)await F.fs.doc(`${F.base}/contracte/${f.id}`).set(x,{merge:true});else{const r=await F.fs.collection(`${F.base}/contracte`).add({...x,dataContract:today()});f.id=r.id}}
+  catch(e){toast("Nu s-a salvat. Verifică internetul.");return}
+  const c={...(list.find(y=>y.id===f.id)||{}),...x,id:f.id};f=null;mode="list";render();
+  await portalPublish(c,false);
+}
 function viewList(){
   const qq=q.trim().toLowerCase(),now=today();
   const L=list.filter(c=>!qq||[c.nume,c.locatie].some(v=>String(v||"").toLowerCase().includes(qq)))
     .sort((a,b)=>{const fa=(a.dataEv||"")>=now,fb=(b.dataEv||"")>=now;if(fa!==fb)return fa?-1:1;return fa?String(a.dataEv).localeCompare(b.dataEv):String(b.dataEv).localeCompare(a.dataEv)});
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length} ${list.length===1?"contract":"contracte"}</p><p class="ev-file">Le vezi doar tu. Barmanii nu au acces la contracte.</p></div>
-    <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="firma">Datele firmei</button><button class="btn" data-bk="1">Backup Drive</button></div></div>`;
+    <div class="st-acts"><button class="btn primary" data-c="new">Contract nou</button><button class="btn" data-c="meniu">Doar meniu (fără contract)</button><button class="btn" data-c="firma">Datele firmei</button><button class="btn" data-bk="1">Backup Drive</button></div></div>`;
   h+=gPick();
   if(window.__qr)h+=window.__qr.leadsHTML();
   h+=thanksHTML();
@@ -195,6 +219,7 @@ function viewList(){
   let lastPast=null;
   L.forEach(c=>{const past=(c.dataEv||"")<now;
     if(past!==lastPast){h+=`<h2 class="ev-h2">${past?"Trecute":"Următoarele"}</h2>`;lastPast=past}
+    if(c.doarMeniu){h+=menuCard(c);return}
     h+=`<div class="ct-card"><div class="ct-h"><b>${esc(c.nume||"Fără nume")}</b><span>${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""}</span></div>
       <div class="ct-m">${esc(c.pret||"")} ${esc(c.moneda||"")} ${esc(c.unitate==="TOTAL"?"total":"/ persoană")} · avans ${esc(c.avans||"—")} ${esc(c.monedaAvans||"")} · diferența la ${esc(shortDate(c.dataRest)||"—")}</div>
       ${rcvRow(c)}
@@ -229,6 +254,8 @@ function viewFirma(){
     <div class="st-meta">${row("invHook","Adresa webhook Make pentru facturi")}${row("sbSerie","Seria facturilor în SmartBill (ex: CPH)")}<label>TVA<select data-fi="sbTva">${[["neplatitor","Neplătitor de TVA"],["21","Plătitor, 21%"],["11","Plătitor, 11%"]].map(([v,n])=>`<option value="${v}"${(x.sbTva||"neplatitor")===v?" selected":""}>${n}</option>`).join("")}</select></label><label>Cum se creează<select data-fi="sbDraft"><option value="da"${(x.sbDraft||"da")==="da"?" selected":""}>Ciornă (o verific în SmartBill)</option><option value="nu"${x.sbDraft==="nu"?" selected":""}>Factură emisă direct</option></select></label></div>
     <h2 class="ev-h2">Ce echipament și oameni ai</h2><p class="ev-file">Când faci un contract pe o zi în care mai ai evenimente, aplicația îți spune dacă îți ajung.</p>
     <div class="st-meta">${row("capBar","Baruri mobile")}${row("capCar","Mașini / remorci")}${row("capPpl","Barmani disponibili")}</div>
+    <h2 class="ev-h2">Alegerea cocktailurilor (portalul clientului)</h2><p class="ev-file">Câte cocktailuri poate alege clientul din rețetar. Implicit între 10 și 14.</p>
+    <div class="st-meta"><label>Minim<input data-fi="menuMin" inputmode="numeric" value="${esc(x.menuMin||"10")}"></label><label>Maxim<input data-fi="menuMax" inputmode="numeric" value="${esc(x.menuMax||"14")}"></label></div>
     <h2 class="ev-h2">Pagina de la bar (QR)</h2><p class="ev-file">Apar pe pagina pe care o deschid invitații când scanează QR-ul de pe bar. Linkul de recenzie îl iei din Google Maps: profilul tău → „Cere recenzii” → Copiază linkul.</p>
     <div class="st-meta">${row("reviewUrl","Link recenzie Google (https://g.page/r/…)")}${row("leadHook","Webhook Make pentru notificare la cerere nouă (opțional)")}${row("igUrl","Instagram (implicit instagram.com/cocktailphilosophy)")}${row("fbUrl","Facebook (implicit facebook.com/cocktailphilosophy)")}</div>
     <div class="st-save"><button class="btn primary" data-c="savefirma">Salvează</button></div>`;
@@ -246,12 +273,12 @@ function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();
   o.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height);res(o.toDataURL("image/png"))};im.src=fr.result};fr.readAsDataURL(file)})}
 function render(){try{if(!G.tc)gPrep()}catch(e){}
   const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("ct-q");
-  V.innerHTML=mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():(gConnHTML()+viewList());
+  V.innerHTML=mode==="meniu"?viewMeniu():mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():(gConnHTML()+viewList());
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
   if(mode==="list")portalAuto();
 }
-function grab(){if(mode!=="form"||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
+function grab(){if((mode!=="form"&&mode!=="meniu")||!f)return;V.querySelectorAll("[data-f]").forEach(el=>{const k=el.dataset.f,v=el.value;if(f.ocr&&f.ocr[k]&&f[k]!==v)delete f.ocr[k];f[k]=v});
   V.querySelectorAll("[data-cb]").forEach(el=>{f[el.dataset.cb]=el.checked})}
 const clean=x=>{const o={...x};delete o.id;delete o.ocr;delete o.pretAuto;if(o.pachetTip===PACH_AI||o.pachetTip===PACH_BAR)o.unitate=o.pachetTip===PACH_BAR?"TOTAL":"/ PERSOANĂ";if(o.pachetTip!==PACH_BAR)delete o.barmani;["nume","strada","localitate","judet","serie","locatie","obiect"].forEach(k=>o[k]=k==="strada"?String(o[k]||"").trim():up(o[k]));o.cnp=String(o.cnp||"").replace(/\D/g,"");o.at=new Date().toISOString();return o};
 async function save(){
@@ -378,6 +405,8 @@ const PORTAL_URL="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/portal.htm
 const POR={busy:{},seen:{}};
 const porTok=()=>{const a=new Uint8Array(24);crypto.getRandomValues(a);const A="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";return [...a].map(x=>A[x%A.length]).join("")};
 const porLink=c=>`${PORTAL_URL}#t=${c.portalTok}`;
+function menuLim(F0){const n=v=>parseInt(String(v||"").replace(/\D/g,""),10);let mn=n(F0&&F0.menuMin),mx=n(F0&&F0.menuMax);
+  if(!(mn>0))mn=10;if(!(mx>0))mx=14;if(mx<mn)mx=mn;return {min:mn,max:mx}}
 function porMenuOptions(){let R0=[];try{R0=JSON.parse(document.getElementById("recipes-data").textContent)}catch(e){}
   return R0.filter(r=>r.sec!=="").map(r=>({id:r.id,name:r.name,zero:!!r.zero,sec:r.sec||(r.zero?"zero":"cls"),gust:r.gust||"",desc:r.desc||"",
     ing:r.ingM?r.ingM.split(/\s*,\s*/).filter(Boolean):(r.ing||[]).map(i=>i.n).filter(Boolean).slice(0,5)}))}
@@ -397,7 +426,7 @@ async function portalPublish(c,quiet){
   try{
     if(!c.dataEv)throw {msg:"Completează întâi data evenimentului în contract."};
     const tok=c.portalTok||porTok(),F0=firma||FIRMA_DEF;
-    let pdf=null;try{pdf=await b64(await pdfBlob(c));if(pdf.length>850000)pdf=null}catch(e){pdf=null}
+    let pdf=null;if(!c.doarMeniu)try{pdf=await b64(await pdfBlob(c));if(pdf.length>850000)pdf=null}catch(e){pdf=null}
     const isTotal=c.unitate==="TOTAL";
     const doc={v:1,updatedAt:new Date().toISOString(),
       ev:{dataEv:c.dataEv||"",oraEv:c.oraEv||"",locatie:tcase(c.locatie||""),invitati:String(c.invitati||""),pachet:tcase(c.obiect||""),pret:String(c.pret||""),moneda:c.moneda==="EURO"?"€":"RON",unitate:isTotal?"total":"/ persoană",tva:c.tva||"",ore:c.ore||"",avans:String(c.avans||""),avansPrimit:c.avansPlatit?{suma:String(c.avansSuma||c.avans||""),moneda:(c.avansMoneda||payCur(c)),data:c.avansPlatitLa||""}:null,monedaAvans:c.monedaAvans==="EURO"?"EUR":"RON",dataRest:c.dataRest||"",plata:c.plata||""},
@@ -405,6 +434,7 @@ async function portalPublish(c,quiet){
       firma:{nume:F0.nume,iban:F0.iban,banca:F0.banca,tel:"0743 785 655"},
       oferte:[{t:"Meniul 2026",u:"https://cocktailphilosophy.ro/meniu/"},pachetTip(c)===PACH_BAR?{t:"Oferta pachet barmani",u:"https://cocktailphilosophy.ro/oferte/#pachet-barmani"}:{t:"Oferta All you can drink",u:"https://cocktailphilosophy.ro/oferte/#all-inclusive"}],
       menuOpts:porMenuOptions(),
+      menuMin:menuLim(F0).min,menuMax:menuLim(F0).max,doarMeniu:!!c.doarMeniu,
       pay:null,
       pdf};
     await F.fs.doc(`portal/${tok}`).set(doc,{merge:true});
@@ -437,7 +467,7 @@ async function portalSaveSigned(c,btn){
     await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalSaved:true},{merge:true});
   }catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut salva contractul semnat.");if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent="Salvează contractul semnat în Drive"}}
 }
-function porMsg(c){return `Bună ziua! Aici găsiți tot pentru evenimentul din ${shortDate(c.dataEv)}: oferta, alegerea cocktailurilor, contractul de semnat online și plata avansului: ${porLink(c)}\nMulțumim! Cocktail Philosophy`}
+function porMsg(c){if(c.doarMeniu)return `Bună ziua! Aici puteți alege cocktailurile pentru evenimentul din ${shortDate(c.dataEv)}: ${porLink(c)}\nMulțumim! Cocktail Philosophy`;return `Bună ziua! Aici găsiți tot pentru evenimentul din ${shortDate(c.dataEv)}: oferta, alegerea cocktailurilor, contractul de semnat online și plata avansului: ${porLink(c)}\nMulțumim! Cocktail Philosophy`}
 
 /* ---------- Avans cu cardul (Revolut prin Make) ---------- */
 const PAY={busy:{},checked:{}};
@@ -1160,12 +1190,14 @@ V.addEventListener("click",async e=>{
   const gs=t.closest("[data-gs]");if(gs){const c=list.find(x=>x.id===gs.dataset.gs);if(c){G.pick=null;gsync(c,gs)}return}
   const gp=t.closest("[data-gp]");if(gp&&G.pick){const v=gp.dataset.gp,c=G.pick.c;if(v==="__cancel"){G.pick=null;render();return}gsync(c,gp,v==="__new"?null:v);return}
   const pd=t.closest("[data-pdf]");if(pd){const c=list.find(x=>x.id===pd.dataset.pdf);if(c)downloadPDF(c,pd);return}
-  const ed=t.closest("[data-ed]");if(ed){const c=list.find(x=>x.id===ed.dataset.ed);if(c){f={...BLANK(),...c,ocr:{}};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)}return}
+  const ed=t.closest("[data-ed]");if(ed){const c=list.find(x=>x.id===ed.dataset.ed);if(c&&c.doarMeniu){f={...c};mode="meniu";render();window.scrollTo(0,V.offsetTop-10);return}if(c){f={...BLANK(),...c,ocr:{}};errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10)}return}
   const du=t.closest("[data-dup]");if(du){const c=list.find(x=>x.id===du.dataset.dup);if(c){f={...BLANK(),...c,id:null,ocr:{},portalTok:"",portalResp:null,portalSaved:false,payOrder:null,driveId:"",calId:"",signedId:"",signedName:"",signedMime:"",signedAt:"",clientSig:null,dataContract:today(),dataEv:"",dataRest:"",avansPlatit:false,restPlatit:false};errs=[];ocrMsg="Copie după contractul existent: completează data evenimentului și verifică restul.";mode="form";render();window.scrollTo(0,V.offsetTop-10)}return}
   const de=t.closest("[data-del]");if(de){const id=de.dataset.del;if(confirmDel!==id){confirmDel=id;render();setTimeout(()=>{if(confirmDel===id){confirmDel=null;if(mode==="list")render()}},4000);return}
     confirmDel=null;F.fs.doc(`${F.base}/contracte/${id}`).delete().then(()=>toast("Contractul a fost șters.")).catch(()=>toast("Nu am putut șterge."));return}
   if(!b)return;const a=b.dataset.c;
   if(a==="new"){f=BLANK();errs=[];ocrMsg="";mode="form";render();window.scrollTo(0,V.offsetTop-10);return}
+  if(a==="meniu"){f={nume:"",tel:"",dataEv:"",oraEv:"",locatie:"",invitati:""};mode="meniu";render();window.scrollTo(0,V.offsetTop-10);return}
+  if(a==="savemeniu"){await saveMeniu();return}
   if(a==="back"){mode="list";f=null;cur=null;errs=[];SOC.arm=false;render();return}
 
   if(a==="saverent"){saveRent();return}

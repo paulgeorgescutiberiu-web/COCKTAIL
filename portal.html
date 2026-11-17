@@ -73,10 +73,15 @@ let P=null,sel=[],pdfUrl=null;
 async function load(){
   let d;try{d=await ref.get()}catch(e){fail("Nu am putut deschide evenimentul. Verifică internetul și reîncarcă pagina.");return}
   if(!d.exists){fail("Linkul nu mai e valabil sau nu există.");return}
-  P=d.data();P.resp=P.resp||{};sel=P.resp.menuIds?P.resp.menuIds.slice():(P.menuOpts||[]).map(o=>o.id);
+  P=d.data();P.resp=P.resp||{};
+  {const T=(P.menuOpts||[]).length;MX=Math.min(T,P.menuMax||T);MN=Math.min(MX,P.menuMin||0)}
+  sel=P.resp.menuIds?P.resp.menuIds.slice(0,MX):MX>=(P.menuOpts||[]).length?(P.menuOpts||[]).map(o=>o.id):[];
   render();
   if(!P.resp.seenAt){P.resp.seenAt=new Date().toISOString();ref.set({resp:P.resp},{merge:true}).catch(()=>{})}
 }
+let MN=0,MX=0;
+const lim=()=>MX<(P.menuOpts||[]).length;
+const cntTxt=()=>lim()?`${sel.length} alese · între ${MN} și ${MX}`:`${sel.length} din ${(P.menuOpts||[]).length} alese`;
 function render(){
   const e=P.ev,r=P.resp,signed=!!r.signedAt,menuDone=(r.menu||[]).length>0;
   const tot=(P.menuOpts||[]).length;
@@ -85,21 +90,21 @@ function render(){
   <div class="card"><div class="facts">
     <div><span>Data</span><b>${esc(fd(e.dataEv))}</b></div>${e.oraEv?`<div><span>Ora</span><b>${esc(e.oraEv)}</b></div>`:""}
     <div><span>Locația</span><b>${esc(e.locatie)}</b></div>${e.invitati?`<div><span>Invitați</span><b>${esc(e.invitati)}</b></div>`:""}
-    <div><span>Pachet</span><b>${esc(e.pachet)}</b></div><div><span>Preț</span><b>${esc(e.pret)} ${esc(e.moneda)} ${esc(e.unitate)}</b></div>
-  </div><p class="mut">${esc(e.tva)}${e.ore?` · ${esc(e.ore)} ore de servire`:""}</p></div>
+    ${P.doarMeniu?"":`<div><span>Pachet</span><b>${esc(e.pachet)}</b></div><div><span>Preț</span><b>${esc(e.pret)} ${esc(e.moneda)} ${esc(e.unitate)}</b></div>`}
+  </div>${P.doarMeniu?"":`<p class="mut">${esc(e.tva)}${e.ore?` · ${esc(e.ore)} ore de servire`:""}</p>`}</div>
 
   <section class="card"><h2><span class="n done">1</span>Oferta și meniul</h2>
     <div class="row">${(P.oferte||[]).map(o=>`<a class="btn sec" href="${esc(o.u)}" target="_blank" rel="noopener">${esc(o.t)}</a>`).join("")}</div></section>
 
   <section class="card"><h2><span class="n ${menuDone?"done":""}">2</span>Meniul de cocktailuri</h2>
-    <p class="mut">Alegeți ce cocktailuri doriți la bar. <b>Recomandarea noastră: toate</b>, ca fiecare invitat să-și găsească preferatul. <b id="cnt">${sel.length} din ${tot} alese</b></p>
-    <div class="row"><button class="btn sec" type="button" id="all">Le vreau pe toate</button><button class="btn sec" type="button" id="none">Golește alegerea</button></div>
+    <p class="mut">${lim()?`Alegeți între <b>${MN} și ${MX}</b> cocktailuri din cele ${tot}. Vă recomandăm să păstrați și câteva fără alcool.`:`Alegeți ce cocktailuri doriți la bar. <b>Recomandarea noastră: toate</b>, ca fiecare invitat să-și găsească preferatul.`} <b id="cnt">${cntTxt()}</b></p>
+    <div class="row">${lim()?"":`<button class="btn sec" type="button" id="all">Le vreau pe toate</button>`}<button class="btn sec" type="button" id="none">Golește alegerea</button></div>
     <div class="grid">${(P.menuOpts||[]).map(o=>{const on=sel.includes(o.id);return `<label class="ck ${on?"on":""}"><input type="checkbox" data-m="${esc(o.id)}" ${on?"checked":""}>${o.zero?`<span class="z">fără alcool</span>`:""}<b>${esc(o.name)}</b><small>${esc((o.ing||[]).join(" · "))}</small></label>`}).join("")}</div>
     <label for="obs" class="mut">Ce alte preferințe aveți pentru meniul de cocktailuri? De exemplu: un cocktail cu numele vostru, mai multe variante fără alcool, mai dulce sau mai sec, alergii, culori pe tema nunții.</label>
     <textarea id="obs" rows="4">${esc(r.obs||"")}</textarea>
     <div class="row"><button class="btn" id="saveMenu">Salvează alegerea</button></div><p class="okmsg hide" id="menuOk">Am salvat alegerea. O vedem imediat.</p></section>
 
-  <section class="card"><h2><span class="n ${signed?"done":""}">3</span>Contractul</h2>
+  ${P.doarMeniu?"":`<section class="card"><h2><span class="n ${signed?"done":""}">3</span>Contractul</h2>
     ${P.pdf?`<div class="row"><a class="btn sec" id="pdfBtn" href="#" target="_blank" rel="noopener">Citește contractul (PDF)</a></div>`:`<p class="mut">Contractul vi-l trimitem separat.</p>`}
     ${signed?`<p class="okmsg">✓ Semnat de ${esc(r.nume)} la ${esc(new Date(r.signedAt).toLocaleString("ro-RO",{dateStyle:"long",timeStyle:"short"}))}. Mulțumim!</p>`:`
     <label class="agree"><input type="checkbox" id="agree"><span>Am citit contractul și sunt de acord cu el.</span></label>
@@ -114,7 +119,7 @@ function render(){
     ${e.avansPrimit?`<p class="okmsg">✓ Am primit avansul${e.avansPrimit.suma?` de ${esc(e.avansPrimit.suma)} ${esc(e.avansPrimit.moneda||"")}`:""}${e.avansPrimit.data?` pe ${esc(fd(e.avansPrimit.data))}`:""}. Data evenimentului e rezervată. Mulțumim!</p></section>`:`<p class="mut">Prin transfer bancar:</p>
     <div class="iban" id="iban">${esc(P.firma.iban||"")}</div>
     <p class="mut">Beneficiar: ${esc(P.firma.nume||"")}${P.firma.banca?` · ${esc(P.firma.banca)}`:""}<br>Detalii plată: avans eveniment ${esc(fd(e.dataEv))}</p>
-    <div class="row"><button class="btn sec" id="cpIban" type="button">Copiază IBAN-ul</button></div></section>`}
+    <div class="row"><button class="btn sec" id="cpIban" type="button">Copiază IBAN-ul</button></div></section>`}`}
 
   <p class="foot">Întrebări? Scrieți-ne pe WhatsApp: <b>${esc(P.firma.tel||"0743 785 655")}</b><br>Tu te distrezi, noi ne ocupăm de bar. 🍸</p>`;
   A.innerHTML=h;
@@ -123,12 +128,16 @@ function render(){
 }
 function bind(){
   const tot=(P.menuOpts||[]).length;
-  const sync=()=>{A.querySelectorAll(".ck").forEach(l=>{const inp=l.querySelector("input"),on=sel.includes(inp.dataset.m);inp.checked=on;l.classList.toggle("on",on)});$("#cnt").textContent=`${sel.length} din ${tot} alese`;$("#menuOk").classList.add("hide")};
-  A.querySelectorAll("[data-m]").forEach(i=>i.onchange=()=>{const id=i.dataset.m;if(i.checked){if(!sel.includes(id))sel.push(id)}else sel=sel.filter(x=>x!==id);sync()});
-  $("#all").onclick=()=>{sel=(P.menuOpts||[]).map(o=>o.id);sync()};
+  const sync=()=>{A.querySelectorAll(".ck").forEach(l=>{const inp=l.querySelector("input"),on=sel.includes(inp.dataset.m);inp.checked=on;l.classList.toggle("on",on)});$("#cnt").textContent=cntTxt();$("#menuOk").classList.add("hide")};
+  const say=m=>{$("#menuOk").textContent=m;$("#menuOk").classList.remove("hide")};
+  A.querySelectorAll("[data-m]").forEach(i=>i.onchange=()=>{const id=i.dataset.m;
+    if(i.checked){if(sel.length>=MX){i.checked=false;say(`Puteți alege cel mult ${MX} cocktailuri. Debifați unul ca să alegeți altul.`);return}if(!sel.includes(id))sel.push(id)}
+    else sel=sel.filter(x=>x!==id);sync()});
+  if($("#all"))$("#all").onclick=()=>{sel=(P.menuOpts||[]).map(o=>o.id);sync()};
   $("#none").onclick=()=>{sel=[];sync()};
   $("#saveMenu").onclick=async()=>{const b=$("#saveMenu");b.disabled=true;
     if(!sel.length&&!$("#obs").value.trim()){$("#menuOk").textContent="Alegeți măcar un cocktail sau scrieți-ne preferințele.";$("#menuOk").classList.remove("hide");b.disabled=false;return}
+    if(lim()&&sel.length&&(sel.length<MN||sel.length>MX)){say(`Alegeți între ${MN} și ${MX} cocktailuri (acum sunt ${sel.length}).`);b.disabled=false;return}
     const names=sel.map(id=>(P.menuOpts.find(o=>o.id===id)||{}).name).filter(Boolean);
     P.resp={...P.resp,menuIds:sel.slice(),menu:names,obs:$("#obs").value.trim(),menuAt:new Date().toISOString()};
     try{await ref.set({resp:P.resp},{merge:true});$("#menuOk").textContent="Am salvat alegerea. O vedem imediat.";$("#menuOk").classList.remove("hide")}

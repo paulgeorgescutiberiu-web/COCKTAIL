@@ -319,3 +319,43 @@ test("Contract: tipul ofertei pune singur prețul (All you can drink pe persoan�
   await page.click('#v-contracte [data-c="back"]');
   assert.deepEqual(errors, []);
 });
+
+test("Doar meniu: link fără contract, clientul alege între minim și maxim, rețetele noi sunt în listă", async () => {
+  await tab("contracte");
+  await page.click('#v-contracte [data-c="meniu"]');
+  await page.fill('#v-contracte [data-f="nume"]', "Ioana Pop");
+  await page.fill('#v-contracte [data-f="dataEv"]', "2026-12-12");
+  await page.fill('#v-contracte [data-f="locatie"]', "Casa Pop");
+  await page.click('#v-contracte [data-c="savemeniu"]');
+  await page.waitForFunction(() => [...window.__STORE.keys()].some(k => k.startsWith("portal/") && window.__STORE.get(k).doarMeniu));
+  const doc = await page.evaluate(() => { const k = [...window.__STORE.keys()].find(k => k.startsWith("portal/") && window.__STORE.get(k).doarMeniu); return { tok: k.slice(7), d: JSON.parse(JSON.stringify(window.__STORE.get(k))) }; });
+  assert.equal(doc.d.menuMin, 10); assert.equal(doc.d.menuMax, 14);
+  assert.equal(doc.d.pdf, null);
+  const ids = doc.d.menuOpts.map(o => o.id);
+  for (const id of ["espresso-martini", "pornstar-martini", "kiwi-passion", "tonic-botanic"]) assert.ok(ids.includes(id), id);
+  assert.ok(ids.length > 14);
+  assert.match(await page.$eval("#v-contracte", e => e.innerText), /Doar alegerea meniului, fără contract/);
+
+  // portalul, cu același document
+  const ctx = page.context();
+  const p2 = await ctx.newPage();
+  await p2.addInitScript(d => { window.__SEED = { docs: { ["portal/" + d.tok]: d.d }, user: null }; }, doc);
+  const perr = []; p2.on("pageerror", e => perr.push(e.message));
+  await p2.goto(ORIGIN + "portal.html#t=" + doc.tok);
+  await p2.waitForSelector("[data-m]");
+  const t = await p2.$eval("body", e => e.innerText);
+  assert.match(t, /între 10 și 14/);
+  assert.doesNotMatch(t, /Contractul|Avansul|Le vreau pe toate/);
+  const boxes = await p2.$$("[data-m]");
+  for (let i = 0; i < 15; i++) await boxes[i].check({ force: true }).catch(() => {});
+  assert.equal(await p2.$$eval("[data-m]:checked", l => l.length), 14, "nu trece de maxim");
+  await boxes[0].uncheck(); await boxes[1].uncheck(); await boxes[2].uncheck(); await boxes[3].uncheck(); await boxes[4].uncheck();
+  await p2.click("#saveMenu");
+  assert.match(await p2.$eval("#menuOk", e => e.textContent), /între 10 și 14/);
+  await boxes[0].check();
+  await p2.click("#saveMenu");
+  await p2.waitForFunction(() => /Am salvat/.test(document.querySelector("#menuOk").textContent));
+  assert.deepEqual(perr, []);
+  await p2.close();
+  assert.deepEqual(errors, []);
+});

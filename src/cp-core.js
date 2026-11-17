@@ -87,7 +87,7 @@ function timpRaspuns(leads,now,zile){now=ms(now)||Date.now();const v=(leads||[])
 const oreText=h=>h==null?"":h<1?Math.max(1,Math.round(h*60))+" min":h<48?(Math.round(h*10)/10).toLocaleString("ro-RO")+" h":Math.round(h/24)+" zile";
 
 /* ---------- contracte ---------- */
-const semnat=c=>!!(c.signedId||(c.portalResp&&c.portalResp.signedAt)||c.avansPlatit);
+const semnat=c=>!!(c.doarMeniu||c.signedId||(c.portalResp&&c.portalResp.signedAt)||c.avansPlatit);
 const numeEv=c=>titlu(c.locatie||c.nume||"");
 
 /* ---------- „Săptămâna ta”: rezumatul de luni dimineață ---------- */
@@ -106,7 +106,7 @@ function rezumat(inp,now){
     if(f)folosite.add(f.key);
     const echipa=f?(f.team||[]).map(n=>({nume:n,conf:conf(n,f.key)})):null;
     return {nume:numeEv(c),client:titlu(c.nume||""),data:c.dataEv,ora:c.oraEv||(f&&f.time)||"",invitati:c.invitati||(f&&f.persons)||"",tel:c.tel||"",
-      semnat:semnat(c),avans:!!c.avansPlatit,inFisa:!!f,echipa,trecut:c.dataEv<azi}});
+      semnat:semnat(c),avans:!!c.avansPlatit,inFisa:!!f,echipa,trecut:c.dataEv<azi,faraContract:!!c.doarMeniu}});
   /* evenimente din fișă fără contract (ex. clienți vechi, colaborări) */
   fe.filter(e=>!folosite.has(e.key)).forEach(e=>ev.push({nume:titlu(e.name),client:"",data:e.date,ora:e.time||"",invitati:e.persons||"",semnat:true,avans:true,inFisa:true,faraContract:true,
     echipa:(e.team||[]).map(n=>({nume:n,conf:conf(n,e.key)})),trecut:e.date<azi}));
@@ -114,8 +114,8 @@ function rezumat(inp,now){
   const echipaLipsa=ev.filter(e=>!e.trecut&&(!e.echipa||!e.echipa.length));
   const neconfirmati=[];ev.filter(e=>!e.trecut&&e.echipa).forEach(e=>e.echipa.forEach(p=>{if(p.conf!=="da")neconfirmati.push({ev:e.nume,data:e.data,nume:p.nume,nu:p.conf==="nu"})}));
   /* bani */
-  const avans=CT.filter(c=>c.dataEv>=azi&&!c.avansPlatit&&!c.evSkip).sort((a,b)=>a.dataEv.localeCompare(b.dataEv)).map(c=>({nume:numeEv(c),client:titlu(c.nume||""),data:c.dataEv,suma:c.avans?`${c.avans} ${c.monedaAvans==="EURO"?"€":"RON"}`:"",tel:c.tel||"",semnat:semnat(c),curand:c.dataEv<=urm.pana}));
-  const rest=CT.filter(c=>!c.restPlatit&&semnat(c)&&((c.dataRest&&c.dataRest<=W.pana)||c.dataEv<azi)).sort((a,b)=>(a.dataRest||a.dataEv).localeCompare(b.dataRest||b.dataEv))
+  const avans=CT.filter(c=>c.dataEv>=azi&&!c.avansPlatit&&!c.evSkip&&!c.doarMeniu).sort((a,b)=>a.dataEv.localeCompare(b.dataEv)).map(c=>({nume:numeEv(c),client:titlu(c.nume||""),data:c.dataEv,suma:c.avans?`${c.avans} ${c.monedaAvans==="EURO"?"€":"RON"}`:"",tel:c.tel||"",semnat:semnat(c),curand:c.dataEv<=urm.pana}));
+  const rest=CT.filter(c=>!c.doarMeniu&&!c.restPlatit&&semnat(c)&&((c.dataRest&&c.dataRest<=W.pana)||c.dataEv<azi)).sort((a,b)=>(a.dataRest||a.dataEv).localeCompare(b.dataRest||b.dataEv))
     .map(c=>({nume:numeEv(c),client:titlu(c.nume||""),data:c.dataEv,scadenta:c.dataRest||"",intarziat:(c.dataRest||c.dataEv)<azi,tel:c.tel||""}));
   /* cereri */
   const todo=deFacut(L,now),inTrec=x=>{const d=iso(new Date(ms(x.at)));return d>=trec.de&&d<=trec.pana};
@@ -125,7 +125,7 @@ function rezumat(inp,now){
   /* săptămâna trecută și cea viitoare */
   const trecute=CT.filter(c=>c.dataEv>=trec.de&&c.dataEv<=trec.pana).length;
   const viitoare=CT.filter(c=>c.dataEv>=urm.de&&c.dataEv<=urm.pana).sort((a,b)=>a.dataEv.localeCompare(b.dataEv)).map(c=>({nume:numeEv(c),data:c.dataEv,semnat:semnat(c)}));
-  const contracteNoi=CT.filter(c=>{const d=String(c.dataContract||"");return d>=trec.de&&d<=trec.pana}).length;
+  const contracteNoi=CT.filter(c=>{if(c.doarMeniu)return false;const d=String(c.dataContract||"");return d>=trec.de&&d<=trec.pana}).length;
   const stoc=S.stoc||{lipsa:[],minus:[]};
   const sursaVeche=S.at?(now-ms(S.at))/D:null;
   /* ce e cel mai important, în ordine */
