@@ -74,6 +74,37 @@ if (!defined('CP_SN_LOADED')) { // protecție: dacă snippetul e activ de două 
 	}
 
 
+	// Sitemap Yoast: paginile noi (servite din GitHub) într-un sitemap separat, adăugat în index
+	add_filter('wpseo_sitemap_index', function ($xml) {
+		return $xml . '<sitemap><loc>' . esc_url(home_url('/sitemap-site-nou.xml')) . '</loc><lastmod>' . gmdate('c') . '</lastmod></sitemap>';
+	});
+	add_action('template_redirect', function () {
+		$path = trim((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+		if ($path !== 'sitemap-site-nou.xml') { return; }
+		status_header(200);
+		header('Content-Type: application/xml; charset=utf-8');
+		echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+		foreach (cp_sn_pages() as $slug => $file) {
+			if ($slug === '') { continue; } // prima pagină e deja în sitemap-ul Yoast
+			echo '<url><loc>' . esc_url(home_url('/' . $slug . '/')) . '</loc><lastmod>' . gmdate('Y-m-d') . '</lastmod></url>' . "\n";
+		}
+		echo '</urlset>';
+		exit;
+	}, 1);
+
+	// Paginile vechi de WooCommerce / probă: scoase din sitemap și marcate noindex
+	function cp_sn_pagini_vechi() { return array('test', 'cart', 'checkout', 'my-account'); }
+	add_filter('wpseo_exclude_from_sitemap_by_post_ids', function ($ids) {
+		foreach (cp_sn_pagini_vechi() as $slug) {
+			$p = get_page_by_path($slug, OBJECT, array('page', 'post'));
+			if ($p) { $ids[] = $p->ID; }
+		}
+		return $ids;
+	});
+	add_filter('wpseo_robots', function ($robots) {
+		return (is_page(cp_sn_pagini_vechi()) || is_single(cp_sn_pagini_vechi())) ? 'noindex, follow' : $robots;
+	});
+
 	// Boți AI permiși explicit în robots.txt (adăugat la cel generat de WordPress)
 	add_filter('robots_txt', function ($output) {
 		$boti = array('GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended');
