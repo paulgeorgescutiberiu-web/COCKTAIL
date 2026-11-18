@@ -56,3 +56,8 @@
 .nx-row .neg{color:#b3261e}.nx-ok{color:#2e7d32}.nx-q{color:var(--muted)}
 .nx-hint{margin:10px 0 0}
 @media (max-width:420px){.nx-row{grid-template-columns:1fr 52px 70px 48px;gap:6px;padding:8px 10px}}
+
+.nx-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:14px 0 0}
+.nx-bar .ev-file{margin:0}
+.nx-tg{display:flex;gap:8px;align-items:center;font-weight:600;white-space:nowrap;cursor:pointer}
+.nx-tg input{width:18px;height:18px;accent-color:var(--accent,#2f5d50)}

@@ -377,6 +377,11 @@ nav.tabs button{flex:1 0 auto;padding:12px 12px}
 .nx-row .neg{color:#b3261e}.nx-ok{color:#2e7d32}.nx-q{color:var(--muted)}
 .nx-hint{margin:10px 0 0}
 @media (max-width:420px){.nx-row{grid-template-columns:1fr 52px 70px 48px;gap:6px;padding:8px 10px}}
+
+.nx-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:14px 0 0}
+.nx-bar .ev-file{margin:0}
+.nx-tg{display:flex;gap:8px;align-items:center;font-weight:600;white-space:nowrap;cursor:pointer}
+.nx-tg input{width:18px;height:18px;accent-color:var(--accent,#2f5d50)}
 .ev-day{margin-top:22px}
 .ev-day:first-child{margin-top:4px}
 .cx-btns{display:flex;flex-wrap:wrap;gap:8px}
@@ -2677,12 +2682,15 @@ async function writeIesire(evd){
   catch(e){toast("Nu am putut scădea marfa din stoc. Încearcă din nou din Stoc depozit.");return false}
 }
 window.__cpAI={loadAI,models:AI_MODELS,ready:aiReady,err:aiErr};
-window.__stocAvail=(label,skipDs)=>{const t=totals(skipDs),x=t[K(label)];const any=Object.values(docs).some(d=>d.tip==="factura"||d.tip==="corectie");return any?{stoc:x?x.stoc:0,disp:x?x.disp:0}:null};
+window.__stocAvail=()=>null;   // stocul nu se mai ține din facturi: fără avertismente în fișă
+window.__stocAvailVechi=(label,skipDs)=>{const t=totals(skipDs),x=t[K(label)];const any=Object.values(docs).some(d=>d.tip==="factura"||d.tip==="corectie");return any?{stoc:x?x.stoc:0,disp:x?x.disp:0}:null};
 /* Pentru asistentul vocal: tot stocul, după ce s-au citit mișcările din depozit */
-window.__stocAll=async()=>{if(!sub)subscribe();for(let i=0;i<40&&!Object.keys(docs).length;i++)await new Promise(r=>setTimeout(r,100));
-  const t=totals(),c=catalog();return Object.entries(c).map(([k,x])=>({articol:x.label,categorie:x.cat,stoc:t[k]?Math.round(t[k].stoc*100)/100:0,disponibil:t[k]?Math.round(t[k].disp*100)/100:0}))};
+/* pentru Sofia și rezumat: ultima numărătoare minus necesarul evenimentelor bifate */
+window.__stocAll=async()=>{if(!NX.loaded){loadCount();for(let i=0;i<40&&!NX.loaded;i++)await new Promise(r=>setTimeout(r,100))}
+  const A=allArticles(fluxData());return Object.entries(A).filter(([k])=>typeof NX.count[k]==="number"||A[k].q>0).map(([k,x])=>{const h=NX.count[k];
+    return {articol:x.label,categorie:x.cat,numarat:typeof h==="number"?h:null,necesar:Math.round(x.q*100)/100,stoc:typeof h==="number"?h:0,disponibil:typeof h==="number"?Math.round((h-x.q)*100)/100:-Math.round(x.q*100)/100,numarat_la:NX.at||null}})};
 window.__stocDs=evd=>evd&&evd.fileName?dsKey(evd.fileName):"";
-window.__stocIesire=async evd=>{if(await writeIesire(evd))toast(`Marfa pentru ${parseAOA(evd.aoa,evd.fileName).title.big} a fost scăzută din stoc.`)};
+window.__stocIesire=async()=>{};   // nu se mai scade nimic automat: stocul e ce numeri
 
 function subscribe(){
   if(sub||!F)return;
@@ -2789,16 +2797,17 @@ async function orderExcel(btn){
 
 /* ---------- Necesar și comandă: evenimente → necesar → numeri în depozit → diferența = comanda la furnizor ----------
    Nu ține un stoc: numărătoarea se salvează în privat/numarare (doar ultima), ca s-o poți continua pe alt telefon. */
-const NX={sel:null,selFile:"",count:{},at:null,by:"",loaded:false,loading:false,dirty:false};
+const NX={sel:null,selFile:"",count:{},names:{},at:null,by:"",loaded:false,loading:false,dirty:false,all:store.get("nxall","0")==="1"};
 async function loadCount(){
   if(NX.loaded||NX.loading||!F)return;NX.loading=true;
-  try{const s=await F.fs.doc(`${F.base}/privat/numarare`).get();if(s.exists){const d=s.data()||{};NX.count=d.counts||{};NX.at=d.at||null;NX.by=d.by||""}}catch(e){console.warn("numarare",e)}
+  try{const s=await F.fs.doc(`${F.base}/privat/numarare`).get();if(s.exists){const d=s.data()||{};NX.count=d.counts||{};NX.names=d.names||{};NX.at=d.at||null;NX.by=d.by||""}}catch(e){console.warn("numarare",e)}
   NX.loaded=true;NX.loading=false;if(mode==="flux")render();
 }
 async function saveCount(quiet){
   const counts={};Object.entries(NX.count).forEach(([k,v])=>{if(typeof v==="number"&&isFinite(v))counts[k]=v});
   const at=new Date().toISOString();
-  try{await F.fs.doc(`${F.base}/privat/numarare`).set({counts,at,by:F.NAME||""});NX.at=at;NX.dirty=false;if(!quiet)toast("Numărătoarea e salvată.");return true}
+  const A=allArticles(fluxData()),names={};Object.keys(counts).forEach(k=>{if(A[k])names[k]={label:A[k].label,cat:A[k].cat}});
+  try{await F.fs.doc(`${F.base}/privat/numarare`).set({counts,names,at,by:F.NAME||""});NX.names=names;NX.at=at;NX.dirty=false;if(!quiet)toast("Numărătoarea e salvată.");return true}
   catch(e){toast("Nu am putut salva numărătoarea. Verifică internetul.");return false}
 }
 function fluxData(){
@@ -2813,29 +2822,42 @@ function fluxData(){
     need[k]=need[k]||{label:it.label,cat:it.cat,q:0};need[k].q+=q});
   return {D,need,file:evd.fileName};
 }
+/* toate articolele pe care le poți număra: rândurile din fișă, ce ai numărat înainte și ce știe aplicația */
+function allArticles(X){
+  const A={},cat=catalog();
+  Object.entries(cat).forEach(([k,x])=>{if(QTY_CATS.includes(x.cat))A[k]={label:x.label,cat:x.cat,q:0}});
+  if(X)X.D.items.forEach(it=>{if(!QTY_CATS.includes(it.cat))return;const k=K(it.excelLabel||it.label);if(!A[k])A[k]={label:it.label,cat:it.cat,q:0}});
+  Object.keys(NX.names||{}).forEach(k=>{if(!A[k])A[k]={label:NX.names[k].label,cat:NX.names[k].cat||"altele",q:0}});
+  if(X)Object.entries(X.need).forEach(([k,n])=>{A[k]={...(A[k]||{}),...n}});
+  return A;
+}
 const lipsaDe=(n,k)=>{const h=NX.count[k];return typeof h==="number"?Math.max(0,n.q-h):null};
 function fluxLipsa(){const X=fluxData();if(!X)return {};const out={};Object.entries(X.need).forEach(([k,n])=>{const l=lipsaDe(n,k);const v=l==null?n.q:l;if(v>1e-9)out[k]={label:n.label,cat:n.cat,lipsa:v}});return out}
 const evDay=d=>d?`${["dum","lun","mar","mie","joi","vin","sâm"][d.getDay()]} ${d.getDate()}.${String(d.getMonth()+1).padStart(2,"0")}`:"";
 function viewFlux(){
   if(!NX.loaded)loadCount();
-  let h=`<div class="st-top"><div><p class="ev-sub">Necesar și comandă</p>
-    <p class="ev-file">1. Bifezi evenimentele. 2. Numeri în depozit ce ai din fiecare articol și scrii la „Am”. 3. Aplicația face diferența și fișa de comandă pentru furnizor.</p></div>
-    <div class="st-acts"><button class="btn" data-a="protocol">Protocol</button><button class="btn" data-a="vechi">Stoc vechi</button></div></div>`;
-  const X=fluxData();
-  if(!X)return h+`<div class="ev-alert">Nu e încărcată fișa evenimentelor. Încarc-o sau fă-o întâi la <b>Evenimente</b>, apoi revino aici.</div>`;
-  h+=`<h2 class="ev-h2">Evenimentele</h2><div class="nx-evs">`+X.D.events.map(e=>`<label class="nx-ev"><input type="checkbox" data-nxev="${esc(e.id)}"${NX.sel[e.id]?" checked":""}><span><b>${esc(e.name)}</b><small>${esc([evDay(e.date),e.persons?e.persons+" pers.":""].filter(Boolean).join(" · "))}</small></span></label>`).join("")+`</div>`;
-  const keys=Object.keys(X.need);
-  if(!keys.length)return h+`<div class="ev-ok">Evenimentele bifate nu au cantități în fișă.</div>`;
-  h+=`<p class="ev-file nx-hint">${NX.at?`Numărat ultima dată: ${fdate(NX.at)}, ${new Date(NX.at).toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"})}${NX.by?" · "+esc(NX.by):""}. Verifică cifrele înainte de comandă.`:"Scrie la „Am” ce găsești în depozit, în aceleași unități ca în fișă (alcoolul în sticle de 1 L). Gol = nu am numărat (se comandă tot necesarul)."}</p>`;
+  if(!admin())return `<div class="ev-ok">Stocul și comanda le face Paul.</div>`;
+  const X=fluxData(),A=allArticles(X);
+  let h=`<div class="st-top"><div><p class="ev-sub">Stoc și comandă</p>
+    <p class="ev-file">Numeri ce ai în depozit și scrii la „Am”. Aplicația scade din necesarul evenimentelor bifate și îți face comanda.</p></div></div>`;
+  if(X)h+=`<h2 class="ev-h2">Evenimentele</h2><div class="nx-evs">`+X.D.events.map(e=>`<label class="nx-ev"><input type="checkbox" data-nxev="${esc(e.id)}"${NX.sel[e.id]?" checked":""}><span><b>${esc(e.name)}</b><small>${esc([evDay(e.date),e.persons?e.persons+" pers.":""].filter(Boolean).join(" · "))}</small></span></label>`).join("")+`</div>`;
+  else h+=`<p class="ev-file nx-hint">Nu e încărcată fișa evenimentelor, așa că nu am necesar. Poți număra depozitul acum; comanda o faci după ce ai fișa.</p>`;
+  const showAll=NX.all||!X||!Object.keys(X.need).length;
+  const keys=Object.keys(A).filter(k=>showAll||A[k].q>0);
+  h+=`<div class="nx-bar"><p class="ev-file">${NX.at?`Numărat ultima dată: <b>${fdate(NX.at)}, ${new Date(NX.at).toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"})}</b>. Verifică cifrele.`:"Alcoolul în sticle de 1 L, restul ca în fișă. Gol = nu am numărat."}</p>
+    ${X&&Object.keys(X.need).length?`<label class="nx-tg"><input type="checkbox" data-nxall${showAll?" checked":""}> Tot depozitul</label>`:""}</div>`;
+  if(!keys.length)h+=`<div class="ev-ok">Nu am încă articole. Fă o fișă de eveniment și revino.</div>`;
   CATS.filter(c=>QTY_CATS.includes(c.id)).forEach(c=>{
-    const rows=keys.filter(k=>X.need[k].cat===c.id).sort((a,b)=>X.need[a].label.localeCompare(X.need[b].label,"ro"));if(!rows.length)return;
+    const rows=keys.filter(k=>A[k].cat===c.id).sort((a,b)=>A[a].label.localeCompare(A[b].label,"ro"));if(!rows.length)return;
     h+=`<h2 class="ev-h2">${esc(c.name)}</h2><div class="ev-list"><div class="nx-row nx-head"><span>Articol</span><span>Necesar</span><span>Am</span><span>Lipsă</span></div>`;
-    rows.forEach(k=>{const n=X.need[k],l=lipsaDe(n,k),hv=NX.count[k];
-      h+=`<div class="nx-row"><span>${esc(n.label)}</span><b>${num(n.q)}</b><input class="ev-rin" inputmode="decimal" data-cnt="${esc(k)}" value="${typeof hv==="number"?esc(num(hv)):""}" placeholder="?" aria-label="Am în depozit: ${esc(n.label)}"><b data-lp="${esc(k)}" class="${l==null?"nx-q":l>0?"neg":"nx-ok"}">${l==null?"?":l>0?num(l):"✓"}</b></div>`});
+    rows.forEach(k=>{const n=A[k],l=n.q>0?lipsaDe(n,k):0,hv=NX.count[k];
+      h+=`<div class="nx-row"><span>${esc(n.label)}</span><b>${n.q>0?num(n.q):"—"}</b><input class="ev-rin" inputmode="decimal" data-cnt="${esc(k)}" value="${typeof hv==="number"?esc(num(hv)):""}" placeholder="?" aria-label="Am în depozit: ${esc(n.label)}"><b data-lp="${esc(k)}" class="${l==null?"nx-q":l>0?"neg":"nx-ok"}">${n.q>0?(l==null?"?":l>0?num(l):"✓"):""}</b></div>`});
     h+=`</div>`;
   });
   const n=Object.keys(fluxLipsa()).length;
-  h+=`<div class="st-save"><button class="btn" data-a="nxsave">Salvează numărătoarea</button> <button class="btn primary" data-a="nxorder">Fă comanda <span data-nxn>(${n} ${n===1?"articol":"articole"})</span></button></div>`;
+  h+=`<div class="st-save">${X?`<button class="btn primary" data-a="nxorder">Fă comanda <span data-nxn>(${n} ${n===1?"articol":"articole"})</span></button>`:""}
+    <button class="btn" data-a="nxnew">${NX.cfNew?"Sigur? Golește tot":"Numărătoare de la zero"}</button></div>
+    <p class="ev-file">Ce scrii se salvează singur.</p>`;
   return h;
 }
 
@@ -2924,12 +2946,17 @@ const err=m=>{const e=$("#stErr");e.textContent=m;e.hidden=!m;if(m)e.scrollIntoV
 V.addEventListener("input",e=>{if(e.target.classList.contains("st-q")){q=e.target.value;render();return}
   const c=e.target.closest("[data-cnt]");if(!c)return;const k=c.dataset.cnt,v=pnum(c.value);
   if(v==null||isNaN(v)||v<0)delete NX.count[k];else NX.count[k]=v;NX.dirty=true;
-  const X=fluxData(),n=X&&X.need[k],o=V.querySelector(`[data-lp="${CSS.escape(k)}"]`);
+  const X=fluxData(),n=X&&X.need[k],o=V.querySelector(`[data-lp="${CSS.escape(k)}"]`);NX.cfNew=false;
   if(n&&o){const l=lipsaDe(n,k);o.textContent=l==null?"?":l>0?num(l):"✓";o.className=l==null?"nx-q":l>0?"neg":"nx-ok"}
   const b=V.querySelector("[data-nxn]");if(b){const m=Object.keys(fluxLipsa()).length;b.textContent=`(${m} ${m===1?"articol":"articole"})`}
   clearTimeout(NX.t);NX.t=setTimeout(()=>{if(NX.dirty)saveCount(true)},2500);
 });
-V.addEventListener("change",e=>{const c=e.target.closest("[data-nxev]");if(!c)return;NX.sel[c.dataset.nxev]=c.checked;render()});
+/* numărătoarea nu se pierde dacă închizi aplicația imediat după ce ai scris */
+window.addEventListener("pagehide",()=>{if(NX.dirty)saveCount(true)});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&NX.dirty)saveCount(true)});
+V.addEventListener("change",e=>{
+  if(e.target.matches("[data-nxall]")){NX.all=e.target.checked;store.set("nxall",NX.all?"1":"0");render();return}
+  const c=e.target.closest("[data-nxev]");if(!c)return;NX.sel[c.dataset.nxev]=c.checked;render()});
 V.addEventListener("click",async e=>{
   const row=e.target.closest(".st-row");if(row){open=open===row.dataset.k?null:row.dataset.k;render();return}
   const del=e.target.closest("[data-del]");
@@ -2940,6 +2967,7 @@ V.addEventListener("click",async e=>{
   if(act==="vechi"){mode="list";render();return}
   if(act==="flux"){mode="flux";render();return}
   if(act==="nxsave"){busy=true;await saveCount();busy=false;return}
+  if(act==="nxnew"){if(!NX.cfNew){NX.cfNew=true;render();return}NX.cfNew=false;NX.count={};NX.all=true;store.set("nxall","1");busy=true;await saveCount(true);busy=false;render();toast("Numărătoare nouă: scrie ce găsești în depozit.");return}
   if(act==="nxorder"){if(NX.dirty)saveCount(true);ordFrom="flux";mode="comanda";ord=null;render();window.scrollTo(0,V.offsetTop-10);
     buildOrder(fluxLipsa()).then(x=>{ord=x;if(mode==="comanda")render()}).catch(e=>{console.warn(e);toast("Nu am putut face comanda. Verifică internetul.")});return}
   if(act==="factura"||act==="inventar"||act==="protocol"){protoFrom=mode;mode=act;form={items:{},extra:{}};render();window.scrollTo(0,V.offsetTop-10);return}
@@ -2987,7 +3015,7 @@ V.addEventListener("click",async e=>{
 
 let started=false;
 let loaded=false;
-function start(){if(started)return;started=true;if(admin()&&mode==="list")mode="flux";if(loaded){render();return}V.innerHTML=`<p class="ev-file">Se încarcă stocul…</p>`;subscribe()}
+function start(){if(started)return;started=true;mode="flux";if(loaded){render();return}V.innerHTML=`<p class="ev-file">Se încarcă stocul…</p>`;subscribe()}
 document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{if(b.dataset.view==="stoc")start()}));
 if(store.get("tab","evenimente")==="stoc")start();
 window.__stocRefresh=()=>{if(started&&(mode==="list"||mode==="flux"))render()};
@@ -5088,7 +5116,7 @@ const DECL=[
     parameters:S("object","",{properties:{nume:S("string","Numele cocktailului sau un ingredient (opțional)")}})},
   {name:"evenimente",description:"Evenimentele din săptămâna curentă (fișa încărcată): nume, dată, oră, persoane, echipă, transport, mențiuni și, cu detalii, cantitățile de marfă.",
     parameters:S("object","",{properties:{cauta:S("string","Numele evenimentului sau al unui barman (opțional)"),detalii:S("boolean","true = include cantitățile de marfă")}})},
-  {name:"stoc",description:"Stocul din depozit: câte bucăți sunt și câte sunt disponibile după evenimentele planificate.",
+  {name:"stoc",description:"Stocul din depozit, după ultima numărătoare a lui Paul: câte bucăți a numărat, cât trebuie pentru evenimentele bifate și ce lipsește. Spune și data numărătorii.",
     parameters:S("object","",{properties:{articol:S("string","Articolul căutat (opțional). Fără el: articolele pe terminate."),toate:S("boolean","true = tot stocul")}})},
   {name:"contracte",description:"Contractele clienților (doar administratorul): client, dată, locație, invitați, preț, avans, ce e încasat.",
     parameters:S("object","",{properties:{cauta:S("string","Nume client, locație sau dată AAAA-LL (opțional)"),viitoare:S("boolean","true = doar evenimentele de azi încolo")}})},
@@ -5184,7 +5212,7 @@ const RUN={
     const L=await window.__stocAll();
     if(articol)return {articole:L.filter(x=>has(x.articol,articol))};
     if(toate)return {articole:L};
-    return {pe_terminate:L.filter(x=>x.disponibil<=2).sort((a,b)=>a.disponibil-b.disponibil).slice(0,40)};
+    return {lipsesc:L.filter(x=>x.disponibil<0).sort((a,b)=>a.disponibil-b.disponibil).slice(0,40),numarat_la:(L[0]||{}).numarat_la||null};
   },
   async contracte({cauta,viitoare}){
     const t=iso(new Date());

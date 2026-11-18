@@ -20,7 +20,7 @@ const DECL=[
     parameters:S("object","",{properties:{nume:S("string","Numele cocktailului sau un ingredient (opțional)")}})},
   {name:"evenimente",description:"Evenimentele din săptămâna curentă (fișa încărcată): nume, dată, oră, persoane, echipă, transport, mențiuni și, cu detalii, cantitățile de marfă.",
     parameters:S("object","",{properties:{cauta:S("string","Numele evenimentului sau al unui barman (opțional)"),detalii:S("boolean","true = include cantitățile de marfă")}})},
-  {name:"stoc",description:"Stocul din depozit: câte bucăți sunt și câte sunt disponibile după evenimentele planificate.",
+  {name:"stoc",description:"Stocul din depozit, după ultima numărătoare a lui Paul: câte bucăți a numărat, cât trebuie pentru evenimentele bifate și ce lipsește. Spune și data numărătorii.",
     parameters:S("object","",{properties:{articol:S("string","Articolul căutat (opțional). Fără el: articolele pe terminate."),toate:S("boolean","true = tot stocul")}})},
   {name:"contracte",description:"Contractele clienților (doar administratorul): client, dată, locație, invitați, preț, avans, ce e încasat.",
     parameters:S("object","",{properties:{cauta:S("string","Nume client, locație sau dată AAAA-LL (opțional)"),viitoare:S("boolean","true = doar evenimentele de azi încolo")}})},
@@ -116,7 +116,7 @@ const RUN={
     const L=await window.__stocAll();
     if(articol)return {articole:L.filter(x=>has(x.articol,articol))};
     if(toate)return {articole:L};
-    return {pe_terminate:L.filter(x=>x.disponibil<=2).sort((a,b)=>a.disponibil-b.disponibil).slice(0,40)};
+    return {lipsesc:L.filter(x=>x.disponibil<0).sort((a,b)=>a.disponibil-b.disponibil).slice(0,40),numarat_la:(L[0]||{}).numarat_la||null};
   },
   async contracte({cauta,viitoare}){
     const t=iso(new Date());

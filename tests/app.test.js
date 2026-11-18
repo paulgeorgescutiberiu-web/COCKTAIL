@@ -208,7 +208,7 @@ test("nicio eroare în tot testul și nicio cerere spre servicii reale", async (
 test("Stoc: necesar din evenimente → numeri în depozit → comanda la furnizor", async () => {
   await tab("stoc");
   await page.waitForSelector("#v-stoc [data-cnt]", { timeout: 8000 });
-  assert.match(await page.$eval("#v-stoc", el => el.innerText), /Necesar și comandă/);
+  assert.match(await page.$eval("#v-stoc", el => el.innerText), /Stoc și comandă/i);
   const rows = await page.$$eval("#v-stoc .nx-row:not(.nx-head)", r => r.map(x => [...x.children].map(c => c.value ?? c.textContent.trim())));
   assert.ok(rows.length >= 2, "prea puține articole în necesar: " + JSON.stringify(rows));
   // la primul articol scriu cât necesarul (nu lipsește), la al doilea 0 (lipsește tot)
@@ -360,18 +360,19 @@ test("Doar meniu: link fără contract, clientul alege între minim și maxim, r
   assert.deepEqual(errors, []);
 });
 
-test("Stoc: protocol (ce bem noi) se scade din stoc", async () => {
+test("Stoc: „Tot depozitul” arată toate articolele, „Numărătoare de la zero” golește", async () => {
   await tab("stoc");
-  await page.waitForSelector('#v-stoc [data-a="protocol"]');
-  await page.click('#v-stoc [data-a="protocol"]');
-  await page.waitForSelector('#v-stoc input[data-k]');
-  const k = await page.$eval('#v-stoc input[data-k]', i => i.dataset.k);
-  await page.fill(`#v-stoc input[data-k="${k}"]`, "0,4");
-  await page.fill("#stNote", "seara echipei");
-  await page.click('#v-stoc [data-a="save"]');
-  await page.waitForFunction(() => [...window.__STORE.values()].some(d => d && d.tip === "protocol"));
-  const d = await page.evaluate(() => JSON.parse(JSON.stringify([...window.__STORE.values()].find(d => d && d.tip === "protocol"))));
-  assert.equal(d.items[k], 0.4);
-  assert.equal(d.note, "seara echipei");
+  await page.waitForSelector("#v-stoc [data-nxall]");
+  const before = await page.$$eval("#v-stoc [data-cnt]", l => l.length);
+  await page.check("#v-stoc [data-nxall]");
+  await page.waitForFunction(n => document.querySelectorAll("#v-stoc [data-cnt]").length > n, before);
+  assert.equal(await page.$('#v-stoc [data-a="protocol"]'), null);
+  assert.equal(await page.$('#v-stoc [data-a="vechi"]'), null);
+  await page.click('#v-stoc [data-a="nxnew"]');
+  await page.click('#v-stoc [data-a="nxnew"]');
+  await page.waitForFunction(() => [...document.querySelectorAll("#v-stoc [data-cnt]")].every(i => i.value === ""));
+  const saved = await store(`echipe/${S.TEAM}/privat/numarare`);
+  assert.deepEqual(saved.counts, {});
+  await page.uncheck("#v-stoc [data-nxall]");
   assert.deepEqual(errors, []);
 });
