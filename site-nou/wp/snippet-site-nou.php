@@ -73,6 +73,34 @@ if (!defined('CP_SN_LOADED')) { // protecție: dacă snippetul e activ de două 
 		return $html;
 	}
 
+
+	// Boți AI permiși explicit în robots.txt (adăugat la cel generat de WordPress)
+	add_filter('robots_txt', function ($output) {
+		$boti = array('GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended');
+		$output .= "\n# Boți AI: permiși explicit\n";
+		foreach ($boti as $b) { $output .= "User-agent: $b\nAllow: /\n\n"; }
+		return $output;
+	}, 99);
+
+	// /llms.txt: rezumatul site-ului pentru agenți AI, luat din GitHub (cache 10 minute)
+	add_action('template_redirect', function () {
+		$path = trim((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+		if ($path !== 'llms.txt') { return; }
+		$key = 'cp_sn_llms';
+		$txt = get_transient($key);
+		if ($txt === false) {
+			$res = wp_remote_get(CP_SN_SRC . 'llms.txt', array('timeout' => 8));
+			$txt = (!is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200) ? wp_remote_retrieve_body($res) : '';
+			if ($txt !== '') { set_transient($key, $txt, 10 * MINUTE_IN_SECONDS); update_option($key . '_backup', $txt, false); }
+			else { $txt = (string) get_option($key . '_backup'); }
+		}
+		if ($txt === '') { return; }
+		status_header(200);
+		header('Content-Type: text/plain; charset=utf-8');
+		echo $txt;
+		exit;
+	}, 1);
+
 	add_action('template_redirect', function () {
 		$path = trim((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 		if (CP_SN_PREFIX !== '') {

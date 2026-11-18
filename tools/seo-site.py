@@ -66,11 +66,7 @@ FIRMA = {
     "hasOfferCatalog": {
         "@type": "OfferCatalog",
         "name": "Bar mobil de cocktailuri",
-        "itemListElement": [
-            {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Bar de cocktailuri pentru nunți", "url": SITE + "/nunti/"}},
-            {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Bar de cocktailuri pentru evenimente corporate", "url": SITE + "/corporate/"}},
-            {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Bar de cocktailuri pentru petreceri private", "url": SITE + "/petreceri/"}},
-        ],
+        "itemListElement": [],  # se completează în main(), cu prețurile în euro din preturi.js
     },
 }
 
@@ -86,6 +82,43 @@ def preturi():
     if m:
         out["supliment"] = m.group(1) + "%"
     return out
+
+def numere(js, cheie):
+    """Toate numerele zecimale din blocul `cheie:` al lui preturi.js (prețurile sunt ultimul număr din fiecare tuplu)."""
+    m = re.search(cheie + r"\s*:\s*(\[\[.*?\]\]|\{.*?\})", js, flags=re.S)
+    return m.group(1) if m else ""
+
+
+def oferte():
+    """Ofertele cu prețuri în euro pentru schema LocalBusiness, luate din site-nou/preturi.js."""
+    js = (SN / "preturi.js").read_text(encoding="utf-8")
+    def tupluri(cheie):
+        return [float(t.split(",")[-1]) for t in re.findall(r"\[([^\[\]]+)\]", numere(js, cheie))]
+    ai = tupluri("allInclusive")
+    fa = tupluri("finalDeAn")
+    bm = [float(x) for x in re.findall(r":\s*(\d+)", numere(js, "barmani"))]
+    if not (ai and fa and bm):
+        raise SystemExit("preturi.js: nu am găsit prețurile (allInclusive / barmani / finalDeAn)")
+    def of(nume, url, desc, lo, hi, unit, extra=None):
+        o = {"@type": "Offer",
+             "itemOffered": {"@type": "Service", "name": nume, "url": SITE + url, "description": desc, "areaServed": "România"},
+             "priceCurrency": "EUR",
+             "priceSpecification": {"@type": "PriceSpecification", "minPrice": lo, "maxPrice": hi, "priceCurrency": "EUR", "unitText": unit}}
+        if extra:
+            o.update(extra)
+        return o
+    ad = "All you can drink: consumație nelimitată, preț fix pe invitat, pahare de sticlă, personal, transport și taxa de vase incluse. Prețul final nu crește față de cotație."
+    return [
+        of("Bar de cocktailuri pentru nunți", "/nunti/", ad, min(ai), max(ai), "€ per invitat"),
+        of("Bar de cocktailuri pentru evenimente corporate", "/corporate/",
+           "Pachet Final de An 2026 (1 noiembrie – 31 decembrie), cu meniuri cu logo-ul firmei și cocktailul companiei. Preț pe invitat + TVA.",
+           min(fa), max(fa), "€ per invitat + TVA", {"validFrom": "2026-11-01", "validThrough": "2026-12-31"}),
+        of("Bar de cocktailuri pentru petreceri private", "/petreceri/",
+           "Botezuri, aniversări și petreceri acasă: All you can drink sau Pachet barmani.", min(ai), max(ai), "€ per invitat"),
+        of("Pachet barmani", "/oferte/",
+           "Barmani, scule, taxa de vase a locației și toată logistica incluse. Băutura se plătește separat, după consum.",
+           min(bm), max(bm), "€ pachet (1–4 barmani)"),
+    ]
 
 
 def text(fragment, P):
@@ -177,6 +210,7 @@ def block(file, p, page_html, P):
 def main():
     check = "--check" in sys.argv
     P = preturi()
+    FIRMA["hasOfferCatalog"]["itemListElement"] = oferte()
     stale = []
     for file, p in CFG["pagini"].items():
         f = SN / file
