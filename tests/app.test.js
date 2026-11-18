@@ -359,3 +359,19 @@ test("Doar meniu: link fără contract, clientul alege între minim și maxim, r
   await p2.close();
   assert.deepEqual(errors, []);
 });
+
+test("Stoc: protocol (ce bem noi) se scade din stoc", async () => {
+  await tab("stoc");
+  await page.waitForSelector('#v-stoc [data-a="protocol"]');
+  await page.click('#v-stoc [data-a="protocol"]');
+  await page.waitForSelector('#v-stoc input[data-k]');
+  const k = await page.$eval('#v-stoc input[data-k]', i => i.dataset.k);
+  await page.fill(`#v-stoc input[data-k="${k}"]`, "0,4");
+  await page.fill("#stNote", "seara echipei");
+  await page.click('#v-stoc [data-a="save"]');
+  await page.waitForFunction(() => [...window.__STORE.values()].some(d => d && d.tip === "protocol"));
+  const d = await page.evaluate(() => JSON.parse(JSON.stringify([...window.__STORE.values()].find(d => d && d.tip === "protocol"))));
+  assert.equal(d.items[k], 0.4);
+  assert.equal(d.note, "seara echipei");
+  assert.deepEqual(errors, []);
+});

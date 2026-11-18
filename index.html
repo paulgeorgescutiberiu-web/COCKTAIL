@@ -2648,6 +2648,7 @@ function totals(skipDs){
     const it=d.items||{};
     if(d.tip==="factura")Object.entries(it).forEach(([k,v])=>g(k).in+=v);
     else if(d.tip==="corectie")Object.entries(it).forEach(([k,v])=>g(k).adj+=v);
+    else if(d.tip==="protocol")Object.entries(it).forEach(([k,v])=>g(k).out+=v);   // ce bem noi (echipa, oaspeți): iese din stoc
     else if(d.tip==="iesire"){if(skipDs&&d.ds===skipDs)return;
       if(isPlanned(d))Object.entries(it).forEach(([k,v])=>g(k).plan+=v);
       else{Object.entries(it).forEach(([k,v])=>g(k).out+=v);Object.entries(extraOut(d)).forEach(([k,v])=>g(k).out+=v);Object.entries(retFor(d)).forEach(([k,v])=>g(k).ret+=v)}}
@@ -2702,7 +2703,7 @@ function subscribe(){
 const ORD_CATS=[{id:"alcool",sect:"alcool",name:"ALCOOL",color:"C00000"},{id:"soft",sect:"suc",name:"SUCURI / APE",color:"38761D"},{id:"garnish",sect:"",name:"GHEAȚĂ, FRUCTE, IERBURI",color:"6AA84F"},{id:"premix",sect:"",name:"PREMIXURI (le prepari tu)",color:"8E7CC3"},{id:"altele",sect:"",name:"ALTELE",color:"7F6000"}];
 const FURN=C=>C.id==="alcool"||C.id==="soft";   // la furnizor pleacă doar alcoolul, apa și sucurile
 const ordCat=c=>ORD_CATS.some(C=>C.id===c)?c:"altele";
-let ord=null,ordFrom="list";
+let ord=null,ordFrom="list",protoFrom="list";
 const ORD_LOC_DEF="Str. Tractorului 4, Sibiu";
 const ordTomorrow=()=>{const d=new Date();d.setDate(d.getDate()+1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
 const ordDayTxt=v=>{const m=String(v||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return "";const d=new Date(+m[1],+m[2]-1,+m[3]);
@@ -2819,7 +2820,7 @@ function viewFlux(){
   if(!NX.loaded)loadCount();
   let h=`<div class="st-top"><div><p class="ev-sub">Necesar și comandă</p>
     <p class="ev-file">1. Bifezi evenimentele. 2. Numeri în depozit ce ai din fiecare articol și scrii la „Am”. 3. Aplicația face diferența și fișa de comandă pentru furnizor.</p></div>
-    <div class="st-acts"><button class="btn" data-a="vechi">Stoc vechi</button></div></div>`;
+    <div class="st-acts"><button class="btn" data-a="protocol">Protocol</button><button class="btn" data-a="vechi">Stoc vechi</button></div></div>`;
   const X=fluxData();
   if(!X)return h+`<div class="ev-alert">Nu e încărcată fișa evenimentelor. Încarc-o sau fă-o întâi la <b>Evenimente</b>, apoi revino aici.</div>`;
   h+=`<h2 class="ev-h2">Evenimentele</h2><div class="nx-evs">`+X.D.events.map(e=>`<label class="nx-ev"><input type="checkbox" data-nxev="${esc(e.id)}"${NX.sel[e.id]?" checked":""}><span><b>${esc(e.name)}</b><small>${esc([evDay(e.date),e.persons?e.persons+" pers.":""].filter(Boolean).join(" · "))}</small></span></label>`).join("")+`</div>`;
@@ -2850,7 +2851,7 @@ function viewList(){
   const neg=Object.entries(t).filter(([k,x])=>x.stoc<0).length,short=Object.entries(t).filter(([k,x])=>x.stoc>=0&&x.disp<0).length,hasIn=Object.values(docs).some(d=>d.tip==="factura"||d.tip==="corectie");
   let h=`<div class="st-top"><div><p class="ev-sub">${list.length?`${Object.keys(t).length} articole urmărite`:"Stocul e gol"}</p>
     <p class="ev-file">Marfa pentru un eveniment e rezervată când faci fișa și iese din depozit în ziua evenimentului. Returul notat de barmani se adaugă înapoi.</p></div>
-    ${admin()?`<div class="st-acts"><button class="btn primary" data-a="flux">← Necesar și comandă</button><button class="btn" data-a="factura">Adaugă factură</button><button class="btn" data-a="inventar">Inventar</button><button class="btn" data-a="comanda">Comandă furnizor</button></div>`:""}</div>`;
+    ${admin()?`<div class="st-acts"><button class="btn primary" data-a="flux">← Necesar și comandă</button><button class="btn" data-a="factura">Adaugă factură</button><button class="btn" data-a="inventar">Inventar</button><button class="btn" data-a="protocol">Protocol</button><button class="btn" data-a="comanda">Comandă furnizor</button></div>`:""}</div>`;
   if(!list.length)h+=`<div class="ev-ok">${admin()?"Începe cu <b>Inventar</b>: numără ce ai acum în depozit și scrie cantitățile. Apoi adaugi facturile pe măsură ce vin.":"Paul nu a introdus încă stocul."}</div>`;
   if(pend&&admin())h+=`<div class="ev-alert st-pend">Excelul curent, <b>${esc(evd.fileName)}</b>, nu e scăzut din stoc. <button class="btn" data-a="scade">Scade acum</button></div>`;
   if(neg)h+=`<div class="ev-alert">${neg} ${neg===1?"articol are":"articole au"} stoc sub zero. ${hasIn?"Probabil lipsește o factură.":"Încă nu ai introdus stocul din depozit."} Fă un <b>Inventar</b> cu ce ai acum pe raft: aplicația pornește de la cifrele reale și minusurile dispar.</div>`;
@@ -2871,9 +2872,9 @@ function viewList(){
     h+=`<h2 class="ev-h2">Istoric<span class="cnt">${list.length}</span></h2><div class="ev-list">`;
     list.forEach(d=>{
       const id=Object.keys(docs).find(i=>docs[i]===d),n=Object.keys(d.items||{}).length;
-      const title=d.tip==="factura"?`Factură${d.furnizor?" "+esc(d.furnizor):""}${d.nr?" nr. "+esc(d.nr):""}`:d.tip==="iesire"?`Evenimente ${esc(d.title||d.file)}`:`Inventar${d.note?": "+esc(d.note):""}`;
-      const when=d.tip==="factura"?fdate(d.data):fdate(d.at);
-      const tag=d.tip==="factura"?"Intrare":d.tip==="iesire"?"Ieșire":"Corecție";
+      const title=d.tip==="factura"?`Factură${d.furnizor?" "+esc(d.furnizor):""}${d.nr?" nr. "+esc(d.nr):""}`:d.tip==="iesire"?`Evenimente ${esc(d.title||d.file)}`:d.tip==="protocol"?`Protocol${d.note?": "+esc(d.note):""}`:`Inventar${d.note?": "+esc(d.note):""}`;
+      const when=d.tip==="factura"||d.tip==="protocol"?fdate(d.data||d.at):fdate(d.at);
+      const tag=d.tip==="factura"?"Intrare":d.tip==="iesire"?"Ieșire":d.tip==="protocol"?"Protocol":"Corecție";
       h+=`<div class="st-hist"><span class="st-tag ${d.tip}">${tag}</span><div><b>${title}</b><br><small>${when} · ${n} ${n===1?"articol":"articole"}${d.by?" · "+esc(d.by):""}</small></div>
         ${admin()?`<button class="btn st-del" data-del="${esc(id)}">${confirmDel===id?"Sigur? Șterge":"Șterge"}</button>`:""}</div>`;
     });
@@ -2882,15 +2883,16 @@ function viewList(){
   return h;
 }
 function viewForm(){
-  const cat=catalog(),t=totals(),inv=mode==="inventar";
-  let h=`<div class="st-top"><div><p class="ev-sub">${inv?"Inventar":"Factură nouă"}</p><p class="ev-file">${inv?"Scrie doar ce ai numărat. Articolele lăsate goale rămân neschimbate.":"Scrie cantitățile în aceleași unități ca în Excel (sticle, baxuri, saci)."}</p></div>
+  const cat=catalog(),t=totals(),inv=mode==="inventar",pro=mode==="protocol";
+  let h=`<div class="st-top"><div><p class="ev-sub">${inv?"Inventar":pro?"Protocol":"Factură nouă"}</p><p class="ev-file">${inv?"Scrie doar ce ai numărat. Articolele lăsate goale rămân neschimbate.":pro?"Ce ați băut voi (echipa, oaspeți). Scrie cât s-a consumat, în sticle de 1 L: de exemplu 0,4 la whisky. Se scade din stoc.":"Scrie cantitățile în aceleași unități ca în Excel (sticle, baxuri, saci)."}</p></div>
     <div class="st-acts"><button class="btn" data-a="cancel">Renunță</button></div></div>`;
-  h+=aiBlock();
-  if(!inv)h+=`<div class="st-meta"><label>Furnizor<input id="stF" list="stFL" value="${esc(form.furnizor||"")}" autocomplete="off"></label>
+  if(!pro)h+=aiBlock();
+  if(!inv&&!pro)h+=`<div class="st-meta"><label>Furnizor<input id="stF" list="stFL" value="${esc(form.furnizor||"")}" autocomplete="off"></label>
     <label>Nr. factură<input id="stN" value="${esc(form.nr||"")}"></label><label>Data<input id="stD" type="date" value="${esc(form.data||today())}"></label>
     <datalist id="stFL">${[...new Set(Object.values(docs).map(d=>d.furnizor).filter(Boolean))].map(f=>`<option value="${esc(f)}">`).join("")}</datalist></div>`;
+  else if(pro)h+=`<div class="st-meta"><label>Data<input id="stD" type="date" value="${esc(form.data||today())}"></label><label>Ocazia (opțional)<input id="stNote" value="${esc(form.note||"")}" placeholder="de ex. seara echipei, degustare"></label></div>`;
   else h+=`<div class="st-meta"><label>Notă (opțional)<input id="stNote" value="${esc(form.note||"")}" placeholder="de ex. Inventar lunar"></label></div>`;
-  groups(()=>true).forEach(g=>{
+  groups(pro?((k,x)=>x.cat==="alcool"||x.cat==="soft"):()=>true).forEach(g=>{
     h+=`<h2 class="ev-h2">${esc(g.c.name)}</h2><div class="ev-list">`;
     g.rows.forEach(([k,x])=>{const s=t[k]?t[k].stoc:0;
       h+=`<label class="st-in"><span>${esc(x.label)}${inv?`<small>în aplicație: ${num(s)}</small>`:""}</span><input class="ev-rin" inputmode="decimal" data-k="${esc(k)}" value="${esc(form.items[k]??"")}" placeholder="${inv?num(s):"0"}"></label>`});
@@ -2900,7 +2902,7 @@ function viewForm(){
     <label>Categorie<select id="stNewC">${CATS.filter(c=>QTY_CATS.includes(c.id)).map(c=>`<option value="${c.id}"${c.id==="alcool"?" selected":""}>${esc(c.name)}</option>`).join("")}</select></label>
     <label>Cantitate<input id="stNewQ" inputmode="decimal"></label><button class="btn" data-a="addnew">Adaugă în listă</button></div>
     <p class="ev-alert" id="stErr" hidden></p>
-    <div class="st-save"><button class="btn primary" data-a="save">${inv?"Salvează inventarul":"Salvează factura"}</button></div>`;
+    <div class="st-save"><button class="btn primary" data-a="save">${inv?"Salvează inventarul":pro?"Scade din stoc":"Salvează factura"}</button></div>`;
   return h;
 }
 function render(){
@@ -2915,7 +2917,7 @@ function grab(){
   grabAI();
   V.querySelectorAll("input[data-k]").forEach(i=>{if(i.value.trim()!=="")form.items[i.dataset.k]=i.value;else delete form.items[i.dataset.k]});
   const v=id=>{const e=V.querySelector(id);return e?e.value.trim():""};
-  if(mode==="factura"){form.furnizor=v("#stF");form.nr=v("#stN");form.data=v("#stD")}else form.note=v("#stNote");
+  if(mode==="factura"){form.furnizor=v("#stF");form.nr=v("#stN");form.data=v("#stD")}else{form.note=v("#stNote");if(mode==="protocol")form.data=v("#stD")}
 }
 const err=m=>{const e=$("#stErr");e.textContent=m;e.hidden=!m;if(m)e.scrollIntoView({block:"center"})};
 
@@ -2940,7 +2942,7 @@ V.addEventListener("click",async e=>{
   if(act==="nxsave"){busy=true;await saveCount();busy=false;return}
   if(act==="nxorder"){if(NX.dirty)saveCount(true);ordFrom="flux";mode="comanda";ord=null;render();window.scrollTo(0,V.offsetTop-10);
     buildOrder(fluxLipsa()).then(x=>{ord=x;if(mode==="comanda")render()}).catch(e=>{console.warn(e);toast("Nu am putut face comanda. Verifică internetul.")});return}
-  if(act==="factura"||act==="inventar"){mode=act;form={items:{},extra:{}};render();window.scrollTo(0,V.offsetTop-10);return}
+  if(act==="factura"||act==="inventar"||act==="protocol"){protoFrom=mode;mode=act;form={items:{},extra:{}};render();window.scrollTo(0,V.offsetTop-10);return}
   if(act==="foto"){const i=$("#stFoto");if(i){i.onchange=()=>{const fs=i.files;if(fs&&fs.length){grab();readInvoice(fs)}};i.click()}return}
   if(act==="aiapply"){grab();await applyAI();return}
   if(act==="aidrop"){grab();form.ai=null;render();return}
@@ -2952,7 +2954,7 @@ V.addEventListener("click",async e=>{
     try{await navigator.clipboard.writeText(txt);toast("Comanda e copiată. Lipește-o în WhatsApp la furnizor.")}
     catch(x){window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")}return}
   if(act==="ordxl"){grabOrder();await orderExcel(b);return}
-  if(act==="cancel"){ord=null;mode=mode==="comanda"&&ordFrom==="flux"?"flux":admin()?"flux":"list";form=null;extraCat={};render();return}
+  if(act==="cancel"){ord=null;mode=mode==="comanda"&&ordFrom==="flux"?"flux":mode==="protocol"?(protoFrom==="flux"?"flux":"list"):mode==="factura"||mode==="inventar"?"list":admin()?"flux":"list";form=null;extraCat={};render();return}
   if(act==="scade"){busy=true;b.disabled=true;await window.__stocIesire(CP.evd());busy=false;return}
   if(act==="addnew"){
     grab();const n=$("#stNewN").value.trim(),c=$("#stNewC").value,qv=$("#stNewQ").value.trim();
@@ -2968,17 +2970,17 @@ V.addEventListener("click",async e=>{
       const v=pnum(raw);if(v===null)continue;
       if(isNaN(v)||v<0){err(`La ${cat[k]?cat[k].label:k} cantitatea „${raw}” nu e un număr valid.`);return}
       const val=mode==="inventar"?v-(t[k]?t[k].stoc:0):v;
-      if(mode==="factura"&&val===0)continue;
+      if((mode==="factura"||mode==="protocol")&&val===0)continue;
       if(mode==="inventar"&&Math.abs(val)<1e-9)continue;
       items[k]=Math.round(val*1000)/1000;labels[k]=(cat[k]||{}).label||k;cats[k]=(cat[k]||{}).cat||"altele";
     }
     if(!Object.keys(items).length){err(mode==="inventar"?"Nu ai schimbat nicio cantitate față de stocul din aplicație.":"Scrie cel puțin o cantitate.");return}
-    const doc=mode==="factura"?{tip:"factura",furnizor:form.furnizor,nr:form.nr,data:form.data||today()}:{tip:"corectie",note:form.note};
+    const doc=mode==="factura"?{tip:"factura",furnizor:form.furnizor,nr:form.nr,data:form.data||today()}:mode==="protocol"?{tip:"protocol",note:form.note,data:form.data||today()}:{tip:"corectie",note:form.note};
     Object.assign(doc,{items,labels,cats,by:F.NAME,at:new Date().toISOString()});
     busy=true;b.disabled=true;b.textContent="Se salvează…";
-    try{await F.fs.collection(`${F.base}/stoc`).add(doc);mode="list";form=null;render();
-      toast(doc.tip==="factura"?`Factura a fost adăugată în stoc (${Object.keys(items).length} articole).`:"Inventarul a fost salvat.")}
-    catch(x){err(x&&x.code==="permission-denied"?"Doar administratorul poate modifica stocul. Intră ca administrator, jos în pagină.":"Salvarea nu a reușit. Verifică internetul și încearcă din nou.");b.disabled=false;b.textContent=mode==="inventar"?"Salvează inventarul":"Salvează factura"}
+    try{await F.fs.collection(`${F.base}/stoc`).add(doc);mode=doc.tip==="protocol"&&protoFrom==="flux"?"flux":"list";form=null;render();
+      toast(doc.tip==="factura"?`Factura a fost adăugată în stoc (${Object.keys(items).length} articole).`:doc.tip==="protocol"?`Protocolul a fost scăzut din stoc (${Object.entries(items).map(([k,v])=>`${labels[k]} ${num(v)}`).join(", ")}).`:"Inventarul a fost salvat.")}
+    catch(x){err(x&&x.code==="permission-denied"?"Doar administratorul poate modifica stocul. Intră ca administrator, jos în pagină.":"Salvarea nu a reușit. Verifică internetul și încearcă din nou.");b.disabled=false;b.textContent=mode==="inventar"?"Salvează inventarul":mode==="protocol"?"Scade din stoc":"Salvează factura"}
     busy=false;
   }
 });
