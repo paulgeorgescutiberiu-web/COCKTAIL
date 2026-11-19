@@ -9,7 +9,7 @@
 <link rel="icon" href="img/monograma-cp.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonturi.css">
-<link rel="stylesheet" href="stil.css?v=20261113d">
+<link rel="stylesheet" href="stil.css?v=20261119a">
 <style>
 .n-hero{position:relative;color:var(--white);background:var(--ink)}
 .n-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
@@ -130,7 +130,7 @@
 <p class="kicker">Două variante</p>
 <h2 class="h2">Cât costă barul <span class="gold">la nunta voastră</span></h2>
 </div>
-<p class="lead">Alegeți cum vreți să plătiți: preț fix pe invitat, cu băutură nelimitată, sau servicii plus consumație.</p>
+<p class="lead">Alegeți cum vreți să plătiți: preț fix pe invitat, cu băutură nelimitată, sau servicii plus consumație. Aveți deja un buget? <a href="#buget" class="gold-link">Spuneți-ni-l și facem noi calculul.</a></p>
 </div>
 
 <div class="opt">
@@ -162,6 +162,24 @@
 </div>
 
 <p class="note">Prețuri orientative. Oferta finală o primiți după ce verificăm data și locația. Avans <span data-p="avans">100 €</span> în ambele variante.</p>
+
+<div class="buget" id="buget">
+<div class="buget-text">
+<span class="pill pill-gold">Bugetul vostru</span>
+<h3>Aveți un buget stabilit? <span class="gold">Spuneți-ni-l.</span></h3>
+<p>Scrieți-ne suma pe care ați pus-o deoparte pentru bar. În cel mult <b>24 de ore</b> revenim cu o propunere care se încadrează în ea: meniul potrivit, câți barmani vă trebuie și varianta de plată care vă avantajează.</p>
+<p class="mic">Bugetul rămâne între noi și nu vă obligă la nimic.</p>
+</div>
+<form class="form buget-form" data-lead="nunti-buget" data-evn="Site: nuntă, buget" data-intro="Avem un buget pentru barul de la nuntă și am vrea o propunere care să se încadreze în el." data-ok="Mulțumim! Am primit bugetul vostru. În cel mult 24 de ore vă trimitem o propunere care se încadrează în el." novalidate>
+<label>Bugetul pentru bar *<span class="buget-suma"><input name="buget" type="number" min="1" inputmode="numeric" placeholder="ex: 1500" required><select name="moneda" aria-label="Moneda"><option>€</option><option>lei</option></select></span></label>
+<label>Nr. invitați<input name="inv" type="number" min="1" inputmode="numeric"></label>
+<label>Data nunții<input name="data" type="date"></label>
+<label>Locația<input name="loc" placeholder="ex: Sibiu, Conac ..."></label>
+<label>Numele vostru *<input name="nume" autocomplete="name" required></label>
+<label>Telefon *<input name="tel" type="tel" autocomplete="tel" inputmode="tel" required></label>
+<button class="btn btn-gold" type="submit">Vreau o propunere pe bugetul meu</button>
+</form>
+</div>
 </div>
 </section>
 
@@ -265,7 +283,7 @@
 
 <nav class="mbar" aria-label="Contact rapid"><a class="mb-call" href="tel:+40743785655" aria-label="Sună la 0743 785 655"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg><span>Sună</span></a><a class="mb-wa" href="https://wa.me/40743785655?text=Bun%C4%83%21%20A%C8%99%20dori%20o%20ofert%C4%83%20pentru%20nunta%20noastr%C4%83.%0AData%3A%20%0ALoca%C8%9Bia%3A%20%0ANum%C4%83r%20invita%C8%9Bi%3A%20" target="_blank" rel="noopener" aria-label="Scrie-ne pe WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg><span>WhatsApp</span></a></nav>
 
-<script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/cerere.js?v=1" defer></script>
+<script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/cerere.js?v=2" defer></script>
 <script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/preturi.js?v=4"></script>
 <script src="https://paulgeorgescutiberiu-web.github.io/COCKTAIL/site-nou/preturi-pagina.js?v=2"></script>
 <script>

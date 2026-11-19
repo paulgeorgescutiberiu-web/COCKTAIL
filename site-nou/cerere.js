@@ -26,12 +26,14 @@
       var tel=v('tel');
       if(!v('nume')){msgBox.textContent='Scrie-ne numele tău.';msgBox.hidden=false;return}
       if(tel.replace(/\D/g,'').length<9){msgBox.textContent='Lasă-ne un număr de telefon, ca să te putem suna sau să-ți scriem.';msgBox.hidden=false;F.elements.tel&&F.elements.tel.focus();return}
-      var extra=v('firma')?'Firma: '+v('firma')+'. ':'';
+      if(F.elements.buget&&!(+v('buget')>0)){msgBox.textContent='Scrieți-ne bugetul pentru bar.';msgBox.hidden=false;F.elements.buget.focus();return}
+      var buget=v('buget')?(+v('buget')).toLocaleString('ro-RO')+' '+(v('moneda')||'€'):'';
+      var extra=(buget?'Buget: '+buget+'. ':'')+(v('firma')?'Firma: '+v('firma')+'. ':'');
       var lead={nume:v('nume').slice(0,60),tel:tel.slice(0,20),data:v('data').slice(0,10),inv:v('inv').replace(/\D/g,'').slice(0,6),
         loc:v('loc').slice(0,80),msg:(extra+v('msg')).slice(0,500),ev:('site-'+F.dataset.lead).slice(0,40),evn:(F.dataset.evn||'Site').slice(0,60),at:new Date().toISOString()};
       var dt=lead.data?(function(){var m=lead.data.split('-');return (+m[2])+' '+MON[+m[1]-1]+' '+m[0]})():'';
       var t='Bună! Sunt '+lead.nume+(v('firma')?' de la '+v('firma'):'')+'. '+(F.dataset.intro||'Aș dori o ofertă pentru evenimentul meu.');
-      if(dt)t+='\nData: '+dt; if(lead.loc)t+='\nLocația: '+lead.loc; if(lead.inv)t+='\n'+(F.dataset.inv||'Număr invitați')+': '+lead.inv; if(v('msg'))t+='\n'+v('msg');
+      if(dt)t+='\nData: '+dt; if(lead.loc)t+='\nLocația: '+lead.loc; if(lead.inv)t+='\n'+(F.dataset.inv||'Număr invitați')+': '+lead.inv; if(buget)t+='\nBugetul nostru pentru bar: '+buget; if(v('msg'))t+='\n'+v('msg');
       var wa='https://wa.me/'+WA+'?text='+encodeURIComponent(t);
       btn.disabled=true;btn.textContent='Se trimite…';
       timeout(db().then(function(fs){
@@ -42,8 +44,8 @@
           }).catch(function(){});
         });
       }),8000).then(function(){
-        ga('generate_lead',{form:F.dataset.lead,guests:lead.inv||''});
-        msgBox.innerHTML='Mulțumim! Am primit cererea și te contactăm noi, direct. Dacă vrei, scrie-ne și pe <a href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a>.';
+        ga('generate_lead',{form:F.dataset.lead,guests:lead.inv||'',budget:buget});
+        msgBox.innerHTML=(F.dataset.ok||'Mulțumim! Am primit cererea și te contactăm noi, direct.')+' Dacă vrei, scrie-ne și pe <a href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a>.';
         msgBox.hidden=false;F.reset();btn.textContent='Trimis ✓';
       },function(){
         btn.disabled=false;btn.textContent=label;
