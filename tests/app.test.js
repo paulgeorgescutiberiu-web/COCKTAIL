@@ -355,8 +355,31 @@ test("Doar meniu: link fără contract, clientul alege între minim și maxim, r
   await boxes[0].check();
   await p2.click("#saveMenu");
   await p2.waitForFunction(() => /Am salvat/.test(document.querySelector("#menuOk").textContent));
+  // detaliile evenimentului: se salvează singure, întrebările condiționate apar la nevoie
+  assert.match(await p2.$eval("#det", e => e.innerText), /Nu e grabă/);
+  assert.equal(await p2.$eval('[data-dt="whiskySticle"]', e => e.closest(".dt-q").classList.contains("dt-hide")), true);
+  await p2.check('[data-dt="whisky"][value="Da"]', { force: true });
+  assert.equal(await p2.$eval('[data-dt="whiskySticle"]', e => e.closest(".dt-q").classList.contains("dt-hide")), false);
+  await p2.fill('[data-dt="whiskySticle"]', "6");
+  await p2.fill('[data-dt="oraStart"]', "19:30");
+  await p2.dispatchEvent('[data-dt="oraStart"]', "change");
+  await p2.check('[data-dt="alergiiNone"]');
+  await p2.waitForFunction(() => /Salvat/.test(document.querySelector("#detSave").textContent), null, { timeout: 5000 });
+  const pdet = await p2.evaluate(t => window.__STORE.get("portal/" + t).resp.det, doc.tok);
+  assert.equal(pdet.whisky, "Da"); assert.equal(pdet.whiskySticle, "6"); assert.equal(pdet.oraStart, "19:30"); assert.equal(pdet.by, "client");
+  assert.match(await p2.$eval("#detSt", e => e.textContent), /3 din 8/);
   assert.deepEqual(perr, []);
   await p2.close();
+
+  // în aplicație: Paul completează aceleași detalii de pe card
+  await page.locator(".ct-card", { hasText: "Ioana Pop" }).locator("button.btn[data-det]").click();
+  await page.waitForSelector("#dtBox");
+  await page.fill('#dtBox [data-dt="adulti"]', "90");
+  await page.check('#dtBox [data-dt="bar"][value="Afară"]', { force: true });
+  await page.click('#v-contracte [data-c="savedet"]');
+  await page.waitForFunction(() => [...document.querySelectorAll("#v-contracte .ct-card")].some(c => /Ioana Pop/.test(c.innerText) && /Detalii: 2\/8/.test(c.innerText)));
+  const pk = await page.evaluate(t => window.__STORE.get("portal/" + t).resp.det, doc.tok);
+  assert.equal(pk.adulti, "90"); assert.equal(pk.bar, "Afară"); assert.equal(pk.by, "paul");
   assert.deepEqual(errors, []);
 });
 

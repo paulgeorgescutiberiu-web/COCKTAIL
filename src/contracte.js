@@ -183,6 +183,7 @@ function menuCard(c){
   return `<div class="ct-card ct-dm"><div class="ct-h"><b>${esc(c.nume||"Fără nume")}</b><span>${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""}</span></div>
     <div class="ct-m"><span class="ct-chip">Doar alegerea meniului, fără contract</span>${c.invitati?` · ${esc(c.invitati)} invitați`:""}${c.tel?` · ${esc(c.tel)}`:""}</div>
     ${portalRow(c)}
+    ${detRow(c)}
     <div class="ct-b"><button class="btn" data-fisa="${c.id}">Fișă eveniment</button><button class="btn" data-ed="${c.id}">Editează</button>
     <button class="btn st-del" data-del="${c.id}">${confirmDel===c.id?"Sigur? Șterge":"Șterge"}</button></div></div>`;
 }
@@ -228,6 +229,7 @@ function viewList(){
       <label class="btn${c.signedId?"":" primary"} ct-up">${c.signedId?"Înlocuiește contractul semnat":"Încarcă contractul semnat de client"}<input type="file" accept="application/pdf,image/*" data-sgn="${c.id}" hidden></label></div>
       ${invRow(c)}
       ${portalRow(c)}
+      ${detRow(c)}
       ${c.rent&&c.rent.calc?`<div class="ct-m">Rentabilitate: venit ${lei(c.rent.calc.venit)} · profit <b>${lei(c.rent.calc.profit)}</b> (${pct(c.rent.calc.marja)})</div>`:""}
       <div class="ct-b"><button class="btn" data-fisa="${c.id}">Fișă eveniment</button><button class="btn" data-rent="${c.id}">Rentabilitate</button><button class="btn" data-notes="${c.id}">Notițe${(c.notes||[]).length?` (${c.notes.length})`:""}</button></div>
       <div class="ct-b"><button class="btn" data-pdf="${c.id}">PDF</button><button class="btn${c.calId?"":" primary"}" data-gs="${c.id}">${c.calId?"✓ Actualizează Drive + calendar":"Drive + calendar"}</button><button class="btn" data-ed="${c.id}">Editează</button><button class="btn" data-dup="${c.id}">Copie</button>
@@ -273,7 +275,7 @@ function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();
   o.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height);res(o.toDataURL("image/png"))};im.src=fr.result};fr.readAsDataURL(file)})}
 function render(){try{if(!G.tc)gPrep()}catch(e){}
   const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("ct-q");
-  V.innerHTML=mode==="meniu"?viewMeniu():mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():(gConnHTML()+viewList());
+  V.innerHTML=mode==="meniu"?viewMeniu():mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():mode==="det"?viewDet():(gConnHTML()+viewList());
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
   if(mode==="list")portalAuto();
@@ -447,15 +449,16 @@ async function portalPublish(c,quiet){
 async function portalRefresh(c,quiet){
   if(!c.portalTok)return;
   try{const d=await F.fs.doc(`portal/${c.portalTok}`).get();if(!d.exists)return;const r=(d.data()||{}).resp||{};
-    const nr={seenAt:r.seenAt||"",menu:r.menu||[],obs:r.obs||"",signedAt:r.signedAt||"",nume:r.nume||""};
+    const nr={seenAt:r.seenAt||"",menu:r.menu||[],obs:r.obs||"",signedAt:r.signedAt||"",nume:r.nume||"",det:r.det||null};
     if(JSON.stringify(nr)!==JSON.stringify(c.portalResp||{})){
       const was=c.portalResp||{};await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalResp:nr},{merge:true});
       if(nr.signedAt&&!was.signedAt)toast(`${tcase(surname(c.nume))} a semnat contractul în portal ✓`);
       else if(nr.menu.length&&!(was.menu||[]).length)toast(`${tcase(surname(c.nume))} a ales meniul în portal.`);
+      else if(nr.det&&nr.det.by==="client"&&nr.det.at!==((was.det||{}).at))toast(`${tcase(surname(c.nume))} a completat detalii despre eveniment.`);
     }else if(!quiet)toast("Nimic nou în portal.");
   }catch(e){if(!quiet)toast("Nu am putut citi portalul.")}
 }
-function portalAuto(){let n=0;list.forEach(c=>{if(n<8&&c.portalTok&&!c.portalSaved&&!POR.seen[c.id]){POR.seen[c.id]=1;n++;portalRefresh(c,true)}})}
+function portalAuto(){let n=0;const t=today();list.forEach(c=>{if(n<12&&c.portalTok&&(!c.portalSaved||(c.dataEv||"")>=t)&&!POR.seen[c.id]){POR.seen[c.id]=1;n++;portalRefresh(c,true)}})}
 async function portalSaveSigned(c,btn){
   if(btn){btn.disabled=true;btn.textContent="Se pregătește contractul semnat…"}
   try{const d=await F.fs.doc(`portal/${c.portalTok}`).get(),r=(d.data()||{}).resp||{};
@@ -467,6 +470,32 @@ async function portalSaveSigned(c,btn){
     await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalSaved:true},{merge:true});
   }catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut salva contractul semnat.");if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent="Salvează contractul semnat în Drive"}}
 }
+/* ---------- Detaliile evenimentului (aceleași întrebări ca în portal, din detalii.js) ---------- */
+const DT=window.CPDet;
+const detOf=c=>DT?DT.nou(c.det||null,(c.portalResp&&c.portalResp.det)||null):null;
+const zileLa=iso=>{if(!iso)return 99;const a=new Date(today()+"T12:00:00"),b=new Date(iso+"T12:00:00");return Math.round((b-a)/864e5)};
+function detRow(c){if(!DT)return "";
+  const d=detOf(c)||{},pr=DT.progres(d),z=zileLa(c.dataEv),viit=z>=0;
+  const red=viit&&z<=4&&!pr.complet,L=DT.rinduri(d);
+  let h=`<div class="ct-b"><button class="ct-chip ${pr.complet?"on":red?"dt-red":""}" data-det="${c.id}">${pr.complet?"✓ ":""}Detalii: ${pr.gata}/${pr.total}${d.by==="client"?" · de la client":""}</button>
+    <button class="btn" data-det="${c.id}">Detalii eveniment</button>`;
+  if(viit&&z<=7&&!pr.complet&&c.portalTok)h+=`<button class="btn${red?" primary":""}" data-detwa="${c.id}">Reamintește pe WhatsApp</button>`;
+  h+=`</div>`;
+  if(L.length)h+=`<details class="ct-m"><summary>Ce știm până acum</summary><ul class="dt-sum">${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`;
+  return h}
+function detMsg(c){const pr=DT.progres(detOf(c)||{}),t=DT.termen(c.dataEv),ex=pr.lipsa.slice(0,3).map(x=>x.toLowerCase()).join(", ");
+  return `Bună ziua! Ca să pregătim barul pentru evenimentul din ${shortDate(c.dataEv)}, ne mai trebuie câteva detalii${ex?` (${ex})`:""}. Le puteți completa aici${t&&t>=today()?`, până pe ${shortDate(t)}`:""}: ${porLink(c)}\nDurează 2 minute. Mulțumim! Cocktail Philosophy`}
+function viewDet(){const c=cur,d=detOf(c)||{},pr=DT.progres(d);
+  return `<div class="st-top"><div><p class="ev-sub">Detalii eveniment · ${esc(c.nume||"")}</p><p class="ev-file">${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""} · ${pr.gata} din ${pr.total} completate${d.at?` · ultima modificare ${esc(shortDate(String(d.at).slice(0,10)))}, de ${d.by==="client"?"client":"tine"}`:""}.
+    ${c.portalTok?"Clientul vede și completează aceleași întrebări în portal.":"Clientul le vede în portal după ce îi faci linkul."}</p></div>
+    <div class="st-acts"><button class="btn" data-c="back">Înapoi</button></div></div>
+    <div class="dt-box" id="dtBox">${DT.formHTML(d,esc,{})}</div>
+    <div class="st-save"><button class="btn primary" data-c="savedet">Salvează detaliile</button></div>`}
+async function saveDet(){const box=$("#dtBox");if(!box)return;const c=cur,d={...DT.citeste(box),at:new Date().toISOString(),by:"paul"};
+  try{await F.fs.doc(`${F.base}/contracte/${c.id}`).set({det:d},{merge:true});
+    if(c.portalTok)await F.fs.doc(`portal/${c.portalTok}`).set({resp:{det:d}},{merge:true}).catch(()=>toast("Detaliile sunt salvate, dar portalul nu s-a actualizat. Apasă „Actualizează portalul”."));
+    const o=list.find(x=>x.id===c.id);if(o)o.det=d;mode="list";cur=null;render();toast("Detaliile au fost salvate.")}
+  catch(e){toast("Nu am putut salva detaliile. Verifică internetul.")}}
 function porMsg(c){if(c.doarMeniu)return `Bună ziua! Aici puteți alege cocktailurile pentru evenimentul din ${shortDate(c.dataEv)}: ${porLink(c)}\nMulțumim! Cocktail Philosophy`;return `Bună ziua! Aici găsiți tot pentru evenimentul din ${shortDate(c.dataEv)}: oferta, alegerea cocktailurilor, contractul de semnat online și plata avansului: ${porLink(c)}\nMulțumim! Cocktail Philosophy`}
 
 /* ---------- Avans cu cardul (Revolut prin Make) ---------- */
@@ -1014,6 +1043,7 @@ function evDesc(c){
   L.push(`REST DE PLATĂ: ${shortDate(c.dataRest)||"—"}${c.restPlatit?" · încasat":""} · ${c.plata}`);
   if(on(c.c3)||on(c.c4))L.push([on(c.c3)?`TRANSPORT: ${c.transport}`:"",on(c.c4)?`taxa de vase: ${c.vase}`:""].filter(Boolean).join(" · "));
   if(c.portalResp&&c.portalResp.menu&&c.portalResp.menu.length)L.push(`MENIU ALES DE CLIENT: ${c.portalResp.menu.join(", ")}${c.portalResp.obs?" · "+c.portalResp.obs:""}`);
+  {const dl=DT?DT.rinduri(detOf(c)||{}):[];if(dl.length)L.push("DETALII EVENIMENT:\n"+dl.map(x=>"· "+x).join("\n"))}
   L.push(c.signedId?`CONTRACT: semnat de ambele părți${c.signedAt?" ("+shortDate(c.signedAt)+")":""}`:"CONTRACT: trimis clientului, încă nesemnat de el");
   return L.join("\n")+notesTxt(c)+`\n\n${c.signedId?"Contractul semnat e":"Contract"} atașat mai jos · completat din aplicația Cocktail Philosophy.`;
 }
@@ -1154,6 +1184,7 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
   if(f&&e.target.dataset&&e.target.dataset.f==="pret")f.pretAuto=false;
 });
 V.addEventListener("change",e=>{const i=e.target;
+  if(mode==="det"&&DT){const bx=$("#dtBox");if(bx&&bx.contains(i)){DT.potriveste(bx);return}}
   if(mode==="form"&&f&&i&&i.dataset&&["pachetTip","barmani","invitati","moneda"].includes(i.dataset.f)){grab();
     if(i.dataset.f==="pachetTip"){f.pretAuto=true;f.c5=f.pachetTip===PACH_BAR}
     pretAuto(f);render();return}
@@ -1172,7 +1203,7 @@ V.addEventListener("click",async e=>{
     delete INV.arm[ak];invNew(c,k);return}
   const tx=t.closest("[data-thx]");if(tx){F.fs.doc(`${F.base}/contracte/${tx.dataset.thx}`).set({thanksAt:new Date().toISOString()},{merge:true}).catch(()=>{});return}
   const tk=t.closest("[data-thxskip]");if(tk){F.fs.doc(`${F.base}/contracte/${tk.dataset.thxskip}`).set({thanksSkip:true},{merge:true}).catch(()=>{});return}
-  const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume)),menuIds:r.menuIds})}return}
+  const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{},dd=detOf(c)||{},dl=DT?DT.rinduri(dd):[];window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:dd.oraStart||c.oraEv||"",pers:String(dd.adulti||c.invitati||""),note:[r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",...dl].filter(Boolean).join("\n"),from:tcase(surname(c.nume)),menuIds:r.menuIds})}return}
   const pon=t.closest("[data-porn]");if(pon){const c=list.find(x=>x.id===pon.dataset.porn);if(c)portalPublish(c);return}
   const pou=t.closest("[data-porup]");if(pou){const c=list.find(x=>x.id===pou.dataset.porup);if(c){portalPublish(c).then(()=>portalRefresh(c,false))}return}
   const pow=t.closest("[data-porwa]");if(pow){const c=list.find(x=>x.id===pow.dataset.porwa);if(c&&c.portalTok){const tel=telWa(c.tel);window.open((tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(porMsg(c)),"_blank")}return}
@@ -1183,6 +1214,8 @@ V.addEventListener("click",async e=>{
   const pc=t.closest("[data-paycp]");if(pc){const c=list.find(x=>x.id===pc.dataset.paycp);if(c&&c.payOrder)navigator.clipboard.writeText(c.payOrder.url).then(()=>toast("Linkul a fost copiat."),()=>toast(c.payOrder.url));return}
   const pk=t.closest("[data-paychk]");if(pk){const c=list.find(x=>x.id===pk.dataset.paychk);if(c)payCheck(c,false);return}
   const rb=t.closest("[data-rent]");if(rb){const c=list.find(x=>x.id===rb.dataset.rent);if(c){cur={...c};rentMsg="";mode="rent";render();window.scrollTo(0,V.offsetTop-10)}return}
+  const dtb=t.closest("[data-det]");if(dtb){const c=list.find(x=>x.id===dtb.dataset.det);if(c&&DT){cur={...c};mode="det";render();window.scrollTo(0,V.offsetTop-10)}return}
+  const dtw=t.closest("[data-detwa]");if(dtw){const c=list.find(x=>x.id===dtw.dataset.detwa);if(c&&c.portalTok){const tel=telWa(c.tel);window.open((tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(detMsg(c)),"_blank")}return}
   const nb=t.closest("[data-notes]");if(nb){const c=list.find(x=>x.id===nb.dataset.notes);if(c){cur={...c};noteDel=null;mode="notes";render();window.scrollTo(0,V.offsetTop-10)}return}
   const rc=t.closest("[data-rcons]");if(rc&&cur){const DD=window.__cx&&window.__cx.getD(),e=DD&&DD.events.find(x=>x.id===rc.dataset.rcons);if(e)pullConsum(e,rc);return}
   const rcb=t.closest("[data-rcb]");if(rcb&&cur){grabRent();render();return}
@@ -1201,6 +1234,7 @@ V.addEventListener("click",async e=>{
   if(a==="back"){mode="list";f=null;cur=null;errs=[];SOC.arm=false;render();return}
 
   if(a==="saverent"){saveRent();return}
+  if(a==="savedet"){b.disabled=true;await saveDet();return}
   if(a==="addnote"){const tx=($("#ntT").value||"").trim(),d=$("#ntD").value||today();if(!tx){toast("Scrie ce s-a discutat.");return}
     saveNotes([...(cur.notes||[]),{d,t:tx,at:new Date().toISOString()}],"Notița a fost salvată.");return}
   if(a==="firma"){mode="firma";render();return}

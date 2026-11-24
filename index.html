@@ -589,6 +589,17 @@ a.btn.primary{color:var(--on-leaf)}
 .ld-tpl{margin:14px 0 4px;border-top:1px solid var(--line);padding-top:10px}.ld-tpl summary{cursor:pointer;font-weight:600}
 .ld-tl{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-size:.85rem;font-weight:600;color:var(--muted)}
 .ld-tl textarea{width:100%;box-sizing:border-box;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-weight:500;line-height:1.45}
+.dt-box{display:flex;flex-direction:column;gap:12px}
+.dt-s{border:1.5px solid var(--line);border-radius:14px;padding:10px 14px 14px;margin:0;background:var(--card)}
+.dt-s legend{font-weight:800;padding:0 6px}.dt-s legend small{font-weight:500;color:var(--muted)}.dt-s.dt-ok legend::after{content:" ✓";color:#1F4A33}
+.dt-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 14px}
+.dt-q{display:flex;flex-direction:column;gap:4px;font-size:.88rem;color:var(--muted);font-weight:600}.dt-w{grid-column:1/-1}
+.dt-q input[type=text],.dt-q input[type=time],.dt-q textarea{font:inherit;font-weight:500;color:var(--ink);padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);width:100%;box-sizing:border-box}
+.dt-ops{display:flex;flex-wrap:wrap;gap:6px}.dt-p{border:1.5px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer;color:var(--ink);font-weight:500;background:var(--paper)}
+.dt-p input{position:absolute;opacity:0;pointer-events:none}.dt-p.on{background:var(--sage);border-color:var(--sage);font-weight:700}
+.dt-none{display:flex;gap:8px;align-items:center;margin:2px 0 8px;font-size:.9rem}.dt-hide{display:none!important}
+.ct-chip.dt-red{background:#F6D9D3;border-color:#A3321F;color:#7A2414;font-weight:700}
+.dt-sum{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:.86rem}.dt-sum li{margin:2px 0}
 
 #fbScreen{position:fixed;inset:0;z-index:99;display:grid;place-items:center;padding:16px;background:var(--paper,#f6f1e7);color:var(--ink,#1d2a22);font-family:Barlow,system-ui,sans-serif}
 #fbScreen .fb-box{max-width:380px;width:100%;text-align:center}
@@ -888,6 +899,92 @@ function emailText(R){const L=[`SĂPTĂMÂNA TA: ${intervalText(R.sapt)}`,""];
 return {MON,ZI,iso,parseDay,addDays,saptamana,dataLunga,dataScurta,ziSiData,deCand,prenume,titlu,eur,telWa,nrm,
   REGULI,SABLOANE,SABLON_NUME,completeaza,contextCerere,pasCerere,deFacut,timpRaspuns,oreText,semnat,rezumat,intervalText,emailHTML,emailText};
 });
+</script>
+<script id="cp-det">
+/* Detaliile evenimentului: aceleași întrebări în portalul clientului și în aplicație (la Contracte → „Detalii eveniment”).
+   Sursa e aici. La construire (src/detp.py) se pune în aplicație și se copiază în portal.html, între DETALII-START și DETALII-END.
+   Datele: un obiect simplu { cheie: valoare, at: data ISO, by: "client" | "paul" }; ține minte varianta cea mai nouă. */
+(function(root){
+const NIV=["Mai mult","Normal","Deloc"];
+const SECT=[
+  {k:"program",t:"Programul",q:[
+    {k:"oraStart",l:"La ce oră începe barul?",s:"începe",type:"time"},
+    {k:"oraFinal",l:"La ce oră se închide barul?",s:"se închide",type:"time"},
+    {k:"oraMontaj",l:"De la ce oră avem acces la locație pentru montaj?",s:"acces montaj",type:"time"}]},
+  {k:"invitati",t:"Invitații",q:[
+    {k:"adulti",l:"Câți adulți vor fi?",s:"adulți",type:"num"},
+    {k:"copii",l:"Câți copii sau invitați care nu beau alcool?",s:"copii / fără alcool",type:"num"}]},
+  {k:"locatie",t:"La locație",q:[
+    {k:"contact",l:"Persoana de contact de la locație (nume și telefon)",s:"contact",type:"text"},
+    {k:"bar",l:"Barul va fi",s:"bar",type:"opt",o:["Înăuntru","Afară","Nu știm încă"]},
+    {k:"acces",l:"Unde descărcăm marfa, este curent lângă bar, alte detalii",s:"acces",type:"area"}]},
+  {k:"sala",t:"Alcool pe mese",q:[
+    {k:"whisky",l:"Aveți whisky pe mese?",s:"whisky pe mese",type:"opt",o:["Da","Nu"]},
+    {k:"whiskyCine",l:"Cine aduce whisky-ul?",s:"îl aduce",type:"opt",o:["Clientul","Cocktail Philosophy"],if:["whisky","Da"]},
+    {k:"whiskySticle",l:"Câte sticle, aproximativ?",s:"sticle",type:"num",if:["whisky","Da"]},
+    {k:"alteMese",l:"Ce alte băuturi sunt pe mese? (vin, prosecco, shot-uri)",s:"altele pe mese",type:"area"}]},
+  {k:"baze",t:"Preferințe la alcool",q:[
+    {k:"bGin",l:"Gin",s:"gin",type:"lvl"},{k:"bRom",l:"Rom",s:"rom",type:"lvl"},{k:"bVodca",l:"Vodcă",s:"vodcă",type:"lvl"},
+    {k:"bWhisky",l:"Whisky",s:"whisky",type:"lvl"},{k:"bTequila",l:"Tequila",s:"tequila",type:"lvl"},
+    {k:"marci",l:"Mărci preferate (opțional)",s:"mărci",type:"text"}]},
+  {k:"cocktail",t:"Cocktailuri în plus",q:[
+    {k:"extra",l:"Cocktailuri dorite care nu sunt în meniu",s:"în afara meniului",type:"area"},
+    {k:"pers",l:"Vreți un cocktail personalizat, cu numele vostru?",s:"cocktail personalizat",type:"opt",o:["Da","Nu"]},
+    {k:"persNume",l:"Ce nume să poarte?",s:"nume",type:"text",if:["pers","Da"]}]},
+  {k:"momente",t:"Momente speciale",none:"Nimic special",q:[
+    {k:"momente",l:"Toast cu prosecco, shot-uri la miezul nopții, ora tortului…",type:"area"}]},
+  {k:"alergii",t:"Alergii și restricții",none:"Nu sunt",q:[
+    {k:"alergii",l:"Alergii, intoleranțe sau ingrediente de evitat",type:"area"}]},
+  {k:"obs",t:"Observații",opt:true,q:[
+    {k:"obsDet",l:"Orice altceva ne-ar ajuta să pregătim barul",type:"area"}]}
+];
+const KEYS=SECT.flatMap(s=>s.q.map(q=>q.k).concat(s.none?[s.k+"None"]:[]));
+const val=(d,k)=>String((d||{})[k]??"").trim();
+const vis=(q,d)=>!q.if||val(d,q.if[0])===q.if[1];
+function done(s,d){if(s.none&&val(d,s.k+"None"))return true;return s.q.some(q=>vis(q,d)&&val(d,q.k)!=="")}
+function progres(d){const S=SECT.filter(s=>!s.opt),ok=S.filter(s=>done(s,d||{}));return {gata:ok.length,total:S.length,complet:ok.length===S.length,lipsa:S.filter(s=>!done(s,d||{})).map(s=>s.t)}}
+/* termenul: cu 4 zile înainte de eveniment */
+function termen(dataEv){const m=String(dataEv||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return "";return new Date(Date.UTC(+m[1],m[2]-1,+m[3]-4)).toISOString().slice(0,10)}
+/* rezumat pe rânduri, pentru fișa evenimentului și calendar */
+function rinduri(d){d=d||{};const L=[];
+  SECT.forEach(s=>{if(s.none&&val(d,s.k+"None")){L.push(`${s.t}: ${s.none.toLowerCase()}`);return}
+    const p=s.q.filter(q=>vis(q,d)&&val(d,q.k)).map(q=>q.s?`${q.s} ${val(d,q.k)}`:val(d,q.k));
+    if(p.length)L.push(`${s.t}: ${p.join(" · ")}`)});
+  return L}
+/* varianta cea mai nouă dintre două (din aplicație și din portal) */
+function nou(a,b){if(!a)return b||null;if(!b)return a;return String(b.at||"")>String(a.at||"")?b:a}
+/* toate cheile cunoscute, ca text scurt; cele goale rămân "" ca să șteargă valoarea veche la salvarea cu merge */
+function curat(d){const o={};KEYS.forEach(k=>{o[k]=val(d,k).slice(0,600)});return o}
+
+/* formularul: aceeași formă în portal și în aplicație; fiecare pagină își pune stilurile pentru clasele dt-* */
+function formHTML(d,esc,o){d=d||{};o=o||{};let h="";
+  SECT.forEach((s,i)=>{const ok=done(s,d);
+    h+=`<fieldset class="dt-s${ok?" dt-ok":""}" data-dts="${s.k}"><legend>${o.nr?`<span class="dt-n">${i+1}</span>`:""}${esc(s.t)}${s.opt?` <small>(opțional)</small>`:""}</legend>`;
+    if(s.none)h+=`<label class="dt-none"><input type="checkbox" data-dt="${s.k}None"${val(d,s.k+"None")?" checked":""}> ${esc(s.none)}</label>`;
+    h+=`<div class="dt-g">`;
+    s.q.forEach(q=>{const v=val(d,q.k),hid=!vis(q,d)||(s.none&&val(d,s.k+"None"))?" dt-hide":"",attr=`data-dt="${q.k}"`;
+      const iff=q.if?` data-if="${q.if[0]}=${esc(q.if[1])}"`:"";
+      if(q.type==="opt"||q.type==="lvl"){const ops=q.type==="lvl"?NIV:q.o;
+        h+=`<div class="dt-q${q.type==="lvl"?" dt-lvl":""}${hid}"${iff}><span class="dt-l">${esc(q.l)}</span><span class="dt-ops">${ops.map(x=>`<label class="dt-p${v===x?" on":""}"><input type="radio" name="dt-${q.k}" value="${esc(x)}" ${attr}${v===x?" checked":""}>${esc(x)}</label>`).join("")}</span></div>`}
+      else if(q.type==="area")h+=`<label class="dt-q dt-w${hid}"${iff}><span class="dt-l">${esc(q.l)}</span><textarea rows="2" ${attr}>${esc(v)}</textarea></label>`;
+      else h+=`<label class="dt-q${hid}"${iff}><span class="dt-l">${esc(q.l)}</span><input ${q.type==="time"?'type="time"':q.type==="num"?'type="text" inputmode="numeric"':'type="text"'} ${attr} value="${esc(v)}"></label>`});
+    h+=`</div></fieldset>`});
+  return h}
+/* citește valorile din formular */
+function citeste(box){const d={};
+  box.querySelectorAll("[data-dt]").forEach(i=>{const k=i.dataset.dt;
+    if(i.type==="radio"){if(i.checked)d[k]=i.value}else if(i.type==="checkbox"){if(i.checked)d[k]="1"}else if(String(i.value).trim())d[k]=String(i.value).trim()});
+  return curat(d)}
+/* după o schimbare: arată/ascunde întrebările condiționate, bifează secțiunile gata */
+function potriveste(box){const d=citeste(box);
+  box.querySelectorAll(".dt-p").forEach(l=>l.classList.toggle("on",l.querySelector("input").checked));
+  SECT.forEach(s=>{const fs=box.querySelector(`[data-dts="${s.k}"]`);if(!fs)return;const nn=s.none&&val(d,s.k+"None");
+    fs.querySelectorAll(".dt-q").forEach(q=>{const c=q.dataset.if,[a,b]=c?c.split("="):[];q.classList.toggle("dt-hide",!!nn||(c?val(d,a)!==b:false))});
+    fs.classList.toggle("dt-ok",done(s,d))});
+  return d}
+const API={SECT,KEYS,progres,termen,rinduri,nou,curat,formHTML,citeste,potriveste};
+if(typeof module!=="undefined"&&module.exports)module.exports=API;else root.CPDet=API;
+})(typeof window!=="undefined"?window:globalThis);
 </script>
 <script id="app" type="text/plain">
 (function(){
@@ -3206,6 +3303,7 @@ function menuCard(c){
   return `<div class="ct-card ct-dm"><div class="ct-h"><b>${esc(c.nume||"Fără nume")}</b><span>${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""}</span></div>
     <div class="ct-m"><span class="ct-chip">Doar alegerea meniului, fără contract</span>${c.invitati?` · ${esc(c.invitati)} invitați`:""}${c.tel?` · ${esc(c.tel)}`:""}</div>
     ${portalRow(c)}
+    ${detRow(c)}
     <div class="ct-b"><button class="btn" data-fisa="${c.id}">Fișă eveniment</button><button class="btn" data-ed="${c.id}">Editează</button>
     <button class="btn st-del" data-del="${c.id}">${confirmDel===c.id?"Sigur? Șterge":"Șterge"}</button></div></div>`;
 }
@@ -3252,6 +3350,7 @@ function viewList(){
       <label class="btn${c.signedId?"":" primary"} ct-up">${c.signedId?"Înlocuiește contractul semnat":"Încarcă contractul semnat de client"}<input type="file" accept="application/pdf,image/*" data-sgn="${c.id}" hidden></label></div>
       ${invRow(c)}
       ${portalRow(c)}
+      ${detRow(c)}
       ${c.rent&&c.rent.calc?`<div class="ct-m">Rentabilitate: venit ${lei(c.rent.calc.venit)} · profit <b>${lei(c.rent.calc.profit)}</b> (${pct(c.rent.calc.marja)})</div>`:""}
       <div class="ct-b"><button class="btn" data-fisa="${c.id}">Fișă eveniment</button><button class="btn" data-rent="${c.id}">Rentabilitate</button><button class="btn" data-notes="${c.id}">Notițe${(c.notes||[]).length?` (${c.notes.length})`:""}</button></div>
       <div class="ct-b"><button class="btn" data-pdf="${c.id}">PDF</button><button class="btn${c.calId?"":" primary"}" data-gs="${c.id}">${c.calId?"✓ Actualizează Drive + calendar":"Drive + calendar"}</button><button class="btn" data-ed="${c.id}">Editează</button><button class="btn" data-dup="${c.id}">Copie</button>
@@ -3297,7 +3396,7 @@ function prepSig(file){return new Promise((res,rej)=>{const fr=new FileReader();
   o.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height);res(o.toDataURL("image/png"))};im.src=fr.result};fr.readAsDataURL(file)})}
 function render(){try{if(!G.tc)gPrep()}catch(e){}
   const y=window.scrollY,a=document.activeElement,fq=a&&a.classList&&a.classList.contains("ct-q");
-  V.innerHTML=mode==="meniu"?viewMeniu():mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():(gConnHTML()+viewList());
+  V.innerHTML=mode==="meniu"?viewMeniu():mode==="form"?viewForm():mode==="firma"?viewFirma():mode==="rent"?viewRent():mode==="notes"?viewNotes():mode==="det"?viewDet():(gConnHTML()+viewList());
   if(fq){const i=V.querySelector(".ct-q");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}
   window.scrollTo(0,y);
   if(mode==="list")portalAuto();
@@ -3471,15 +3570,16 @@ async function portalPublish(c,quiet){
 async function portalRefresh(c,quiet){
   if(!c.portalTok)return;
   try{const d=await F.fs.doc(`portal/${c.portalTok}`).get();if(!d.exists)return;const r=(d.data()||{}).resp||{};
-    const nr={seenAt:r.seenAt||"",menu:r.menu||[],obs:r.obs||"",signedAt:r.signedAt||"",nume:r.nume||""};
+    const nr={seenAt:r.seenAt||"",menu:r.menu||[],obs:r.obs||"",signedAt:r.signedAt||"",nume:r.nume||"",det:r.det||null};
     if(JSON.stringify(nr)!==JSON.stringify(c.portalResp||{})){
       const was=c.portalResp||{};await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalResp:nr},{merge:true});
       if(nr.signedAt&&!was.signedAt)toast(`${tcase(surname(c.nume))} a semnat contractul în portal ✓`);
       else if(nr.menu.length&&!(was.menu||[]).length)toast(`${tcase(surname(c.nume))} a ales meniul în portal.`);
+      else if(nr.det&&nr.det.by==="client"&&nr.det.at!==((was.det||{}).at))toast(`${tcase(surname(c.nume))} a completat detalii despre eveniment.`);
     }else if(!quiet)toast("Nimic nou în portal.");
   }catch(e){if(!quiet)toast("Nu am putut citi portalul.")}
 }
-function portalAuto(){let n=0;list.forEach(c=>{if(n<8&&c.portalTok&&!c.portalSaved&&!POR.seen[c.id]){POR.seen[c.id]=1;n++;portalRefresh(c,true)}})}
+function portalAuto(){let n=0;const t=today();list.forEach(c=>{if(n<12&&c.portalTok&&(!c.portalSaved||(c.dataEv||"")>=t)&&!POR.seen[c.id]){POR.seen[c.id]=1;n++;portalRefresh(c,true)}})}
 async function portalSaveSigned(c,btn){
   if(btn){btn.disabled=true;btn.textContent="Se pregătește contractul semnat…"}
   try{const d=await F.fs.doc(`portal/${c.portalTok}`).get(),r=(d.data()||{}).resp||{};
@@ -3491,6 +3591,32 @@ async function portalSaveSigned(c,btn){
     await F.fs.doc(`${F.base}/contracte/${c.id}`).set({portalSaved:true},{merge:true});
   }catch(e){console.warn(e);toast(e&&e.msg||"Nu am putut salva contractul semnat.");if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent="Salvează contractul semnat în Drive"}}
 }
+/* ---------- Detaliile evenimentului (aceleași întrebări ca în portal, din detalii.js) ---------- */
+const DT=window.CPDet;
+const detOf=c=>DT?DT.nou(c.det||null,(c.portalResp&&c.portalResp.det)||null):null;
+const zileLa=iso=>{if(!iso)return 99;const a=new Date(today()+"T12:00:00"),b=new Date(iso+"T12:00:00");return Math.round((b-a)/864e5)};
+function detRow(c){if(!DT)return "";
+  const d=detOf(c)||{},pr=DT.progres(d),z=zileLa(c.dataEv),viit=z>=0;
+  const red=viit&&z<=4&&!pr.complet,L=DT.rinduri(d);
+  let h=`<div class="ct-b"><button class="ct-chip ${pr.complet?"on":red?"dt-red":""}" data-det="${c.id}">${pr.complet?"✓ ":""}Detalii: ${pr.gata}/${pr.total}${d.by==="client"?" · de la client":""}</button>
+    <button class="btn" data-det="${c.id}">Detalii eveniment</button>`;
+  if(viit&&z<=7&&!pr.complet&&c.portalTok)h+=`<button class="btn${red?" primary":""}" data-detwa="${c.id}">Reamintește pe WhatsApp</button>`;
+  h+=`</div>`;
+  if(L.length)h+=`<details class="ct-m"><summary>Ce știm până acum</summary><ul class="dt-sum">${L.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>`;
+  return h}
+function detMsg(c){const pr=DT.progres(detOf(c)||{}),t=DT.termen(c.dataEv),ex=pr.lipsa.slice(0,3).map(x=>x.toLowerCase()).join(", ");
+  return `Bună ziua! Ca să pregătim barul pentru evenimentul din ${shortDate(c.dataEv)}, ne mai trebuie câteva detalii${ex?` (${ex})`:""}. Le puteți completa aici${t&&t>=today()?`, până pe ${shortDate(t)}`:""}: ${porLink(c)}\nDurează 2 minute. Mulțumim! Cocktail Philosophy`}
+function viewDet(){const c=cur,d=detOf(c)||{},pr=DT.progres(d);
+  return `<div class="st-top"><div><p class="ev-sub">Detalii eveniment · ${esc(c.nume||"")}</p><p class="ev-file">${esc(shortDate(c.dataEv))}${c.locatie?" · "+esc(c.locatie):""} · ${pr.gata} din ${pr.total} completate${d.at?` · ultima modificare ${esc(shortDate(String(d.at).slice(0,10)))}, de ${d.by==="client"?"client":"tine"}`:""}.
+    ${c.portalTok?"Clientul vede și completează aceleași întrebări în portal.":"Clientul le vede în portal după ce îi faci linkul."}</p></div>
+    <div class="st-acts"><button class="btn" data-c="back">Înapoi</button></div></div>
+    <div class="dt-box" id="dtBox">${DT.formHTML(d,esc,{})}</div>
+    <div class="st-save"><button class="btn primary" data-c="savedet">Salvează detaliile</button></div>`}
+async function saveDet(){const box=$("#dtBox");if(!box)return;const c=cur,d={...DT.citeste(box),at:new Date().toISOString(),by:"paul"};
+  try{await F.fs.doc(`${F.base}/contracte/${c.id}`).set({det:d},{merge:true});
+    if(c.portalTok)await F.fs.doc(`portal/${c.portalTok}`).set({resp:{det:d}},{merge:true}).catch(()=>toast("Detaliile sunt salvate, dar portalul nu s-a actualizat. Apasă „Actualizează portalul”."));
+    const o=list.find(x=>x.id===c.id);if(o)o.det=d;mode="list";cur=null;render();toast("Detaliile au fost salvate.")}
+  catch(e){toast("Nu am putut salva detaliile. Verifică internetul.")}}
 function porMsg(c){if(c.doarMeniu)return `Bună ziua! Aici puteți alege cocktailurile pentru evenimentul din ${shortDate(c.dataEv)}: ${porLink(c)}\nMulțumim! Cocktail Philosophy`;return `Bună ziua! Aici găsiți tot pentru evenimentul din ${shortDate(c.dataEv)}: oferta, alegerea cocktailurilor, contractul de semnat online și plata avansului: ${porLink(c)}\nMulțumim! Cocktail Philosophy`}
 
 /* ---------- Avans cu cardul (Revolut prin Make) ---------- */
@@ -4038,6 +4164,7 @@ function evDesc(c){
   L.push(`REST DE PLATĂ: ${shortDate(c.dataRest)||"—"}${c.restPlatit?" · încasat":""} · ${c.plata}`);
   if(on(c.c3)||on(c.c4))L.push([on(c.c3)?`TRANSPORT: ${c.transport}`:"",on(c.c4)?`taxa de vase: ${c.vase}`:""].filter(Boolean).join(" · "));
   if(c.portalResp&&c.portalResp.menu&&c.portalResp.menu.length)L.push(`MENIU ALES DE CLIENT: ${c.portalResp.menu.join(", ")}${c.portalResp.obs?" · "+c.portalResp.obs:""}`);
+  {const dl=DT?DT.rinduri(detOf(c)||{}):[];if(dl.length)L.push("DETALII EVENIMENT:\n"+dl.map(x=>"· "+x).join("\n"))}
   L.push(c.signedId?`CONTRACT: semnat de ambele părți${c.signedAt?" ("+shortDate(c.signedAt)+")":""}`:"CONTRACT: trimis clientului, încă nesemnat de el");
   return L.join("\n")+notesTxt(c)+`\n\n${c.signedId?"Contractul semnat e":"Contract"} atașat mai jos · completat din aplicația Cocktail Philosophy.`;
 }
@@ -4178,6 +4305,7 @@ V.addEventListener("input",e=>{if(e.target.classList.contains("ct-q")){q=e.targe
   if(f&&e.target.dataset&&e.target.dataset.f==="pret")f.pretAuto=false;
 });
 V.addEventListener("change",e=>{const i=e.target;
+  if(mode==="det"&&DT){const bx=$("#dtBox");if(bx&&bx.contains(i)){DT.potriveste(bx);return}}
   if(mode==="form"&&f&&i&&i.dataset&&["pachetTip","barmani","invitati","moneda"].includes(i.dataset.f)){grab();
     if(i.dataset.f==="pachetTip"){f.pretAuto=true;f.c5=f.pachetTip===PACH_BAR}
     pretAuto(f);render();return}
@@ -4196,7 +4324,7 @@ V.addEventListener("click",async e=>{
     delete INV.arm[ak];invNew(c,k);return}
   const tx=t.closest("[data-thx]");if(tx){F.fs.doc(`${F.base}/contracte/${tx.dataset.thx}`).set({thanksAt:new Date().toISOString()},{merge:true}).catch(()=>{});return}
   const tk=t.closest("[data-thxskip]");if(tk){F.fs.doc(`${F.base}/contracte/${tk.dataset.thxskip}`).set({thanksSkip:true},{merge:true}).catch(()=>{});return}
-  const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{};window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:c.oraEv||"",pers:String(c.invitati||""),note:r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",from:tcase(surname(c.nume)),menuIds:r.menuIds})}return}
+  const fi=t.closest("[data-fisa]");if(fi){const c=list.find(x=>x.id===fi.dataset.fisa);if(c&&window.__evNew){const r=c.portalResp||{},dd=detOf(c)||{},dl=DT?DT.rinduri(dd):[];window.__evNew({nume:tcase(c.locatie||""),data:c.dataEv||"",ora:dd.oraStart||c.oraEv||"",pers:String(dd.adulti||c.invitati||""),note:[r.menu&&r.menu.length?"Meniu: "+r.menu.join(", ")+(r.obs?". "+r.obs:""):"",...dl].filter(Boolean).join("\n"),from:tcase(surname(c.nume)),menuIds:r.menuIds})}return}
   const pon=t.closest("[data-porn]");if(pon){const c=list.find(x=>x.id===pon.dataset.porn);if(c)portalPublish(c);return}
   const pou=t.closest("[data-porup]");if(pou){const c=list.find(x=>x.id===pou.dataset.porup);if(c){portalPublish(c).then(()=>portalRefresh(c,false))}return}
   const pow=t.closest("[data-porwa]");if(pow){const c=list.find(x=>x.id===pow.dataset.porwa);if(c&&c.portalTok){const tel=telWa(c.tel);window.open((tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(porMsg(c)),"_blank")}return}
@@ -4207,6 +4335,8 @@ V.addEventListener("click",async e=>{
   const pc=t.closest("[data-paycp]");if(pc){const c=list.find(x=>x.id===pc.dataset.paycp);if(c&&c.payOrder)navigator.clipboard.writeText(c.payOrder.url).then(()=>toast("Linkul a fost copiat."),()=>toast(c.payOrder.url));return}
   const pk=t.closest("[data-paychk]");if(pk){const c=list.find(x=>x.id===pk.dataset.paychk);if(c)payCheck(c,false);return}
   const rb=t.closest("[data-rent]");if(rb){const c=list.find(x=>x.id===rb.dataset.rent);if(c){cur={...c};rentMsg="";mode="rent";render();window.scrollTo(0,V.offsetTop-10)}return}
+  const dtb=t.closest("[data-det]");if(dtb){const c=list.find(x=>x.id===dtb.dataset.det);if(c&&DT){cur={...c};mode="det";render();window.scrollTo(0,V.offsetTop-10)}return}
+  const dtw=t.closest("[data-detwa]");if(dtw){const c=list.find(x=>x.id===dtw.dataset.detwa);if(c&&c.portalTok){const tel=telWa(c.tel);window.open((tel?`https://wa.me/${tel}`:"https://wa.me/")+"?text="+encodeURIComponent(detMsg(c)),"_blank")}return}
   const nb=t.closest("[data-notes]");if(nb){const c=list.find(x=>x.id===nb.dataset.notes);if(c){cur={...c};noteDel=null;mode="notes";render();window.scrollTo(0,V.offsetTop-10)}return}
   const rc=t.closest("[data-rcons]");if(rc&&cur){const DD=window.__cx&&window.__cx.getD(),e=DD&&DD.events.find(x=>x.id===rc.dataset.rcons);if(e)pullConsum(e,rc);return}
   const rcb=t.closest("[data-rcb]");if(rcb&&cur){grabRent();render();return}
@@ -4225,6 +4355,7 @@ V.addEventListener("click",async e=>{
   if(a==="back"){mode="list";f=null;cur=null;errs=[];SOC.arm=false;render();return}
 
   if(a==="saverent"){saveRent();return}
+  if(a==="savedet"){b.disabled=true;await saveDet();return}
   if(a==="addnote"){const tx=($("#ntT").value||"").trim(),d=$("#ntD").value||today();if(!tx){toast("Scrie ce s-a discutat.");return}
     saveNotes([...(cur.notes||[]),{d,t:tx,at:new Date().toISOString()}],"Notița a fost salvată.");return}
   if(a==="firma"){mode="firma";render();return}
