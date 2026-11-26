@@ -339,7 +339,7 @@ p{margin:0}
 .st-card em{font-style:normal;color:var(--gold-light);white-space:nowrap}
 
 .cu-frunze{position:relative;overflow:hidden;isolation:isolate}
-.cu-frunze::before{content:"";position:absolute;z-index:-1;left:-90px;bottom:-60px;width:520px;height:650px;background:url(img/statuia-veche-frunze.webp) center/cover no-repeat;opacity:.16;mix-blend-mode:luminosity;-webkit-mask-image:radial-gradient(closest-side,#000 55%,transparent);mask-image:radial-gradient(closest-side,#000 55%,transparent);pointer-events:none}
+.cu-frunze::before{content:"";position:absolute;z-index:-1;left:-90px;bottom:-60px;width:520px;height:650px;background:url(img/statuia-aur.webp) center/cover no-repeat;opacity:.16;mix-blend-mode:luminosity;-webkit-mask-image:radial-gradient(closest-side,#000 55%,transparent);mask-image:radial-gradient(closest-side,#000 55%,transparent);pointer-events:none}
 @media (max-width:860px){.cu-frunze::before{width:380px;height:475px;left:-120px;bottom:auto;top:-40px;opacity:.12}}
 @media (max-width:560px){.st-card{gap:14px;padding:14px}.st-card img{width:64px;height:64px}.st-card b{font-size:21px}.st-card span{font-size:15px}}
 
