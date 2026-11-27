@@ -292,10 +292,8 @@ function setN(v){v=update(v);n.value=v;r.value=Math.min(N1,v)}
 /* trimite calculul pe WhatsApp (mirii îl arată partenerului, părinților); linkul redeschide calculatorul cu același număr */
 var shareBtn=document.getElementById('cpShare');
 function shareUrl(v){
-  var p=price(v),link='https://cocktailphilosophy.ro/oferte/#invitati-'+v;
-  var t='Uite cât ar costa barul de cocktailuri Cocktail Philosophy pentru '+v+' invitați, cu băutură nelimitată (all you can drink):\n'+
-    '• '+fmt(p)+' € de invitat\n• aproximativ '+Math.round(p*v).toLocaleString('ro-RO')+' € în total\n\n'+
-    'Calculează și tu: '+link;
+  var link='https://cocktailphilosophy.ro/oferte/#invitati-'+v;
+  var t=link;
   return 'https://wa.me/?text='+encodeURIComponent(t);
 }
 function refreshShare(){shareBtn.href=shareUrl(Math.max(1,Math.min(2000,Math.round(+n.value||150))))}
