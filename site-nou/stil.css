@@ -456,3 +456,8 @@ p{margin:0}
 .buget-form input,.buget-form select{min-width:0;width:100%}
 .buget-suma select{width:auto;flex:0 0 auto}
 @media (max-width:560px){.buget-form{padding:18px 14px}.buget{gap:24px}}
+
+/* buton WhatsApp (calculator) */
+.btn-wa{background:#25D366;color:#04310F;border:2px solid #25D366;display:inline-flex;align-items:center;gap:8px}
+.btn-wa svg{width:20px;height:20px;flex:none}
+.btn-wa:hover{background:#1EBE5A;border-color:#1EBE5A}
