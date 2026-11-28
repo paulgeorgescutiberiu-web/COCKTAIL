@@ -332,7 +332,8 @@ test("Doar meniu: link fără contract, clientul alege între minim și maxim, r
   assert.equal(doc.d.menuMin, 10); assert.equal(doc.d.menuMax, 14);
   assert.equal(doc.d.pdf, null);
   const ids = doc.d.menuOpts.map(o => o.id);
-  for (const id of ["espresso-martini", "pornstar-martini", "kiwi-passion", "tonic-botanic"]) assert.ok(ids.includes(id), id);
+  for (const id of ["espresso-martini", "pornstar-martini", "tonic-botanic"]) assert.ok(ids.includes(id), id);
+  assert.ok(!ids.includes("kiwi-passion"), "Kiwi Passion a fost scos din meniu");
   assert.ok(ids.length > 14);
   assert.match(await page.$eval("#v-contracte", e => e.innerText), /Doar alegerea meniului, fără contract/);
 
